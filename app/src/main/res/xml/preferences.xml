@@ -21,11 +21,6 @@
             android:key="pref_background_image"
             android:title="@string/pref_background_title"
             android:summary="@string/summary_background_not_set" />
-        <SwitchPreferenceCompat
-            android:key="pref_show_background"
-            android:title="@string/pref_show_background_title"
-            android:summary="@string/pref_show_background_summary"
-            android:defaultValue="true" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/pref_category_sphere">

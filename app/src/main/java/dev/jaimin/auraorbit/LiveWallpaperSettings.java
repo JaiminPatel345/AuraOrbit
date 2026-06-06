@@ -246,31 +246,36 @@ public class LiveWallpaperSettings extends AppCompatActivity {
         // ─────────────────────────────────────────────────────────────────
 
         /**
-         * Called when the user taps "Background image".
+         * Called when the user taps the background-image preference.
          *
          * <ul>
-         *   <li>If no image is stored: launches the photo picker directly.</li>
-         *   <li>If an image exists: shows a two-item dialog (Replace / Remove).</li>
+         *   <li>If no custom photo is set: launches the photo picker directly.</li>
+         *   <li>If a custom photo is set: shows a three-choice dialog —
+         *       "Choose new photo" (picker), "Remove photo" (revert to default
+         *       gradient), and "Cancel" (dismiss, change nothing).</li>
          * </ul>
          */
         private void handleBackgroundClick() {
             if (BackgroundStore.exists(requireContext())) {
-                // Image already set — offer replace or remove
+                // Custom photo already set — offer replace, remove, or cancel
                 new MaterialAlertDialogBuilder(requireContext())
                         .setItems(new CharSequence[]{
-                                getString(R.string.background_replace),
-                                getString(R.string.background_remove)
+                                getString(R.string.background_choose_new),
+                                getString(R.string.background_remove),
+                                getString(R.string.background_remove_cancel)
                         }, (dialog, which) -> {
                             if (which == 0) {
                                 launchPicker();
-                            } else {
-                                // Remove: clear stored file, update summaries
+                            } else if (which == 1) {
+                                // Remove: clear stored file, engine reverts to default gradient
                                 BackgroundStore.clear(requireContext());
                                 updateSummaries();
                             }
+                            // which == 2 is Cancel — dismiss dialog, change nothing
                         })
                         .show();
             } else {
+                // No custom photo — go straight to the picker
                 launchPicker();
             }
         }

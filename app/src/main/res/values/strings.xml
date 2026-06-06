@@ -17,10 +17,8 @@
     <!-- Background -->
     <string name="pref_category_background">Background</string>
     <string name="pref_background_title">Background image</string>
-    <string name="summary_background_set">Custom image set — tap to replace or remove</string>
-    <string name="summary_background_not_set">Tap to choose an image from your gallery</string>
-    <string name="pref_show_background_title">Show background image</string>
-    <string name="pref_show_background_summary">When off, a dark gradient is used instead</string>
+    <string name="summary_background_set">Custom photo — tap to change or remove</string>
+    <string name="summary_background_not_set">Default gradient — tap to choose a photo</string>
 
     <!-- Sphere -->
     <string name="pref_category_sphere">Sphere</string>
@@ -57,8 +55,9 @@
     <!-- Background toasts -->
     <string name="toast_background_saved">Background image saved.</string>
     <string name="toast_background_failed">Could not load that image.</string>
-    <string name="background_replace">Replace image</string>
-    <string name="background_remove">Remove image</string>
+    <string name="background_choose_new">Choose new photo</string>
+    <string name="background_remove">Remove photo</string>
+    <string name="background_remove_cancel">Cancel</string>
 
     <!-- Summaries -->
     <string name="summary_apps_selected">%1$d apps selected</string>
