@@ -39,24 +39,17 @@
     <string name="pref_target_fps_summary">Higher values are smoother but use more battery</string>
 
     <!-- Dialogs -->
-    <string name="dialog_select_apps_title">Select Apps</string>
-    <string name="dialog_create_group">Create Group</string>
     <string name="dialog_group_name_hint">Group name (e.g., Social)</string>
-    <string name="dialog_group_color">Choose Color</string>
-    <string name="dialog_assign_apps">Assign apps to this group</string>
-    <string name="dialog_edit_group">Edit Group</string>
     <string name="dialog_delete_confirm">Delete group &#8220;%1$s&#8221;?</string>
     <string name="dialog_delete_confirm_msg">The apps in this group will become ungrouped.</string>
 
     <!-- Buttons -->
     <string name="btn_save">Save</string>
     <string name="btn_cancel">Cancel</string>
-    <string name="btn_add_group">Add Group</string>
     <string name="btn_delete_group">Delete</string>
 
     <!-- Toasts -->
     <string name="toast_saved">Settings saved. Wallpaper will update.</string>
-    <string name="toast_no_apps">Please select at least one app.</string>
     <string name="toast_group_name_empty">Please enter a group name.</string>
     <string name="toast_group_exists">A group with this name already exists.</string>
     <string name="toast_group_deleted">Group deleted.</string>
@@ -75,7 +68,6 @@
 
     <!-- Fragment / UI titles -->
     <string name="search_apps_hint">Search apps…</string>
-    <string name="title_select_apps">Select apps</string>
     <string name="title_groups">Groups</string>
     <string name="title_new_group">New group</string>
     <string name="title_edit_group">Edit group</string>

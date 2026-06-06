@@ -79,26 +79,6 @@ public class AppFetcher {
      */
     public static final String PREF_SELECTED_APPS = "selected_app_packages";
 
-    /**
-     * @deprecated Legacy schema, migrated by GroupStore; removed after settings rewrite lands.
-     * Group data was stored as a StringSet of group names under this key.
-     * The new schema uses {@link GroupStore#PREF_GROUPS_JSON} (a single JSON blob).
-     * Kept here because the old LiveWallpaperSettings still references this constant
-     * and is being rewritten in a parallel task.
-     */
-    @Deprecated
-    public static final String PREF_GROUPS_LIST = "groups_list";
-
-    /**
-     * @deprecated Legacy schema, migrated by GroupStore; removed after settings rewrite lands.
-     * Per-group keys were formed as "group_&lt;name&gt;_color" and "group_&lt;name&gt;_apps".
-     * The new schema uses {@link GroupStore#PREF_GROUPS_JSON} (a single JSON blob).
-     * Kept here because the old LiveWallpaperSettings still references this constant
-     * and is being rewritten in a parallel task.
-     */
-    @Deprecated
-    public static final String PREF_GROUP_PREFIX = "group_";
-
     // ═══════════════════════════════════════════════════════════════════════
     //  Data Class — Holds app metadata + texture for a single sphere node
     // ═══════════════════════════════════════════════════════════════════════
