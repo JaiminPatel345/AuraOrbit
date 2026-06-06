@@ -1,14 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- ═══════════════════════════════════════════════════════════════════════════
      AndroidManifest.xml — AuraOrbit Live Wallpaper
-     
+
      Declares:
-       1. MyWallpaperService   — The live wallpaper service that hosts libGDX.
+       1. MyWallpaperService    — The live wallpaper service that hosts libGDX.
        2. LiveWallpaperSettings — Preference Activity for app selection & grouping.
-     
-     Permissions:
-       - QUERY_ALL_PACKAGES: Required to enumerate installed apps for selection.
-       - READ_EXTERNAL_STORAGE: Fallback for system wallpaper retrieval on older APIs.
+
+     Package visibility:
+       - Uses a <queries> intent filter (MAIN + LAUNCHER) to enumerate installed
+         apps with launcher icons. No QUERY_ALL_PACKAGES permission is needed
+         (and it is Play-policy restricted anyway).
+
+     Storage:
+       - No READ_EXTERNAL_STORAGE permission. Custom backgrounds are selected via
+         the Android Photo Picker (ACTION_PICK_IMAGES), which grants one-time URI
+         access without needing broad storage permissions.
      ═══════════════════════════════════════════════════════════════════════════ -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 

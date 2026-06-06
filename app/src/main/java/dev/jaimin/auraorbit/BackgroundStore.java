@@ -5,8 +5,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 
-import androidx.preference.PreferenceManager;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -173,7 +171,7 @@ public final class BackgroundStore {
 
     /**
      * Deletes the stored background image and bumps the version counter so the
-     * SphereEngine falls back to the system wallpaper on the next frame.
+     * SphereEngine falls back to the built-in dark gradient on the next frame.
      *
      * @param ctx  Android context
      */
@@ -198,10 +196,11 @@ public final class BackgroundStore {
      * @param maxDimension  Maximum allowed dimension after sampling
      * @return Power-of-2 sample size ≥ 1
      */
-    private static int computeSampleSize(int width, int height, int maxDimension) {
+    /** Package-private for unit tests. */
+    static int computeSampleSize(int width, int height, int maxDimension) {
         int inSampleSize = 1;
         int maxSrc = Math.max(width, height);
-        while (maxSrc / (inSampleSize * 2) > maxDimension) {
+        while (maxSrc / inSampleSize > maxDimension) {
             inSampleSize *= 2;
         }
         return inSampleSize;
