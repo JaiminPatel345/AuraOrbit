@@ -55,12 +55,11 @@ public class LiveWallpaperSettings extends AppCompatActivity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-        // Apply Material You dynamic colour tokens before the window is drawn.
-        // Must come before super.onCreate so the theme override takes effect on
-        // the window's DecorView.
-        DynamicColors.applyToActivityIfAvailable(this);
-
         super.onCreate(savedInstanceState);
+
+        // Apply Material You dynamic colour tokens (documented pattern: after super.onCreate).
+        // This overlays the theme with wallpaper-derived colours on Android 12+ devices.
+        DynamicColors.applyToActivityIfAvailable(this);
 
         // Only push the root fragment on a clean launch — the FragmentManager
         // already restores the back stack on config-change (rotation, etc.).

@@ -193,6 +193,14 @@ public class GroupEditFragment extends Fragment {
         // Seed the working members set.
         if (existingGroup != null) {
             workingMembers.addAll(existingGroup.packages);
+
+            // "What you see is what you save": retain only packages that are
+            // currently selected (visible in the member list). A package that
+            // was deselected in the App Picker would otherwise stay invisibly
+            // in the working set and get re-saved on the next Save tap.
+            Set<String> selectedSet = prefs.getStringSet(
+                    AppFetcher.PREF_SELECTED_APPS, new HashSet<>());
+            workingMembers.retainAll(selectedSet);
         }
 
         // Prefill name.

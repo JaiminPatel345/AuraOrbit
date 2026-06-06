@@ -18,7 +18,6 @@ import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
@@ -32,7 +31,6 @@ import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.input.GestureDetector;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
@@ -41,6 +39,7 @@ import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.IntArray;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -141,6 +140,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private float rotationSpeedFactor;     // Multiplier for auto-spin and fling
     private List<AppFetcher.AppNode> appNodes;  // The loaded app data
     private Array<Decal> decals;           // libGDX decals for each app
+    /**
+     * Parallel to {@link #decals}: maps decal index → nodePositions index.
+     * Icons can fail to rasterize (iconRegion == null), so createDecals() skips
+     * those nodes via {@code continue}. Without this map every later decal would
+     * be paired with the wrong node position in renderDecals().
+     */
+    private IntArray decalNodeIndex;       // decal i → nodePositions[decalNodeIndex.get(i)]
     private Vector3[] nodePositions;       // Fibonacci-distributed positions
 
     /**
@@ -224,7 +230,6 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private final Vector3 tmpVec = new Vector3();
     private final Vector3 tmpVec2 = new Vector3();
     private final Quaternion tmpQuat = new Quaternion();
-    private final Matrix4 tmpMatrix = new Matrix4();
 
     // ─── Interaction tracking ───────────────────────────────────────────
     private boolean userInteracting = false;
@@ -444,7 +449,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             Log.d(TAG, "applyConfig: snapshot unchanged, skipping rebuild");
             return;
         }
-        lastConfigSnapshot = snapshot;
+        // NOTE: lastConfigSnapshot is intentionally NOT assigned here.
+        // It is assigned at the END of the method after a successful rebuild
+        // so that a failed/interrupted rebuild can be retried on the next
+        // resume() or preference-change listener fire.
 
         Log.i(TAG, "applyConfig: rebuilding scene...");
 
@@ -484,6 +492,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         if (showBackground) {
             backgroundTexture = AppFetcher.loadBackgroundTexture(context);
         }
+
+        // Snapshot recorded AFTER successful rebuild so a failed rebuild can
+        // be retried on the next resume() or preference-change listener fire.
+        lastConfigSnapshot = snapshot;
 
         Log.i(TAG, "applyConfig: done — " + appNodes.size() + " apps");
     }
@@ -613,6 +625,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      */
     private void createDecals() {
         decals = new Array<>();
+        // Parallel index map: icons can fail to rasterize (iconRegion == null), so we
+        // skip those nodes via `continue`. Without this map every later decal would be
+        // paired with the wrong node position in renderDecals().
+        decalNodeIndex = new IntArray();
 
         for (int i = 0; i < appNodes.size(); i++) {
             AppFetcher.AppNode node = appNodes.get(i);
@@ -627,6 +643,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             decal.setPosition(nodePositions[i].x, nodePositions[i].y, nodePositions[i].z);
 
             decals.add(decal);
+            decalNodeIndex.add(i); // record which node this decal belongs to
         }
 
         Log.d(TAG, "Created " + decals.size + " decals");
@@ -1156,11 +1173,14 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * the illusion of flat 2D icons floating in 3D space.
      */
     private void renderDecals() {
-        for (int i = 0; i < decals.size && i < nodePositions.length; i++) {
+        for (int i = 0; i < decals.size; i++) {
             Decal decal = decals.get(i);
 
             // ─── Apply sphere rotation to this node's position ──────────
-            Vector3 rotatedPos = getRotatedPosition(i);
+            // Use decalNodeIndex to get the correct nodePositions entry; icons can
+            // fail to rasterize so decals[] may be shorter than nodePositions[].
+            int nodeIdx = decalNodeIndex.get(i);
+            Vector3 rotatedPos = getRotatedPosition(nodeIdx);
 
             // ─── Depth-based scale and alpha ─────────────────────────────
             // Compute BEFORE scaling by pageVisibility (rotatedPos.z must be
