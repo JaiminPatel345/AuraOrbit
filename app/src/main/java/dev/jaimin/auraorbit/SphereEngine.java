@@ -1269,7 +1269,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // Full visibility when within 0.3 pages, fading to 0 beyond 1 page.
             // Clamp floor is 0f (not 0.1f) so the sphere fully disappears on
             // non-active pages — the user configured this sphere for one page only.
-            targetVisibility = MathUtils.clamp(1f - (pageDistance - 0.3f) * 1.4f, 0f, 1f);
+            // Falloff slope 1.5 (not 1.4): at exactly pageDistance = 1.0 the
+            // target must reach 0 — with 1.4 it left a 2% ghost (1−0.7×1.4=0.02)
+            // visible on the adjacent page.
+            targetVisibility = MathUtils.clamp(1f - (pageDistance - 0.3f) * 1.5f, 0f, 1f);
         }
 
         // Smooth lerp to target
