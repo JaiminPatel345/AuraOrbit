@@ -1130,4 +1130,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
         Log.i(TAG, "Sphere rebuilt with " + appNodes.size() + " apps");
     }
+
+    @Override
+    public void iconDropped(int x, int y) {
+        // Required by AndroidWallpaperListener but not used
+    }
 }

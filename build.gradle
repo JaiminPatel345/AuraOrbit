@@ -7,7 +7,7 @@ plugins {
 
 // libGDX version constants used by the app module
 ext {
-    gdxVersion = '1.12.1'
+    gdxVersion = '1.13.0'
     androidMinSdk = 30         // Android 11+ required for setFrameRate API
     androidTargetSdk = 35
     androidCompileSdk = 35
