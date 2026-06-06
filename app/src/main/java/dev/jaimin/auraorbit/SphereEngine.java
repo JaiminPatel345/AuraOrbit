@@ -1083,14 +1083,40 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * Uses SpriteBatch which internally sets up an orthographic projection,
      * unaffected by our 3D PerspectiveCamera. The depth buffer is temporarily
      * disabled so the background is always behind everything.
+     *
+     * The gradient texture (1×256) is always stretched full-screen — that is
+     * correct since it is a uniform gradient with no meaningful aspect ratio.
+     * The user photo (backgroundTexture) is center-cropped (aspect-fill) so
+     * it fills the screen without distortion regardless of photo dimensions.
      */
     private void renderBackground() {
         Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
 
-        Texture bg = (backgroundTexture != null) ? backgroundTexture : gradientTexture;
+        float screenW = Gdx.graphics.getWidth();
+        float screenH = Gdx.graphics.getHeight();
 
         spriteBatch.begin();
-        spriteBatch.draw(bg, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+
+        if (backgroundTexture != null) {
+            // ─── Center-crop (aspect-fill) for user photo ────────────────
+            // Scale uniformly so the photo covers the entire screen, then
+            // center it. This avoids the stretch/distortion that would occur
+            // when the photo's aspect ratio differs from the screen's.
+            float texW = backgroundTexture.getWidth();
+            float texH = backgroundTexture.getHeight();
+
+            float scale  = Math.max(screenW / texW, screenH / texH);
+            float drawW  = texW * scale;
+            float drawH  = texH * scale;
+            float drawX  = (screenW - drawW) / 2f;
+            float drawY  = (screenH - drawH) / 2f;
+
+            spriteBatch.draw(backgroundTexture, drawX, drawY, drawW, drawH);
+        } else {
+            // Gradient is a 1×256 stripe — stretching is correct here.
+            spriteBatch.draw(gradientTexture, 0, 0, screenW, screenH);
+        }
+
         spriteBatch.end();
 
         Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);

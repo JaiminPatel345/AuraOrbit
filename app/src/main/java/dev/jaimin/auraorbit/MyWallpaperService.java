@@ -62,9 +62,23 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
 
     /**
      * User-configured target frame rate (60/90/120). Read from SharedPreferences
-     * at initialization and used for the setFrameRate() call.
+     * at initialization and updated live when the pref changes (spec §3.2).
      */
     private float targetFrameRate = 120f;
+
+    /**
+     * The most recently created AuraOrbitEngine instance.
+     * Tracked here so the live FPS listener can reach its currentHolder.
+     * libGDX keeps one app context, so one engine is active at a time.
+     */
+    private AuraOrbitEngine activeEngine;
+
+    /**
+     * STRONG reference to the FPS preference listener.
+     * SharedPreferences uses a WeakHashMap internally, so a listener stored
+     * only as a local variable would be silently GC'd.
+     */
+    private SharedPreferences.OnSharedPreferenceChangeListener fpsListener;
 
     // ═══════════════════════════════════════════════════════════════════════
     //  libGDX Lifecycle — Called when the wallpaper service is first created
@@ -125,7 +139,38 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
         // This triggers GL context creation and calls sphereEngine.create()
         initialize(sphereEngine, config);
 
+        // ─── Register live FPS listener (spec §3.2) ─────────────────────
+        // When the user changes pref_target_fps in Settings, re-parse the
+        // value and apply it to the active surface immediately — no need to
+        // re-apply the wallpaper for the setting to take effect.
+        fpsListener = (p, key) -> {
+            if ("pref_target_fps".equals(key)) {
+                String newFpsStr = p.getString("pref_target_fps", "120");
+                try {
+                    targetFrameRate = Float.parseFloat(newFpsStr);
+                } catch (NumberFormatException e) {
+                    targetFrameRate = 120f;
+                }
+                Log.i(TAG, "pref_target_fps changed → " + targetFrameRate + " FPS");
+                if (activeEngine != null && activeEngine.currentHolder != null) {
+                    activeEngine.applyFrameRate(activeEngine.currentHolder);
+                }
+            }
+        };
+        prefs.registerOnSharedPreferenceChangeListener(fpsListener);
+
         Log.i(TAG, "libGDX engine initialized successfully");
+    }
+
+    @Override
+    public void onDestroy() {
+        // Unregister the FPS listener to avoid leaking this service instance.
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        if (fpsListener != null) {
+            prefs.unregisterOnSharedPreferenceChangeListener(fpsListener);
+            fpsListener = null;
+        }
+        super.onDestroy();
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -167,13 +212,46 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
      */
     private class AuraOrbitEngine extends AndroidLiveWallpaperService.AndroidWallpaperEngine {
 
+        /**
+         * The active SurfaceHolder for this engine, set in onSurfaceCreated
+         * and cleared in onSurfaceDestroyed. Exposed (package-private) so
+         * the service's live FPS listener can re-apply the frame rate without
+         * requiring the wallpaper to be re-applied (spec §3.2).
+         */
+        SurfaceHolder currentHolder;
+
         @Override
         public void onSurfaceCreated(SurfaceHolder holder) {
             super.onSurfaceCreated(holder);
+            currentHolder = holder;
+            activeEngine = this; // track most-recent engine in the service
 
-            // ─── 120Hz Frame Rate Unlock ────────────────────────────────
-            //
-            // The critical call that breaks through the 60 FPS ceiling.
+            // ─── Apply the user's frame rate preference to this surface ──
+            applyFrameRate(holder);
+        }
+
+        @Override
+        public void onSurfaceDestroyed(SurfaceHolder holder) {
+            currentHolder = null;
+            super.onSurfaceDestroyed(holder);
+        }
+
+        /**
+         * Applies the current {@link #targetFrameRate} to the given surface.
+         *
+         * Extracted from onSurfaceCreated so the live FPS preference listener
+         * in the service can call it whenever the user changes pref_target_fps,
+         * making the FPS setting take effect immediately (spec §3.2).
+         *
+         * Guards:
+         * - API 30+ (Surface.setFrameRate added in Android 11)
+         * - Surface validity check before the call
+         * - try/catch for OEM surfaces that throw UnsupportedOperationException
+         *
+         * @param holder The SurfaceHolder whose Surface should be reconfigured.
+         */
+        private void applyFrameRate(SurfaceHolder holder) {
+            // ─── Frame Rate Unlock ──────────────────────────────────────
             //
             // Surface.setFrameRate() was added in API 30 (Android 11).
             // FRAME_RATE_COMPATIBILITY_DEFAULT tells the compositor to
