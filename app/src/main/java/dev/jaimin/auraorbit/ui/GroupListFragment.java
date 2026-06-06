@@ -47,7 +47,7 @@ import dev.jaimin.auraorbit.R;
  * ─── Navigation ──────────────────────────────────────────────────────────────
  *
  * Row taps and the FAB both navigate to {@link GroupEditFragment} using the
- * shared {@code android.R.id.content} back-stack pattern.
+ * shared {@code R.id.settings_container} back-stack pattern.
  */
 public class GroupListFragment extends Fragment {
 
@@ -133,7 +133,7 @@ public class GroupListFragment extends Fragment {
     private void navigateToEdit(@Nullable String groupName) {
         getParentFragmentManager()
                 .beginTransaction()
-                .replace(android.R.id.content, GroupEditFragment.newInstance(groupName))
+                .replace(R.id.settings_container, GroupEditFragment.newInstance(groupName))
                 .addToBackStack(null)
                 .commit();
     }

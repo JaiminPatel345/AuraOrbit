@@ -5,9 +5,10 @@
          palettes at runtime on Android 12+. -->
     <style name="Theme.AuraOrbit" parent="Theme.Material3.DayNight.NoActionBar" />
 
-    <!-- Settings theme: Material 3 with an action bar for fragment titles
-         and back navigation. -->
-    <style name="Theme.AuraOrbit.Settings" parent="Theme.Material3.DayNight">
+    <!-- Settings theme: Material 3 with a MaterialToolbar (NoActionBar) for
+         proper edge-to-edge inset handling on Android 15+. The MaterialToolbar
+         is declared in activity_settings.xml and registered via setSupportActionBar. -->
+    <style name="Theme.AuraOrbit.Settings" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
     </style>
 </resources>

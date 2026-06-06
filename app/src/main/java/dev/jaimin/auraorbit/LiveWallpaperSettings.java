@@ -4,6 +4,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -12,10 +13,14 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.color.DynamicColors;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -37,7 +42,7 @@ import dev.jaimin.auraorbit.ui.GroupListFragment;
  *                                    → navigates → AppPickerFragment (Fragment)
  *                                    → navigates → GroupListFragment → GroupEditFragment
  *
- * All fragment navigation uses {@code android.R.id.content} as the container and
+ * All fragment navigation uses {@code R.id.settings_container} as the container and
  * {@code addToBackStack} so the system back button and the action-bar up arrow
  * both pop correctly.
  *
@@ -55,18 +60,41 @@ public class LiveWallpaperSettings extends AppCompatActivity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        // Apply Material You dynamic colour tokens (documented pattern: before setContentView,
+        // after super.onCreate). This overlays the theme with wallpaper-derived colours on
+        // Android 12+ devices.
+        DynamicColors.applyToActivityIfAvailable(this);
+
         super.onCreate(savedInstanceState);
 
-        // Apply Material You dynamic colour tokens (documented pattern: after super.onCreate).
-        // This overlays the theme with wallpaper-derived colours on Android 12+ devices.
-        DynamicColors.applyToActivityIfAvailable(this);
+        // Inflate the activity layout that owns the MaterialToolbar + settings_container.
+        // This replaces the implicit android.R.id.content-only approach so that
+        // AppBarLayout.fitsSystemWindows handles the status-bar inset and
+        // appbar_scrolling_view_behavior positions the container below the toolbar —
+        // fixing the Android 15+ edge-to-edge enforcement issue.
+        setContentView(R.layout.activity_settings);
+
+        // Register the MaterialToolbar as the support action bar so that
+        // getSupportActionBar(), setTitle(), setDisplayHomeAsUpEnabled(), etc.
+        // all work as expected without a decor action bar.
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        // Apply bottom window inset to the container so list content is not
+        // hidden behind the gesture navigation bar (or 3-button nav bar).
+        View container = findViewById(R.id.settings_container);
+        ViewCompat.setOnApplyWindowInsetsListener(container, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(0, 0, 0, bars.bottom);
+            return insets;
+        });
 
         // Only push the root fragment on a clean launch — the FragmentManager
         // already restores the back stack on config-change (rotation, etc.).
         if (savedInstanceState == null) {
             getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(android.R.id.content, new MainSettingsFragment())
+                    .replace(R.id.settings_container, new MainSettingsFragment())
                     .commit();
         }
 
@@ -201,14 +229,14 @@ public class LiveWallpaperSettings extends AppCompatActivity {
         // ─────────────────────────────────────────────────────────────────
 
         /**
-         * Pushes {@code fragment} onto the back stack using {@code android.R.id.content}
+         * Pushes {@code fragment} onto the back stack using {@code R.id.settings_container}
          * as the container. All fragments in this Activity share this pattern so that
          * the up arrow and hardware back button both pop correctly.
          */
         private void navigateTo(@NonNull androidx.fragment.app.Fragment fragment) {
             getParentFragmentManager()
                     .beginTransaction()
-                    .replace(android.R.id.content, fragment)
+                    .replace(R.id.settings_container, fragment)
                     .addToBackStack(null)
                     .commit();
         }
