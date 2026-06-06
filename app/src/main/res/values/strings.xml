@@ -77,6 +77,8 @@
     <string name="group_member_count">%1$d apps</string>
     <string name="wallpaper_hint_no_apps">Open AuraOrbit settings\nto pick your apps</string>
     <string name="selected_count">%1$d selected</string>
+    <string name="picker_select_all">Select all</string>
+    <string name="picker_clear_all">Clear all</string>
 
     <!-- Group color names (in palette order) -->
     <string-array name="group_color_names">
