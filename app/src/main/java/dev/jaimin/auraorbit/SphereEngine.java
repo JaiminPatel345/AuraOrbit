@@ -479,7 +479,12 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         readConfig(prefs);
 
         // ─── Update camera position for new radius ───────────────────────
-        camera.position.set(0f, 0f, sphereRadius * 2.8f);
+        // Use the viewport dimensions that are already set on the camera.
+        // Guard against a degenerate first-call where the viewport may not
+        // yet be initialised (falls back to Gdx.graphics dimensions).
+        float vpW = camera.viewportWidth  > 0 ? camera.viewportWidth  : Gdx.graphics.getWidth();
+        float vpH = camera.viewportHeight > 0 ? camera.viewportHeight : Gdx.graphics.getHeight();
+        camera.position.set(0f, 0f, computeCameraDistance(vpW, vpH));
         camera.update();
 
         // ─── Re-fetch apps, redistribute, recreate decals and backdrops ──
@@ -1295,6 +1300,50 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     }
 
     // ═══════════════════════════════════════════════════════════════════════
+    //  Camera Distance — fits sphere + icon overhang inside both dimensions
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Computes the camera Z distance so the entire sphere — including the
+     * billboarded icon quads that overhang the surface tangentially — projects
+     * inside both screen dimensions. Owner requirement: the sphere's projected
+     * diameter must never exceed the screen width.
+     *
+     * Geometry: a sphere of effective radius R' viewed from distance D has a
+     * silhouette half-angle of asin(R'/D). It fits inside a view cone of
+     * half-angle θ when D ≥ R'/sin(θ). We evaluate the horizontal cone
+     * (θ_h = atan(tan(θ_v) × aspect), the narrow cone in portrait) and the
+     * vertical cone, then take the larger distance, plus a 5 % safety margin.
+     *
+     * Billboards extend up to ~iconSize × 0.75 beyond the sphere surface
+     * diagonally; they are enclosed in a slightly larger effective sphere.
+     *
+     * @param viewportW  Current viewport width  in pixels (must be > 0)
+     * @param viewportH  Current viewport height in pixels (must be > 0)
+     * @return Camera Z coordinate that keeps sphere + icons on-screen
+     */
+    private float computeCameraDistance(float viewportW, float viewportH) {
+        // Effective radius encloses the sphere plus billboarded icon overhang.
+        float effRadius = sphereRadius + iconSize * 0.75f;
+
+        // camera.fieldOfView is the VERTICAL fov in libGDX PerspectiveCamera.
+        double halfV = Math.toRadians(camera.fieldOfView / 2.0);
+
+        // Derive horizontal half-fov from vertical half-fov and aspect ratio.
+        float aspect = viewportW / viewportH;
+        double halfH = Math.atan(Math.tan(halfV) * aspect);
+
+        // Minimum distance so the sphere's silhouette fits inside each cone.
+        // D ≥ R' / sin(θ) ensures the silhouette subtends at most θ half-angle.
+        float distH = (float) (effRadius / Math.sin(halfH));
+        float distV = (float) (effRadius / Math.sin(halfV));
+
+        // Take the larger of the two (portrait → distH dominates),
+        // then add a 5 % safety margin.
+        return Math.max(distH, distV) * 1.05f;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
     //  Color Parsing Utility
     // ═══════════════════════════════════════════════════════════════════════
 
@@ -1378,6 +1427,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         if (camera != null) {
             camera.viewportWidth = width;
             camera.viewportHeight = height;
+            // Recompute the camera Z distance with the new aspect ratio.
+            // In portrait (narrow), the horizontal half-fov is the binding cone;
+            // after an orientation change the binding dimension may flip, so we
+            // always recalculate to keep the sphere+icons inside the screen.
+            if (width > 0 && height > 0) {
+                camera.position.set(0f, 0f, computeCameraDistance(width, height));
+            }
             camera.update();
         }
 
