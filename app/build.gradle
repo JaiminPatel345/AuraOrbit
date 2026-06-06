@@ -1,0 +1,85 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'dev.jaimin.auraorbit'
+    compileSdk rootProject.ext.androidCompileSdk
+
+    defaultConfig {
+        applicationId "dev.jaimin.auraorbit"
+        minSdk rootProject.ext.androidMinSdk
+        targetSdk rootProject.ext.androidTargetSdk
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // Prevent compression of libGDX native libs
+    androidResources {
+        noCompress 'so'
+    }
+
+    packaging {
+        // Avoid duplicate META-INF entries from libGDX transitive deps
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        }
+    }
+}
+
+configurations { natives }
+
+dependencies {
+    def gdxVersion = rootProject.ext.gdxVersion
+
+    // ─── libGDX Core ────────────────────────────────────────────────────
+    implementation "com.badlogicgames.gdx:gdx:$gdxVersion"
+
+    // ─── libGDX Android Backend (includes Live Wallpaper support) ──────
+    implementation "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
+
+    // ─── libGDX Android Native Libs (arm64, x86_64) ───────────────────
+    natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-arm64-v8a"
+    natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86_64"
+
+    // ─── AndroidX ──────────────────────────────────────────────────────
+    implementation 'androidx.preference:preference:1.2.1'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
+    implementation 'com.google.android.material:material:1.12.0'
+}
+
+
+tasks.register('copyNatives') {
+    doFirst {
+        configurations.natives.files.each { jar ->
+            copy {
+                from zipTree(jar)
+                into file("src/main/jniLibs")
+                include "**/*.so"
+            }
+        }
+    }
+}
+
+tasks.configureEach { task ->
+    if (task.name.contains('merge') && task.name.contains('JniLibFolders')) {
+        task.dependsOn 'copyNatives'
+    }
+}

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 
+         Group backdrop colors — translucent ARGB hex values.
+         Alpha is ~40% (0x66) to create a subtle, glowing backdrop effect
+         behind grouped app clusters on the sphere.
+    -->
+    <color name="group_coral_red">#66FF6B6B</color>
+    <color name="group_ocean_blue">#664ECDC4</color>
+    <color name="group_emerald_green">#6645B7D1</color>
+    <color name="group_amber_gold">#66F7DC6F</color>
+    <color name="group_violet_purple">#66A29BFE</color>
+    <color name="group_sky_cyan">#6674B9FF</color>
+    <color name="group_blush_pink">#66FD79A8</color>
+    <color name="group_slate_gray">#66636E72</color>
+
+    <!-- Hex values for passing to libGDX (without alpha, handled in code) -->
+    <string-array name="group_color_hex">
+        <item>#FF6B6B</item>
+        <item>#4ECDC4</item>
+        <item>#45B7D1</item>
+        <item>#F7DC6F</item>
+        <item>#A29BFE</item>
+        <item>#74B9FF</item>
+        <item>#FD79A8</item>
+        <item>#636E72</item>
+    </string-array>
+
+    <!-- Settings Activity theme colors -->
+    <color name="settings_bg">#FF121212</color>
+    <color name="settings_surface">#FF1E1E1E</color>
+    <color name="settings_primary">#FF6C63FF</color>
+    <color name="settings_on_primary">#FFFFFFFF</color>
+    <color name="settings_text">#FFFFFFFF</color>
+    <color name="settings_text_secondary">#FFB0B0B0</color>
+</resources>

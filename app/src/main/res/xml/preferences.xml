@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+     Preferences screen layout for LiveWallpaperSettings.
+     
+     Organized into 4 categories:
+     1. App Selection — pick which apps to show on the sphere
+     2. Visual Groups — create colored clusters
+     3. Display — background toggle, active page, sizes
+     4. Performance — frame rate target
+-->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- ─── App Selection ───────────────────────────────────────────── -->
+    <PreferenceCategory
+        android:key="category_apps"
+        android:title="@string/pref_category_apps">
+
+        <Preference
+            android:key="pref_select_apps"
+            android:title="@string/pref_select_apps_title"
+            android:summary="@string/pref_select_apps_summary"
+            android:icon="@android:drawable/ic_menu_manage" />
+
+    </PreferenceCategory>
+
+    <!-- ─── Visual Groups ───────────────────────────────────────────── -->
+    <PreferenceCategory
+        android:key="category_groups"
+        android:title="@string/pref_category_groups">
+
+        <Preference
+            android:key="pref_manage_groups"
+            android:title="@string/pref_manage_groups_title"
+            android:summary="@string/pref_manage_groups_summary"
+            android:icon="@android:drawable/ic_menu_sort_by_size" />
+
+    </PreferenceCategory>
+
+    <!-- ─── Display ─────────────────────────────────────────────────── -->
+    <PreferenceCategory
+        android:key="category_display"
+        android:title="@string/pref_category_display">
+
+        <SwitchPreferenceCompat
+            android:key="pref_keep_wallpaper"
+            android:title="@string/pref_keep_wallpaper_title"
+            android:summary="@string/pref_keep_wallpaper_summary"
+            android:defaultValue="true"
+            android:icon="@android:drawable/ic_menu_gallery" />
+
+        <SeekBarPreference
+            android:key="pref_active_page"
+            android:title="@string/pref_active_page_title"
+            android:summary="@string/pref_active_page_summary"
+            android:defaultValue="0"
+            android:max="6"
+            app:min="0"
+            app:showSeekBarValue="true" />
+
+        <SeekBarPreference
+            android:key="pref_sphere_radius"
+            android:title="@string/pref_sphere_radius_title"
+            android:summary="@string/pref_sphere_radius_summary"
+            android:defaultValue="50"
+            android:max="100"
+            app:min="20"
+            app:showSeekBarValue="true" />
+
+        <SeekBarPreference
+            android:key="pref_icon_size"
+            android:title="@string/pref_icon_size_title"
+            android:summary="@string/pref_icon_size_summary"
+            android:defaultValue="50"
+            android:max="100"
+            app:min="20"
+            app:showSeekBarValue="true" />
+
+    </PreferenceCategory>
+
+    <!-- ─── Performance ─────────────────────────────────────────────── -->
+    <PreferenceCategory
+        android:key="category_performance"
+        android:title="@string/pref_category_performance">
+
+        <ListPreference
+            android:key="pref_target_fps"
+            android:title="@string/pref_target_fps_title"
+            android:summary="@string/pref_target_fps_summary"
+            android:entries="@array/target_fps_entries"
+            android:entryValues="@array/target_fps_values"
+            android:defaultValue="120" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

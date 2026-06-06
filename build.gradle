@@ -1,0 +1,14 @@
+// Top-level build file for AuraOrbit
+// Configures build tools shared across all sub-projects/modules.
+
+plugins {
+    id 'com.android.application' version '8.7.3' apply false
+}
+
+// libGDX version constants used by the app module
+ext {
+    gdxVersion = '1.12.1'
+    androidMinSdk = 30         // Android 11+ required for setFrameRate API
+    androidTargetSdk = 35
+    androidCompileSdk = 35
+}

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AuraOrbit</string>
+    <string name="settings_title">AuraOrbit Settings</string>
+    <string name="wallpaper_description">A true 3D orbital sphere populated by your chosen app icons. Supports 120Hz, Fibonacci distribution, visual grouping, and native app launching.</string>
+
+    <!-- Settings Screen -->
+    <string name="pref_category_apps">App Selection</string>
+    <string name="pref_select_apps_title">Select Apps</string>
+    <string name="pref_select_apps_summary">Choose which apps appear on the 3D sphere</string>
+
+    <string name="pref_category_groups">Visual Groups</string>
+    <string name="pref_manage_groups_title">Manage Groups</string>
+    <string name="pref_manage_groups_summary">Create colored folders to cluster apps on the sphere</string>
+
+    <string name="pref_category_display">Display</string>
+    <string name="pref_keep_wallpaper_title">Keep System Wallpaper</string>
+    <string name="pref_keep_wallpaper_summary">Retain your existing wallpaper as the background behind the 3D sphere</string>
+
+    <string name="pref_active_page_title">Active Home Screen Page</string>
+    <string name="pref_active_page_summary">Only render the sphere at full size on this page (saves battery)</string>
+
+    <string name="pref_sphere_radius_title">Sphere Size</string>
+    <string name="pref_sphere_radius_summary">Adjust the radius of the 3D sphere</string>
+
+    <string name="pref_icon_size_title">Icon Size</string>
+    <string name="pref_icon_size_summary">Adjust the size of app icons on the sphere</string>
+
+    <string name="pref_category_performance">Performance</string>
+    <string name="pref_target_fps_title">Target Frame Rate</string>
+    <string name="pref_target_fps_summary">Higher values are smoother but use more battery</string>
+
+    <!-- Dialogs -->
+    <string name="dialog_select_apps_title">Select Apps</string>
+    <string name="dialog_create_group">Create Group</string>
+    <string name="dialog_group_name_hint">Group name (e.g., Social)</string>
+    <string name="dialog_group_color">Choose Color</string>
+    <string name="dialog_assign_apps">Assign apps to this group</string>
+
+    <string name="btn_save">Save</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_add_group">Add Group</string>
+    <string name="btn_delete_group">Delete</string>
+
+    <string name="toast_saved">Settings saved. Wallpaper will update.</string>
+    <string name="toast_no_apps">Please select at least one app.</string>
+    <string name="toast_group_name_empty">Please enter a group name.</string>
+    <string name="toast_group_exists">A group with this name already exists.</string>
+    <string name="toast_group_deleted">Group deleted.</string>
+
+    <string name="summary_apps_selected">%d apps selected</string>
+    <string name="summary_no_apps">No apps selected — tap to choose</string>
+    <string name="summary_groups_count">%d groups configured</string>
+    <string name="summary_no_groups">No groups — tap to create</string>
+    <string name="dialog_edit_group">Edit Group</string>
+    <string name="dialog_delete_confirm">Delete group \"%s\"?</string>
+    <string name="dialog_delete_confirm_msg">The apps in this group will become ungrouped.</string>
+
+    <!-- Group Colors -->
+    <string-array name="group_color_names">
+        <item>Coral Red</item>
+        <item>Ocean Blue</item>
+        <item>Emerald Green</item>
+        <item>Amber Gold</item>
+        <item>Violet Purple</item>
+        <item>Sky Cyan</item>
+        <item>Blush Pink</item>
+        <item>Slate Gray</item>
+    </string-array>
+
+    <string-array name="target_fps_entries">
+        <item>60 FPS (Battery Saver)</item>
+        <item>90 FPS (Balanced)</item>
+        <item>120 FPS (Ultra Smooth)</item>
+    </string-array>
+
+    <string-array name="target_fps_values">
+        <item>60</item>
+        <item>90</item>
+        <item>120</item>
+    </string-array>
+</resources>
