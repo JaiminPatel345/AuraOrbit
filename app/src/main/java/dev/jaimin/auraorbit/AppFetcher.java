@@ -1,6 +1,5 @@
 package dev.jaimin.auraorbit;
 
-import android.app.WallpaperManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -22,7 +21,6 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -41,13 +39,14 @@ import java.util.Set;
  *    Drawable, rasterizes it to a Bitmap, and converts it to a libGDX
  *    Texture suitable for 3D DecalBatch rendering.
  *
- * 2. **System Wallpaper Capture**: Uses WallpaperManager.peekDrawable()
- *    to non-destructively read the user's current static wallpaper,
- *    converts it to a full-screen libGDX Texture for background rendering.
+ * 2. **Background Image Loading**: Reads the user-selected background JPEG
+ *    (saved by BackgroundStore) and converts it to a libGDX Texture. This
+ *    replaces the old WallpaperManager.peekDrawable() approach which threw
+ *    SecurityException on Android 13+ when AuraOrbit itself was the active
+ *    wallpaper.
  *
- * 3. **Group Configuration Parsing**: Reads group assignments from
- *    SharedPreferences and maps package names to group IDs/colors for
- *    the SphereEngine's visual clustering system.
+ * 3. **Group Configuration Parsing**: Delegates to GroupStore to map package
+ *    names to group IDs/colors for the SphereEngine's visual clustering system.
  *
  * ─── Thread Safety ──────────────────────────────────────────────────────────
  *
@@ -81,13 +80,23 @@ public class AppFetcher {
     public static final String PREF_SELECTED_APPS = "selected_app_packages";
 
     /**
-     * SharedPreferences key prefix for group definitions.
-     * Groups are stored as:
-     *   - "groups_list" → Set<String> of group names
-     *   - "group_<name>_color" → String hex color
-     *   - "group_<name>_apps" → Set<String> of package names
+     * @deprecated Legacy schema, migrated by GroupStore; removed after settings rewrite lands.
+     * Group data was stored as a StringSet of group names under this key.
+     * The new schema uses {@link GroupStore#PREF_GROUPS_JSON} (a single JSON blob).
+     * Kept here because the old LiveWallpaperSettings still references this constant
+     * and is being rewritten in a parallel task.
      */
+    @Deprecated
     public static final String PREF_GROUPS_LIST = "groups_list";
+
+    /**
+     * @deprecated Legacy schema, migrated by GroupStore; removed after settings rewrite lands.
+     * Per-group keys were formed as "group_&lt;name&gt;_color" and "group_&lt;name&gt;_apps".
+     * The new schema uses {@link GroupStore#PREF_GROUPS_JSON} (a single JSON blob).
+     * Kept here because the old LiveWallpaperSettings still references this constant
+     * and is being rewritten in a parallel task.
+     */
+    @Deprecated
     public static final String PREF_GROUP_PREFIX = "group_";
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -139,6 +148,14 @@ public class AppFetcher {
      *
      * MUST be called from the GL thread (e.g., inside SphereEngine.create()).
      *
+     * ─── Group Assignment ────────────────────────────────────────────────────
+     *
+     * Group data is read via {@link GroupStore#load(SharedPreferences)} and then
+     * inverted into a package→Group map by {@link GroupStore#packageToGroup(List)}.
+     * This replaces the old per-key schema (groups_list / group_*_color / group_*_apps)
+     * which required N+1 pref reads and two Map allocations; the new approach uses
+     * a single JSON read and a single pass over the group list.
+     *
      * @param context  Android context for PackageManager access
      * @return List of AppNode objects ready for sphere placement, sorted by group
      */
@@ -156,10 +173,12 @@ public class AppFetcher {
 
         Log.i(TAG, "Fetching " + selectedPackages.size() + " selected apps");
 
-        // ─── Read group assignments ─────────────────────────────────────
-        Map<String, String> packageToGroup = new HashMap<>();
-        Map<String, String> groupColors = new HashMap<>();
-        loadGroupMappings(prefs, packageToGroup, groupColors);
+        // ─── Read group assignments via GroupStore ───────────────────────
+        // GroupStore.load() handles both the new JSON schema and legacy key
+        // migration transparently. packageToGroup() inverts the list into a
+        // fast O(1) lookup map keyed by package name.
+        Map<String, GroupStore.Group> packageToGroup =
+                GroupStore.packageToGroup(GroupStore.load(prefs));
 
         // ─── Build AppNode list ─────────────────────────────────────────
         List<AppNode> nodes = new ArrayList<>();
@@ -183,16 +202,16 @@ public class AppFetcher {
                     bitmap.recycle();
                 }
 
-                // ─── Assign group metadata ──────────────────────────────
-                String groupId = packageToGroup.get(packageName);
-                if (groupId != null) {
-                    node.groupId = groupId;
-                    node.groupColorHex = groupColors.get(groupId);
+                // ─── Assign group metadata via GroupStore ────────────────
+                GroupStore.Group g = packageToGroup.get(packageName);
+                if (g != null) {
+                    node.groupId = g.name;
+                    node.groupColorHex = g.color;
                 }
 
                 nodes.add(node);
                 Log.d(TAG, "Loaded: " + appName + " (" + packageName + ")"
-                        + (groupId != null ? " [Group: " + groupId + "]" : ""));
+                        + (node.groupId != null ? " [Group: " + node.groupId + "]" : ""));
 
             } catch (PackageManager.NameNotFoundException e) {
                 // App was uninstalled since selection — skip silently
@@ -256,69 +275,33 @@ public class AppFetcher {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  Public API — System Wallpaper Background Texture
+    //  Public API — User-Selected Background Image Texture
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
-     * Captures the current system wallpaper and converts it to a libGDX Texture.
+     * Loads the user-selected background image (saved by BackgroundStore)
+     * as a libGDX Texture. MUST be called on the GL thread.
      *
-     * Uses WallpaperManager.peekDrawable() which is non-destructive — it reads
-     * the wallpaper without claiming ownership or modifying it. Returns null if
-     * the wallpaper cannot be read (e.g., live wallpaper, permission denied).
+     * ─── Why not WallpaperManager.peekDrawable()? ────────────────────────
      *
-     * The returned Texture is sized to the screen dimensions for a pixel-perfect
-     * full-screen background render.
+     * The old fetchSystemWallpaper() used WallpaperManager.peekDrawable(),
+     * which throws a SecurityException on Android 13+ when the calling app
+     * IS itself the active wallpaper (READ_EXTERNAL_STORAGE is no longer
+     * sufficient). BackgroundStore stores the user's chosen image in the
+     * app's private filesDir, which requires no additional permissions.
      *
-     * MUST be called from the GL thread.
-     *
-     * @param context  Android context for WallpaperManager access
-     * @return Texture of the system wallpaper, or null if unavailable
+     * @param context  Android context for BackgroundStore file access
+     * @return Texture or null when no image is set / decode fails.
      */
-    public static Texture fetchSystemWallpaper(Context context) {
+    public static Texture loadBackgroundTexture(Context context) {
+        java.io.File f = BackgroundStore.file(context);
+        if (!f.exists()) return null;
         try {
-            WallpaperManager wm = WallpaperManager.getInstance(context);
-
-            // peekDrawable() returns null if:
-            //   - Current wallpaper is a Live Wallpaper (not a static image)
-            //   - Permission not granted (shouldn't happen — we're a wallpaper service)
-            Drawable wallpaperDrawable = wm.peekDrawable();
-
-            if (wallpaperDrawable == null) {
-                Log.w(TAG, "System wallpaper is null (live wallpaper or no permission)");
-                return null;
-            }
-
-            // ─── Determine output size ──────────────────────────────────
-            // Use the actual screen dimensions for pixel-perfect rendering.
-            // On Galaxy S25 Ultra: 1440×3120 in portrait.
-            int width = Gdx.graphics.getWidth();
-            int height = Gdx.graphics.getHeight();
-
-            // Clamp to power-of-two friendly sizes to avoid GPU waste
-            // (most modern GPUs handle NPOT fine, but this is defensive)
-            width = Math.min(width, 2048);
-            height = Math.min(height, 2048);
-
-            Log.i(TAG, "Capturing system wallpaper at " + width + "x" + height);
-
-            // ─── Rasterize the wallpaper Drawable to a Bitmap ───────────
-            Bitmap wallpaperBitmap = Bitmap.createBitmap(width, height,
-                    Bitmap.Config.ARGB_8888);
-            Canvas canvas = new Canvas(wallpaperBitmap);
-
-            // Scale the drawable to fill the entire canvas
-            wallpaperDrawable.setBounds(0, 0, width, height);
-            wallpaperDrawable.draw(canvas);
-
-            // ─── Convert to libGDX Texture ──────────────────────────────
-            Texture texture = bitmapToTexture(wallpaperBitmap);
-            wallpaperBitmap.recycle();
-
-            Log.i(TAG, "System wallpaper captured successfully");
-            return texture;
-
+            Texture t = new Texture(Gdx.files.absolute(f.getAbsolutePath()));
+            t.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            return t;
         } catch (Exception e) {
-            Log.e(TAG, "Failed to capture system wallpaper", e);
+            Log.e(TAG, "Failed to load background texture", e);
             return null;
         }
     }
@@ -426,46 +409,6 @@ public class AppFetcher {
         pixmap.dispose();
 
         return texture;
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    //  Private — Group Configuration Parsing
-    // ═══════════════════════════════════════════════════════════════════════
-
-    /**
-     * Loads group→package and group→color mappings from SharedPreferences.
-     *
-     * Group data structure in SharedPreferences:
-     *   - "groups_list"           → Set<String> {"Social", "Productivity", ...}
-     *   - "group_Social_color"    → "#FF6B6B"
-     *   - "group_Social_apps"     → Set<String> {"com.whatsapp", "com.instagram", ...}
-     *
-     * @param prefs           SharedPreferences to read from
-     * @param packageToGroup  Output: maps package name → group name
-     * @param groupColors     Output: maps group name → hex color string
-     */
-    private static void loadGroupMappings(SharedPreferences prefs,
-                                          Map<String, String> packageToGroup,
-                                          Map<String, String> groupColors) {
-
-        Set<String> groupNames = prefs.getStringSet(PREF_GROUPS_LIST, new HashSet<>());
-
-        for (String groupName : groupNames) {
-            // Read this group's color
-            String colorHex = prefs.getString(PREF_GROUP_PREFIX + groupName + "_color", "#FFFFFF");
-            groupColors.put(groupName, colorHex);
-
-            // Read this group's assigned apps
-            Set<String> groupApps = prefs.getStringSet(
-                    PREF_GROUP_PREFIX + groupName + "_apps", new HashSet<>());
-
-            for (String packageName : groupApps) {
-                packageToGroup.put(packageName, groupName);
-            }
-
-            Log.d(TAG, "Group '" + groupName + "' (" + colorHex + "): "
-                    + groupApps.size() + " apps");
-        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════

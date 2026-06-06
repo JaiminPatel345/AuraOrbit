@@ -12,8 +12,11 @@ import com.badlogic.gdx.backends.android.AndroidWallpaperListener;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.VertexAttributes;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.Material;
@@ -22,6 +25,7 @@ import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
+import com.badlogic.gdx.graphics.g3d.attributes.DepthTestAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 
@@ -35,12 +39,15 @@ import com.badlogic.gdx.math.collision.Ray;
 import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy;
 import com.badlogic.gdx.graphics.g3d.decals.Decal;
 import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
@@ -53,8 +60,9 @@ import java.util.Map;
  * ─── Rendering Pipeline ────────────────────────────────────────────────────
  *
  * 1. **Background Layer** (SpriteBatch, 2D)
- *    Renders the captured system wallpaper as a full-screen quad behind
- *    the 3D scene. Uses orthographic projection within SpriteBatch.
+ *    Always rendered. Draws the user-selected background photo (via
+ *    BackgroundStore/AppFetcher.loadBackgroundTexture) when one is set;
+ *    falls back to a procedural vertical gradient texture otherwise.
  *
  * 2. **Group Backdrop Layer** (ModelBatch, 3D)
  *    Renders translucent colored spherical cap meshes behind each app
@@ -64,13 +72,28 @@ import java.util.Map;
  * 3. **App Icon Layer** (DecalBatch, 3D billboarded)
  *    Renders app icons as 2D textured decals positioned in 3D space on
  *    the sphere surface. Each decal uses lookAt() billboarding to always
- *    face the camera.
+ *    face the camera. Icons on the far side of the sphere are scaled down
+ *    and dimmed (depth-based scale/alpha) for a natural parallax effect.
+ *
+ * 4. **Empty-state hint** (SpriteBatch, 2D)
+ *    When no apps are selected, a centered text hint is rendered on top of
+ *    the background instructing the user to open AuraOrbit settings.
  *
  * ─── Physics ────────────────────────────────────────────────────────────────
  *
  * - Rotation uses Quaternions exclusively (no Euler angles → no Gimbal Lock)
  * - Angular velocity with exponential friction for smooth spin deceleration
  * - All math is delta-time dependent for frame-rate independence
+ * - Drag and physics rotations use pre-multiplication (mulLeft) so they always
+ *   operate in world space regardless of accumulated sphere orientation.
+ *
+ * ─── Live Settings ──────────────────────────────────────────────────────────
+ *
+ * A SharedPreferences listener (strongly referenced in a field, because
+ * SharedPreferences uses a WeakHashMap and would silently GC a lambda)
+ * posts applyConfig() to the GL thread whenever a relevant key changes.
+ * applyConfig() uses a snapshot string for deduplication — the same config
+ * is never applied twice (prevents double-fire on resume + pref change).
  *
  * ─── Input ──────────────────────────────────────────────────────────────────
  *
@@ -86,17 +109,36 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
     // ─── Camera & Rendering ─────────────────────────────────────────────
     private PerspectiveCamera camera;
-    private SpriteBatch spriteBatch;       // For 2D background wallpaper
+    private SpriteBatch spriteBatch;       // For 2D background and empty-state hint
     private DecalBatch decalBatch;         // For 3D billboarded app icons
     private ModelBatch modelBatch;         // For 3D group backdrop meshes
 
-    // ─── Background Wallpaper ───────────────────────────────────────────
-    private Texture backgroundTexture;     // System wallpaper as texture
-    private boolean keepSystemWallpaper;   // User preference toggle
+    // ─── Background Textures ────────────────────────────────────────────
+    /**
+     * User-selected background photo loaded from BackgroundStore, or null
+     * when no photo has been selected or showBackground is false.
+     * Falls back to gradientTexture when null.
+     */
+    private Texture backgroundTexture;
+
+    /**
+     * Procedural 1×256 vertical gradient (dark navy top → slightly lighter navy bottom).
+     * Always created in create() so there is always something to draw behind the sphere.
+     * Disposed in dispose() and recreated in applyConfig() rebuilds.
+     */
+    private Texture gradientTexture;
+
+    // ─── User-configurable settings (read by readConfig) ─────────────────
+    /**
+     * Whether to attempt loading a user photo background (pref_show_background).
+     * When false, backgroundTexture stays null and only gradientTexture is drawn.
+     */
+    private boolean showBackground;
 
     // ─── Sphere State ───────────────────────────────────────────────────
     private float sphereRadius;            // Configurable sphere size
     private float iconSize;                // Configurable icon dimensions
+    private float rotationSpeedFactor;     // Multiplier for auto-spin and fling
     private List<AppFetcher.AppNode> appNodes;  // The loaded app data
     private Array<Decal> decals;           // libGDX decals for each app
     private Vector3[] nodePositions;       // Fibonacci-distributed positions
@@ -112,7 +154,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     /**
      * Angular velocity vector. Each component represents rotation speed
      * (radians/sec) around that world axis. Applied to sphereRotation
-     * each frame via quaternion multiplication.
+     * each frame via quaternion pre-multiplication (mulLeft), which keeps
+     * the rotation in world space regardless of accumulated orientation.
      */
     private Vector3 angularVelocity;
 
@@ -136,14 +179,16 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private static final float ROTATION_SENSITIVITY = 0.005f;
 
     /**
-     * Sensitivity multiplier for fling-to-spin. Converts fling velocity
+     * Base sensitivity multiplier for fling-to-spin. Scaled by
+     * rotationSpeedFactor at fling time. Converts fling velocity
      * (pixels/sec) into angular velocity (radians/sec).
      */
     private static final float FLING_SENSITIVITY = 0.002f;
 
     /**
      * Default auto-rotation speed when user isn't interacting.
-     * A gentle Y-axis spin to keep the wallpaper alive.
+     * A gentle Y-axis spin to keep the wallpaper alive. Scaled by
+     * rotationSpeedFactor when applied.
      */
     private static final float IDLE_SPIN_SPEED = 0.15f;
 
@@ -151,6 +196,20 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private Array<ModelInstance> groupBackdrops;
     private Array<Model> groupModels;  // Must be disposed
     private Array<Vector3> groupCentroids; // Original centroid positions (pre-rotation)
+
+    // ─── Empty-state hint rendering ──────────────────────────────────────
+    /**
+     * BitmapFont used to render the empty-state hint message. Scaled to
+     * device density in create(). Must be disposed.
+     */
+    private BitmapFont hintFont;
+
+    /**
+     * Pre-measured layout for the hint string. Built with Align.center so
+     * hintFont.draw() centers the text around the x coordinate passed to it.
+     * Rebuilt after any scale change.
+     */
+    private GlyphLayout hintLayout;
 
     // ─── Page Isolation State ───────────────────────────────────────────
     private float currentXOffset = 0f;     // 0.0–1.0 from onOffsetsChanged
@@ -172,13 +231,49 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private float idleTimer = 0f;
     private static final float IDLE_DELAY = 3f; // Seconds before auto-spin resumes
 
+    // ─── Live settings listener ──────────────────────────────────────────
+
+    /**
+     * Keys that SphereEngine cares about. When any of these change, applyConfig()
+     * is posted to the GL thread to rebuild the scene.
+     */
+    private static final Set<String> RELEVANT_KEYS = Set.of(
+            "selected_app_packages",
+            GroupStore.PREF_GROUPS_JSON,
+            "pref_show_background",
+            BackgroundStore.PREF_BACKGROUND_VERSION,
+            "pref_sphere_radius",
+            "pref_icon_size",
+            "pref_rotation_speed",
+            "pref_active_page"
+    );
+
+    /**
+     * STRONG reference to the preference change listener.
+     *
+     * SharedPreferences internally stores listeners in a WeakHashMap, so a
+     * listener registered as an inline lambda or anonymous class with no other
+     * strong reference will be silently garbage-collected, causing the engine
+     * to stop reacting to settings changes without any warning or exception.
+     * Holding the reference here prevents that.
+     */
+    private SharedPreferences.OnSharedPreferenceChangeListener prefListener;
+
+    /**
+     * Snapshot string of the last applied configuration, used to deduplicate
+     * applyConfig() calls. SharedPreferences listeners fire on every write even
+     * when the value is unchanged, and resume() also triggers a rebuild — this
+     * snapshot comparison makes both idempotent at negligible cost.
+     */
+    private String lastConfigSnapshot = "";
+
     // ═══════════════════════════════════════════════════════════════════════
     //  Constructor
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
      * @param context The Android context (WallpaperService). Used for
-     *                PackageManager, WallpaperManager, SharedPreferences.
+     *                PackageManager, BackgroundStore, SharedPreferences.
      *                Note: AndroidLiveWallpaperService extends Service
      *                extends Context, so the service itself IS a Context.
      */
@@ -195,32 +290,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     public void create() {
         Log.i(TAG, "Creating SphereEngine...");
 
-        // ─── Read user preferences ──────────────────────────────────────
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        keepSystemWallpaper = prefs.getBoolean("pref_keep_wallpaper", true);
-        activePage = prefs.getInt("pref_active_page", 0);
-
-        // Sphere radius: pref value 20–100 mapped to world units 3.0–8.0
-        int radiusPref = prefs.getInt("pref_sphere_radius", 50);
-        sphereRadius = MathUtils.lerp(3.0f, 8.0f, radiusPref / 100f);
-
-        // Icon size: pref value 20–100 mapped to world units 0.6–2.0
-        int iconPref = prefs.getInt("pref_icon_size", 50);
-        iconSize = MathUtils.lerp(0.6f, 2.0f, iconPref / 100f);
-
-        Log.i(TAG, "Config — radius: " + sphereRadius + ", iconSize: " + iconSize
-                + ", keepWallpaper: " + keepSystemWallpaper + ", activePage: " + activePage);
-
         // ─── Setup 3D camera ────────────────────────────────────────────
         // PerspectiveCamera with 67° FOV — standard for immersive 3D.
-        // Position the camera far enough back that the entire sphere fits
-        // in view with some margin for the icons.
+        // Position is set later in buildScene() based on sphereRadius.
         camera = new PerspectiveCamera(67f, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        camera.position.set(0f, 0f, sphereRadius * 2.8f);
         camera.lookAt(0f, 0f, 0f);
         camera.near = 0.1f;
         camera.far = 100f;
-        camera.update();
 
         // ─── Initialize rendering systems ───────────────────────────────
         spriteBatch = new SpriteBatch();
@@ -231,27 +307,223 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         sphereRotation = new Quaternion().idt(); // Identity = no rotation
         angularVelocity = new Vector3(0f, IDLE_SPIN_SPEED, 0f); // Gentle initial spin
 
-        // ─── Load app data ──────────────────────────────────────────────
-        appNodes = AppFetcher.fetchSelectedApps(context);
+        // ─── Build the gradient fallback background ──────────────────────
+        // Always built so there is always something behind the sphere even
+        // when no photo is selected. A 1×256 pixel tall texture is sufficient;
+        // SpriteBatch stretches it full-screen.
+        gradientTexture = buildGradientTexture();
 
-        // ─── Distribute icons on sphere using Fibonacci algorithm ───────
-        distributeNodesOnSphere();
+        // ─── Initialize hint font for empty-state rendering ──────────────
+        hintFont = new BitmapFont();
+        hintFont.getData().setScale(Gdx.graphics.getDensity() * 1.1f);
+        hintLayout = new GlyphLayout(hintFont,
+                context.getString(R.string.wallpaper_hint_no_apps),
+                Color.WHITE, 0, Align.center, false);
 
-        // ─── Create decals for each app icon ────────────────────────────
-        createDecals();
-
-        // ─── Build group backdrop meshes ────────────────────────────────
-        buildGroupBackdrops();
-
-        // ─── Load background wallpaper if enabled ───────────────────────
-        if (keepSystemWallpaper) {
-            backgroundTexture = AppFetcher.fetchSystemWallpaper(context);
-        }
+        // ─── Register live settings listener ────────────────────────────
+        // We keep a strong reference in the field (prefListener) to prevent
+        // the WeakHashMap inside SharedPreferences from GC-ing the listener.
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        prefListener = (p, key) -> {
+            if (key != null && RELEVANT_KEYS.contains(key)) {
+                Gdx.app.postRunnable(this::applyConfig);
+            }
+        };
+        prefs.registerOnSharedPreferenceChangeListener(prefListener);
 
         // ─── Setup input handling ───────────────────────────────────────
         setupInput();
 
-        Log.i(TAG, "SphereEngine created with " + appNodes.size() + " apps");
+        // ─── Initial scene build ────────────────────────────────────────
+        // applyConfig() reads prefs, builds the scene, and sets lastConfigSnapshot.
+        applyConfig();
+
+        Log.i(TAG, "SphereEngine created with " + (appNodes != null ? appNodes.size() : 0) + " apps");
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  Config Reading — Extracts all relevant prefs into engine fields
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Reads all user-configurable preferences into engine fields.
+     *
+     * Centralizing pref reads here ensures create(), resume(), and the live
+     * listener all apply the same set of keys in the same way, with no
+     * accidental omissions.
+     *
+     * @param prefs  SharedPreferences to read from
+     */
+    private void readConfig(SharedPreferences prefs) {
+        // Background visibility (replaces old pref_keep_wallpaper)
+        showBackground = prefs.getBoolean("pref_show_background", true);
+
+        // Active home-screen page for visibility fade
+        activePage = prefs.getInt("pref_active_page", 0);
+
+        // Sphere radius: pref value 20–100 mapped to world units 3.0–8.0
+        int radiusPref = prefs.getInt("pref_sphere_radius", 50);
+        sphereRadius = MathUtils.lerp(3.0f, 8.0f, radiusPref / 100f);
+
+        // Icon size: pref value 20–100 mapped to world units 0.6–2.0
+        int iconPref = prefs.getInt("pref_icon_size", 50);
+        iconSize = MathUtils.lerp(0.6f, 2.0f, iconPref / 100f);
+
+        // Rotation speed: pref value 10–300, divide by 100 to get factor, clamp to [0.1, 3.0]
+        rotationSpeedFactor = MathUtils.clamp(prefs.getInt("pref_rotation_speed", 100) / 100f, 0.1f, 3.0f);
+
+        Log.i(TAG, "Config — radius: " + sphereRadius + ", iconSize: " + iconSize
+                + ", showBackground: " + showBackground + ", activePage: " + activePage
+                + ", rotationSpeedFactor: " + rotationSpeedFactor);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  Snapshot — Deduplication key for applyConfig()
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Returns a string snapshot of all RELEVANT_KEYS values from SharedPreferences.
+     *
+     * The snapshot is compared against {@link #lastConfigSnapshot} in applyConfig()
+     * to skip redundant rebuilds. StringSets are sorted before concatenation so
+     * the snapshot is order-independent (SharedPreferences StringSets have no
+     * guaranteed iteration order).
+     *
+     * @return Pipe-delimited concatenation of current values for all RELEVANT_KEYS
+     */
+    private String configSnapshot() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        StringBuilder sb = new StringBuilder();
+
+        // selected_app_packages — sort for deterministic ordering
+        Set<String> selectedApps = prefs.getStringSet("selected_app_packages", new java.util.HashSet<>());
+        sb.append(new TreeSet<>(selectedApps)).append('|');
+
+        sb.append(prefs.getString(GroupStore.PREF_GROUPS_JSON, "")).append('|');
+        sb.append(prefs.getBoolean("pref_show_background", true)).append('|');
+        sb.append(prefs.getInt(BackgroundStore.PREF_BACKGROUND_VERSION, 0)).append('|');
+        sb.append(prefs.getInt("pref_sphere_radius", 50)).append('|');
+        sb.append(prefs.getInt("pref_icon_size", 50)).append('|');
+        sb.append(prefs.getInt("pref_rotation_speed", 100)).append('|');
+        sb.append(prefs.getInt("pref_active_page", 0));
+
+        return sb.toString();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  applyConfig() — GL-thread scene rebuild with snapshot deduplication
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Reads the current configuration and rebuilds the scene if anything changed.
+     *
+     * Must be called on the GL thread. Safe to call redundantly — the snapshot
+     * comparison makes it a no-op when nothing has changed (e.g., resume() fires
+     * twice, or a pref listener fires for an unrelated key that slipped through).
+     *
+     * ─── What is rebuilt ─────────────────────────────────────────────────
+     *
+     * - All app icon textures (disposed then re-fetched from PackageManager)
+     * - Group backdrop 3D models (disposed then rebuilt from new GroupStore data)
+     * - Background texture (disposed then reloaded from BackgroundStore)
+     * - Fibonacci node distribution (recalculated with new sphereRadius)
+     * - Decals (recreated with new iconSize)
+     * - Camera position (repositioned to sphereRadius * 2.8f)
+     *
+     * ─── What is NOT rebuilt ─────────────────────────────────────────────
+     *
+     * - Camera projection (update() is called but FOV and near/far stay)
+     * - SpriteBatch, DecalBatch, ModelBatch (renderer lifetime = GL context)
+     * - sphereRotation, angularVelocity (physics state is preserved)
+     * - gradientTexture (never changes — only depends on color constants)
+     * - hintFont / hintLayout (only rebuilt if density changes, which is rare)
+     */
+    private void applyConfig() {
+        String snapshot = configSnapshot();
+        if (snapshot.equals(lastConfigSnapshot)) {
+            Log.d(TAG, "applyConfig: snapshot unchanged, skipping rebuild");
+            return;
+        }
+        lastConfigSnapshot = snapshot;
+
+        Log.i(TAG, "applyConfig: rebuilding scene...");
+
+        // ─── Dispose old per-app icon textures ──────────────────────────
+        if (appNodes != null) {
+            for (AppFetcher.AppNode node : appNodes) {
+                if (node.iconTexture != null) node.iconTexture.dispose();
+            }
+        }
+
+        // ─── Dispose old group models ────────────────────────────────────
+        if (groupModels != null) {
+            for (Model model : groupModels) model.dispose();
+        }
+
+        // ─── Dispose old background texture ─────────────────────────────
+        if (backgroundTexture != null) {
+            backgroundTexture.dispose();
+            backgroundTexture = null;
+        }
+
+        // ─── Read fresh configuration ────────────────────────────────────
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        readConfig(prefs);
+
+        // ─── Update camera position for new radius ───────────────────────
+        camera.position.set(0f, 0f, sphereRadius * 2.8f);
+        camera.update();
+
+        // ─── Re-fetch apps, redistribute, recreate decals and backdrops ──
+        appNodes = AppFetcher.fetchSelectedApps(context);
+        distributeNodesOnSphere();
+        createDecals();
+        buildGroupBackdrops();
+
+        // ─── Reload background photo if enabled ──────────────────────────
+        if (showBackground) {
+            backgroundTexture = AppFetcher.loadBackgroundTexture(context);
+        }
+
+        Log.i(TAG, "applyConfig: done — " + appNodes.size() + " apps");
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  Gradient Texture Builder
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Builds a 1×256 RGBA8888 gradient texture that transitions from a very dark
+     * navy (#05050F) at the top to a slightly lighter navy (#1A1A33) at the bottom.
+     *
+     * The texture is only 1 pixel wide; SpriteBatch stretches it to fill the screen.
+     * Using a 256-pixel height gives smooth gradient steps. Linear filtering on the
+     * texture ensures no banding when it is upscaled.
+     *
+     * @return New Texture (caller must dispose when done)
+     */
+    private Texture buildGradientTexture() {
+        // Top color: #05050F  →  r=0.0196, g=0.0196, b=0.0588
+        // Bottom color: #1A1A33  →  r=0.1020, g=0.1020, b=0.2000
+        final float topR = 0x05 / 255f, topG = 0x05 / 255f, topB = 0x0F / 255f;
+        final float botR = 0x1A / 255f, botG = 0x1A / 255f, botB = 0x33 / 255f;
+
+        Pixmap pixmap = new Pixmap(1, 256, Pixmap.Format.RGBA8888);
+
+        for (int y = 0; y < 256; y++) {
+            // t=0 at top (y=0), t=1 at bottom (y=255)
+            float t = y / 255f;
+            int r = (int) (MathUtils.lerp(topR, botR, t) * 255f);
+            int g = (int) (MathUtils.lerp(topG, botG, t) * 255f);
+            int b = (int) (MathUtils.lerp(topB, botB, t) * 255f);
+            // Pixmap.drawPixel expects RGBA packed int: 0xRRGGBBAA
+            pixmap.drawPixel(0, y, (r << 24) | (g << 16) | (b << 8) | 0xFF);
+        }
+
+        Texture texture = new Texture(pixmap);
+        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        pixmap.dispose();
+        return texture;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -371,17 +643,16 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      *
      * Each group gets a semi-transparent sphere positioned slightly inside
      * the main sphere radius (at 85% of the radius). This creates a
-     * visible colored glow behind the group's app icons.
-     *
-     * The mesh is attached to the same rotation transform as the app nodes,
-     * so it rotates with the sphere. Even when apps are on the "back" of
-     * the sphere, the colored glow is visible through the translucent mesh.
+     * visible colored glow behind the group's app icons. The backdrop uses
+     * DepthTestAttribute with depthMask=false so translucent cap geometry
+     * never writes to the depth buffer and cannot z-reject icon decals that
+     * are positioned at almost the same depth.
      *
      * ─── Mesh Construction ───────────────────────────────────────────────
      *
      * We use libGDX's ModelBuilder to create a low-poly sphere (12×12
      * divisions) with a BlendingAttribute for translucency. The Material
-     * uses ColorAttribute.Diffuse with the group's color at 35% opacity.
+     * uses ColorAttribute.Diffuse with the group's color at 25% opacity.
      */
     private void buildGroupBackdrops() {
         groupBackdrops = new Array<>();
@@ -433,15 +704,22 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // Minimum mesh size so single-app groups are still visible
             meshSize = Math.max(meshSize, iconSize * 2f);
 
-            // ─── Parse the group color ──────────────────────────────────
-            Color gdxColor = parseHexColor(colorHex, 0.35f); // 35% opacity
+            // ─── Parse the group color at 25% opacity ────────────────────
+            // Lower opacity (0.25 vs old 0.35) reduces visual noise when
+            // multiple group backdrops overlap on the sphere.
+            Color gdxColor = parseHexColor(colorHex, 0.25f);
 
             // ─── Create translucent material ────────────────────────────
             // BlendingAttribute enables GL_SRC_ALPHA/GL_ONE_MINUS_SRC_ALPHA
-            // blending so the mesh appears as a colored translucent glow
+            // blending so the mesh appears as a colored translucent glow.
+            // DepthTestAttribute(GL_LEQUAL, false): depth testing ON so the
+            // caps still sort correctly, but depthMask=false so they never
+            // write into the depth buffer and cannot z-reject icon decals
+            // that are at nearly the same depth.
             Material material = new Material(
                     ColorAttribute.createDiffuse(gdxColor),
-                    new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.35f)
+                    new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.25f),
+                    new DepthTestAttribute(GL20.GL_LEQUAL, false)
             );
 
             // ─── Build the spherical backdrop mesh ──────────────────────
@@ -552,8 +830,18 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
              * appropriate axes. Dragging horizontally rotates around Y axis,
              * dragging vertically rotates around X axis.
              *
-             * We apply the rotation as a quaternion multiplication to prevent
-             * gimbal lock that would occur with sequential Euler rotations.
+             * ─── Why mulLeft (pre-multiply)? ─────────────────────────────
+             *
+             * Post-multiplying (sphereRotation.mul(tmpQuat)) applies the new
+             * rotation around the sphere's LOCAL axes. After the sphere has
+             * accumulated some orientation, those local axes no longer align
+             * with the screen axes, so horizontal drags start spinning the
+             * sphere diagonally — a disorienting skew/inversion effect.
+             *
+             * Pre-multiplying (sphereRotation.mulLeft(tmpQuat)) applies the
+             * rotation in WORLD space instead. The Y axis is always the
+             * screen-vertical world axis, so horizontal drags always produce
+             * a horizontal spin regardless of the accumulated orientation.
              */
             @Override
             public boolean pan(float x, float y, float deltaX, float deltaY) {
@@ -566,12 +854,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 float angleY = -deltaX * ROTATION_SENSITIVITY;
                 float angleX = deltaY * ROTATION_SENSITIVITY;
 
-                // Create rotation quaternions for each axis
+                // Pre-multiply: apply rotation in WORLD space so horizontal drags
+                // always spin around the screen-vertical Y axis.
                 tmpQuat.setFromAxis(Vector3.Y, (float) Math.toDegrees(angleY));
-                sphereRotation.mul(tmpQuat);
+                sphereRotation.mulLeft(tmpQuat);
 
                 tmpQuat.setFromAxis(Vector3.X, (float) Math.toDegrees(angleX));
-                sphereRotation.mul(tmpQuat);
+                sphereRotation.mulLeft(tmpQuat);
 
                 // Kill any existing momentum while dragging
                 angularVelocity.setZero();
@@ -584,18 +873,19 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
              *
              * When the user releases a swipe, apply the fling velocity as
              * angular momentum. The friction system in render() will
-             * smoothly decelerate the spin.
+             * smoothly decelerate the spin. Fling angular velocity is scaled
+             * by rotationSpeedFactor so the user's speed preference applies.
              */
             @Override
             public boolean fling(float velocityX, float velocityY, int button) {
                 userInteracting = false;
 
-                // Map screen-space fling velocity to angular velocity
-                // Negative X velocity = positive Y rotation (natural feel)
+                // Map screen-space fling velocity to angular velocity, scaled
+                // by the user's rotation speed preference.
                 angularVelocity.set(
-                        velocityY * FLING_SENSITIVITY,   // X axis from vertical fling
-                        -velocityX * FLING_SENSITIVITY,  // Y axis from horizontal fling
-                        0f                                // No Z rotation from 2D input
+                        velocityY * FLING_SENSITIVITY * rotationSpeedFactor,   // X axis
+                        -velocityX * FLING_SENSITIVITY * rotationSpeedFactor,  // Y axis
+                        0f                                                       // No Z
                 );
 
                 // Clamp maximum angular velocity to prevent seizure-inducing spins
@@ -636,19 +926,17 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         updatePageVisibility(delta);
 
         // ─── Clear screen ───────────────────────────────────────────────
-        // Clear both color and depth buffers.
-        // Alpha = 0 for transparent background (system wallpaper shows through
-        // if we're not rendering our own background).
-        Gdx.gl.glClearColor(0f, 0f, 0f, keepSystemWallpaper ? 1f : 0f);
+        // Fixed deep-navy clear color provides a consistent base for the
+        // gradient fallback. Alpha=1 so we always own our pixel.
+        Gdx.gl.glClearColor(0.02f, 0.02f, 0.06f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
         // ─── Enable depth testing for proper 3D sorting ─────────────────
         Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
 
-        // ─── Layer 1: Background System Wallpaper ───────────────────────
-        if (keepSystemWallpaper && backgroundTexture != null) {
-            renderBackground();
-        }
+        // ─── Layer 1: Background ─────────────────────────────────────────
+        // Always draws: user photo if available; gradient texture otherwise.
+        renderBackground();
 
         // ─── Layer 2: Group Backdrop Meshes ─────────────────────────────
         if (groupBackdrops != null && groupBackdrops.size > 0 && pageVisibility > 0.01f) {
@@ -658,6 +946,12 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // ─── Layer 3: App Icon Decals (Billboarded) ─────────────────────
         if (decals != null && decals.size > 0 && pageVisibility > 0.01f) {
             renderDecals();
+        }
+
+        // ─── Layer 4: Empty-state hint ───────────────────────────────────
+        // Drawn on top of everything when no apps are configured.
+        if (appNodes == null || appNodes.isEmpty()) {
+            renderEmptyHint();
         }
     }
 
@@ -675,12 +969,12 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * 3. Apply friction to decelerate angular velocity
      * 4. Normalize the quaternion to prevent drift accumulation
      *
-     * ─── Why Quaternion × Delta Quaternion? ──────────────────────────────
+     * ─── Why mulLeft (pre-multiply)? ─────────────────────────────────────
      *
-     * Instead of euler.x += omega.x * dt (which gimbal-locks), we create
-     * a small delta rotation quaternion from the angular velocity vector
-     * and multiply it into the accumulated rotation. This is equivalent
-     * to integrating the angular velocity in SO(3) space.
+     * The angular velocity vector is defined in world space. Pre-multiplying
+     * ensures the rotation always acts on world axes, consistent with the pan
+     * handler. Post-multiplying would rotate in the sphere's local space,
+     * causing the auto-spin axis to drift as orientation accumulates.
      *
      * @param delta Frame time in seconds (1/120 at 120 FPS)
      */
@@ -689,8 +983,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         if (!userInteracting) {
             idleTimer += delta;
             if (idleTimer > IDLE_DELAY && angularVelocity.len2() < VELOCITY_EPSILON * VELOCITY_EPSILON) {
-                // Resume gentle auto-rotation around Y axis
-                angularVelocity.y = IDLE_SPIN_SPEED;
+                // Resume gentle auto-rotation around world Y axis, scaled by speed preference
+                angularVelocity.y = IDLE_SPIN_SPEED * rotationSpeedFactor;
             }
         }
 
@@ -705,8 +999,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             tmpVec.set(angularVelocity).nor();
             tmpQuat.setFromAxis(tmpVec, (float) Math.toDegrees(angle));
 
-            // Multiply into accumulated rotation
-            sphereRotation.mul(tmpQuat);
+            // Pre-multiply: apply rotation in WORLD space so the auto-spin
+            // axis remains the world Y axis regardless of accumulated orientation.
+            sphereRotation.mulLeft(tmpQuat);
 
             // Normalize to prevent floating-point drift
             // After many multiplications, quaternion magnitude can drift from 1.0
@@ -741,7 +1036,6 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * The lerp speed (8.0) gives a snappy ~150ms transition at 120 FPS.
      */
     private void updatePageVisibility(float delta) {
-        // Determine if we're on the active page
         float targetVisibility;
 
         if (xOffsetStep <= 0f) {
@@ -761,12 +1055,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  Render Layer 1 — Background System Wallpaper
+    //  Render Layer 1 — Background (photo or gradient)
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
-     * Renders the captured system wallpaper as a full-screen 2D sprite
-     * behind the 3D scene.
+     * Renders the background as a full-screen 2D sprite. Always draws
+     * something — the user photo if one has been loaded, otherwise the
+     * procedural gradient texture.
      *
      * Uses SpriteBatch which internally sets up an orthographic projection,
      * unaffected by our 3D PerspectiveCamera. The depth buffer is temporarily
@@ -775,10 +1070,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private void renderBackground() {
         Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
 
+        Texture bg = (backgroundTexture != null) ? backgroundTexture : gradientTexture;
+
         spriteBatch.begin();
-        spriteBatch.draw(backgroundTexture,
-                0, 0,
-                Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        spriteBatch.draw(bg, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         spriteBatch.end();
 
         Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
@@ -828,19 +1123,25 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  Render Layer 3 — Billboarded App Icon Decals
+    //  Render Layer 3 — Billboarded App Icon Decals with depth scale/alpha
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
-     * Renders all app icon decals with billboarding (face-the-camera).
+     * Renders all app icon decals with billboarding (face-the-camera) and
+     * depth-based scale/alpha so icons on the far side of the sphere appear
+     * smaller and dimmer, creating a natural parallax depth illusion.
      *
-     * For each decal:
-     * 1. Compute the rotated position by applying sphereRotation quaternion
-     *    to the original Fibonacci position
-     * 2. Update the decal's position
-     * 3. Call lookAt(camera.position, camera.up) for billboarding
-     * 4. Apply page visibility scaling
-     * 5. Add to DecalBatch for depth-sorted rendering
+     * ─── Depth Scaling Math ───────────────────────────────────────────────
+     *
+     * After applying sphereRotation, each node's Z coordinate in
+     * camera-relative space lies in [-sphereRadius, +sphereRadius].
+     * The camera sits at +Z, so a high rotatedPos.z means "facing the camera".
+     *
+     * nd (normalized depth) maps that Z range to [0, 1]:
+     *   nd = clamp((z/R + 1) * 0.5, 0, 1)
+     *
+     * depthScale ∈ [0.5, 1.0] — far icons at half visual size.
+     * depthAlpha ∈ [0.35, 1.0] — far icons at 35% opacity.
      *
      * ─── Depth Sorting ───────────────────────────────────────────────────
      *
@@ -861,6 +1162,14 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // ─── Apply sphere rotation to this node's position ──────────
             Vector3 rotatedPos = getRotatedPosition(i);
 
+            // ─── Depth-based scale and alpha ─────────────────────────────
+            // Compute BEFORE scaling by pageVisibility (rotatedPos.z must be
+            // in the raw sphere-space range [-R, +R] for the formula to hold).
+            // Camera is at +Z; higher z = closer to camera = larger/brighter.
+            float nd = MathUtils.clamp((rotatedPos.z / sphereRadius + 1f) * 0.5f, 0f, 1f);
+            float depthScale = 0.5f + 0.5f * nd;    // far icons half size
+            float depthAlpha = 0.35f + 0.65f * nd;  // far icons dimmed
+
             // ─── Apply page visibility scale ────────────────────────────
             // Scale position toward origin when page visibility < 1
             rotatedPos.scl(pageVisibility);
@@ -868,9 +1177,14 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // ─── Update decal transform ─────────────────────────────────
             decal.setPosition(rotatedPos.x, rotatedPos.y, rotatedPos.z);
 
-            // Scale decal size with page visibility for a shrink effect
-            float scaledSize = iconSize * pageVisibility;
-            decal.setDimensions(scaledSize, scaledSize);
+            // Icon size combines depth perspective and page visibility
+            decal.setDimensions(
+                    iconSize * depthScale * pageVisibility,
+                    iconSize * depthScale * pageVisibility
+            );
+
+            // Apply depth alpha combined with page visibility
+            decal.setColor(1f, 1f, 1f, depthAlpha * pageVisibility);
 
             // ─── Billboard: always face the camera ──────────────────────
             decal.lookAt(camera.position, camera.up);
@@ -884,6 +1198,30 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     }
 
     // ═══════════════════════════════════════════════════════════════════════
+    //  Render Layer 4 — Empty-state hint text
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Renders a centered multi-line hint message when no apps have been
+     * selected by the user.
+     *
+     * The GlyphLayout was built with Align.center in create(), so passing
+     * screen-center X to hintFont.draw() produces a horizontally centered
+     * result. Vertical centering positions the text mid-screen accounting
+     * for the layout's measured height.
+     *
+     * The font color is white at 85% opacity for a subtle, non-intrusive look.
+     */
+    private void renderEmptyHint() {
+        spriteBatch.begin();
+        hintFont.setColor(1f, 1f, 1f, 0.85f);
+        hintFont.draw(spriteBatch, hintLayout,
+                Gdx.graphics.getWidth() / 2f,
+                (Gdx.graphics.getHeight() + hintLayout.height) / 2f);
+        spriteBatch.end();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
     //  Utility — Get rotated position of a node
     // ═══════════════════════════════════════════════════════════════════════
 
@@ -891,9 +1229,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * Returns the current world-space position of the node at the given index,
      * after applying the sphere's rotation quaternion.
      *
-     * The rotation is applied by:
-     * 1. Creating a rotation matrix from the quaternion
-     * 2. Multiplying the original Fibonacci position by this matrix
+     * The rotation is applied by libGDX's Quaternion.transform(), which
+     * computes v' = q * v * q⁻¹ efficiently without constructing a matrix.
      *
      * This preserves the original positions (important for group centroid
      * calculations) while giving us the visually correct rotated positions.
@@ -1009,15 +1346,26 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
     @Override
     public void resume() {
-        // Live wallpaper returning to foreground
-        // Reload preferences in case user changed settings
+        // Live wallpaper returning to foreground — rebuild if settings changed.
+        // The snapshot deduplication in applyConfig() makes this a no-op when
+        // nothing has changed, so it is safe to call on every resume.
         Log.d(TAG, "Resumed");
-        reloadPreferences();
+        Gdx.app.postRunnable(this::applyConfig);
     }
 
     @Override
     public void dispose() {
         Log.i(TAG, "Disposing SphereEngine...");
+
+        // ─── Unregister preference listener ────────────────────────────
+        // Must be unregistered explicitly — SharedPreferences.WeakHashMap will
+        // eventually GC the entry, but we want deterministic unregistration
+        // and the field keeps the listener alive until dispose().
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        if (prefListener != null) {
+            prefs.unregisterOnSharedPreferenceChangeListener(prefListener);
+            prefListener = null;
+        }
 
         // ─── Dispose rendering systems ──────────────────────────────────
         if (spriteBatch != null) spriteBatch.dispose();
@@ -1026,6 +1374,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
         // ─── Dispose textures ───────────────────────────────────────────
         if (backgroundTexture != null) backgroundTexture.dispose();
+        if (gradientTexture != null) gradientTexture.dispose();
 
         // Dispose all app icon textures
         if (appNodes != null) {
@@ -1043,92 +1392,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             }
         }
 
+        // ─── Dispose hint font ──────────────────────────────────────────
+        if (hintFont != null) hintFont.dispose();
+
         Log.i(TAG, "SphereEngine disposed");
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    //  Preference Hot-Reload
-    // ═══════════════════════════════════════════════════════════════════════
-
-    /**
-     * Reloads user preferences and rebuilds the sphere if settings changed.
-     * Called on resume() to pick up changes made in LiveWallpaperSettings.
-     *
-     * Note: Full rebuild (re-fetching app icons from PackageManager) is
-     * relatively expensive (~100ms for 30 apps), so we only do it when
-     * the app returns from the settings screen.
-     */
-    private void reloadPreferences() {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-
-        boolean newKeepWallpaper = prefs.getBoolean("pref_keep_wallpaper", true);
-        int newActivePage = prefs.getInt("pref_active_page", 0);
-        int newRadiusPref = prefs.getInt("pref_sphere_radius", 50);
-        int newIconPref = prefs.getInt("pref_icon_size", 50);
-
-        float newRadius = MathUtils.lerp(3.0f, 8.0f, newRadiusPref / 100f);
-        float newIconSize = MathUtils.lerp(0.6f, 2.0f, newIconPref / 100f);
-
-        activePage = newActivePage;
-
-        // ─── Check if we need to rebuild ────────────────────────────────
-        boolean needsRebuild = false;
-
-        if (newKeepWallpaper != keepSystemWallpaper) {
-            keepSystemWallpaper = newKeepWallpaper;
-            // Reload or dispose background texture
-            if (keepSystemWallpaper) {
-                if (backgroundTexture != null) backgroundTexture.dispose();
-                backgroundTexture = AppFetcher.fetchSystemWallpaper(context);
-            } else {
-                if (backgroundTexture != null) {
-                    backgroundTexture.dispose();
-                    backgroundTexture = null;
-                }
-            }
-        }
-
-        if (Math.abs(newRadius - sphereRadius) > 0.1f || Math.abs(newIconSize - iconSize) > 0.01f) {
-            sphereRadius = newRadius;
-            iconSize = newIconSize;
-            needsRebuild = true;
-        }
-
-        if (needsRebuild) {
-            // Rebuild sphere with new dimensions
-            Gdx.app.postRunnable(this::rebuildSphere);
-        }
-    }
-
-    /**
-     * Fully rebuilds the sphere — re-fetches apps, redistributes nodes,
-     * recreates decals and group meshes. Called when preferences change
-     * that affect the sphere's structure or appearance.
-     */
-    private void rebuildSphere() {
-        Log.i(TAG, "Rebuilding sphere...");
-
-        // Dispose old textures
-        if (appNodes != null) {
-            for (AppFetcher.AppNode node : appNodes) {
-                if (node.iconTexture != null) node.iconTexture.dispose();
-            }
-        }
-        if (groupModels != null) {
-            for (Model model : groupModels) model.dispose();
-        }
-
-        // Re-fetch and rebuild
-        appNodes = AppFetcher.fetchSelectedApps(context);
-        distributeNodesOnSphere();
-        createDecals();
-        buildGroupBackdrops();
-
-        // Update camera distance for new radius
-        camera.position.set(0f, 0f, sphereRadius * 2.8f);
-        camera.update();
-
-        Log.i(TAG, "Sphere rebuilt with " + appNodes.size() + " apps");
     }
 
     @Override
