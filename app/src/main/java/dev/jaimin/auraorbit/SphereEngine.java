@@ -3039,6 +3039,19 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // Gesture state must not survive across visibility edges (Fix 1c).
             pinchActive = false;
             userInteracting = false;
+
+            // ─── Abort any in-flight launch animation (QA finding) ─────────
+            // If the wallpaper loses visibility mid-launch-animation, render()
+            // stops advancing it and the deferred startActivity would otherwise
+            // fire at an arbitrary future visibility regain — a surprise app
+            // launch minutes later. Drop the pending launch entirely; the user
+            // can simply tap again.
+            if (launchingNodeIdx >= 0) {
+                launchingNodeIdx = -1;
+                launchAnim = 0f;
+                pendingLaunchPkg = null;
+                Log.d(TAG, "setVisible(false): aborted in-flight launch animation");
+            }
         } else {
             // Zoom lifecycle hardening: reset stale zoom from lock/recents transitions.
             // The launcher will re-send the correct value if still zoomed; until then
