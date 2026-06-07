@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     AndroidManifest.xml — AuraOrbit Live Wallpaper
+
+     Declares:
+       1. MyWallpaperService    — The live wallpaper service that hosts libGDX.
+       2. LiveWallpaperSettings — Preference Activity for app selection & grouping.
+
+     Package visibility:
+       - Uses a <queries> intent filter (MAIN + LAUNCHER) to enumerate installed
+         apps with launcher icons. No QUERY_ALL_PACKAGES permission is needed
+         (and it is Play-policy restricted anyway).
+
+     Storage:
+       - No READ_EXTERNAL_STORAGE permission. Custom backgrounds are selected via
+         the Android Photo Picker (ACTION_PICK_IMAGES), which grants one-time URI
+         access without needing broad storage permissions.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ─── Storage Permissions ──────────────────────────────────────────── -->
+    <!--
+         MANAGE_EXTERNAL_STORAGE ("All files access") is required on API 30+
+         to read the current system wallpaper via WallpaperManager.getDrawable()
+         when OUR live wallpaper is the active wallpaper. On Android 13+,
+         WallpaperManager.getDrawable() throws SecurityException without this
+         permission even though the drawable is read-only. This is intentional
+         for this personal/sideload app. tools:ignore suppresses Play Store
+         linting (not applicable here).
+    -->
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+
+    <!-- ─── Feature Declarations ─────────────────────────────────────────── -->
+    <!--
+         Declare OpenGL ES 2.0 as required. libGDX requires at minimum GL ES 2.0,
+         and we use it for all 3D rendering (DecalBatch, MeshBuilder, etc.).
+    -->
+    <uses-feature android:glEsVersion="0x00020000" android:required="true" />
+
+    <!--
+         Declare the live wallpaper feature so the Play Store filters correctly.
+    -->
+    <uses-feature android:name="android.software.live_wallpaper" android:required="true" />
+
+    <!-- Package-visibility: we only need apps with a launcher activity.
+         This replaces QUERY_ALL_PACKAGES (Play-policy restricted). -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.AuraOrbit">
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             1. LIVE WALLPAPER SERVICE
+             
+             This is the entry point that Android's Wallpaper Picker invokes.
+             - BIND_WALLPAPER permission prevents other apps from binding to it.
+             - The intent-filter advertises this as a WallpaperService.
+             - The meta-data points to res/xml/wallpaper.xml which declares
+               the settings Activity and thumbnail.
+             ═══════════════════════════════════════════════════════════════ -->
+        <service
+            android:name=".MyWallpaperService"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_WALLPAPER"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.service.wallpaper.WallpaperService" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.service.wallpaper"
+                android:resource="@xml/wallpaper" />
+        </service>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             2. SETTINGS ACTIVITY
+             
+             Launched from the wallpaper picker's "Settings" button.
+             The user configures:
+               - Which apps to display on the sphere
+               - App grouping (folders with colors)
+               - Whether to retain the system wallpaper as background
+               - Active home screen page for rendering
+             
+             exported=true so the wallpaper picker can launch it via Intent.
+             ═══════════════════════════════════════════════════════════════ -->
+        <activity
+            android:name=".LiveWallpaperSettings"
+            android:label="@string/settings_title"
+            android:theme="@style/Theme.AuraOrbit.Settings"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>

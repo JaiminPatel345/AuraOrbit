@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base application theme — Material 3, follows system dark mode.
+         DynamicColors.applyToActivityIfAvailable() overlays Material You
+         palettes at runtime on Android 12+. -->
+    <style name="Theme.AuraOrbit" parent="Theme.Material3.DayNight.NoActionBar" />
+
+    <!-- Settings theme: Material 3 with a MaterialToolbar (NoActionBar) for
+         proper edge-to-edge inset handling on Android 15+. The MaterialToolbar
+         is declared in activity_settings.xml and registered via setSupportActionBar. -->
+    <style name="Theme.AuraOrbit.Settings" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
+    </style>
+</resources>

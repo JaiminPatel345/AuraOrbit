@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  sphere_launch_exit.xml — Exit animation for the wallpaper surface when an app
+  is launched. Subtle fade to 90% opacity over 200ms so the transition feels
+  polished without being distracting.
+-->
+<set xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <alpha
+        android:fromAlpha="1.0"
+        android:toAlpha="0.9"
+        android:duration="200" />
+
+</set>

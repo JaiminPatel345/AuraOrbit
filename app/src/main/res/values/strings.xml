@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AuraOrbit</string>
+    <string name="settings_title">AuraOrbit Settings</string>
+    <string name="wallpaper_description">A true 3D orbital sphere populated by your chosen app icons. Supports 120Hz, Fibonacci distribution, visual grouping, and native app launching.</string>
+
+    <!-- Apply Wallpaper -->
+    <string name="pref_apply_wallpaper_title_inactive">Apply</string>
+    <string name="toast_apply_wallpaper_unavailable">Open system wallpaper settings to re-apply the sphere.</string>
+
+    <!-- App Selection -->
+    <string name="pref_category_apps">App Selection</string>
+    <string name="pref_select_apps_title">Select Apps</string>
+    <string name="pref_select_apps_summary">Choose which apps appear on the 3D sphere</string>
+
+    <!-- Groups -->
+    <string name="pref_category_groups">Visual Groups</string>
+    <string name="pref_manage_groups_title">Manage Groups</string>
+    <string name="pref_manage_groups_summary">Create colored folders to cluster apps on the sphere</string>
+
+    <!-- Background -->
+    <string name="pref_category_background">Background</string>
+    <string name="pref_background_title">Background image</string>
+    <string name="summary_background_set">Custom photo — tap to change or remove</string>
+    <string name="summary_background_not_set">Default gradient — tap to choose a photo</string>
+    <string name="pref_system_wallpaper_title_granted">Real wallpaper visible ✓</string>
+    <string name="pref_system_wallpaper_summary_granted">Without a custom photo, your system wallpaper shows behind the sphere</string>
+    <string name="pref_system_wallpaper_title_denied">Show my real wallpaper</string>
+    <string name="pref_system_wallpaper_summary_denied">Allow access so your current wallpaper can appear behind the sphere (no custom photo needed)</string>
+
+    <!-- Sphere -->
+    <string name="pref_category_sphere">Sphere</string>
+    <string name="pref_active_page_title">Sphere page</string>
+    <string name="pref_active_page_summary">Home screen page that shows the sphere (1 = first page). Android doesn\'t let apps add launcher pages — create extra pages by dragging any app icon to the screen\'s right edge, then pick its number here.</string>
+    <string name="pref_sphere_radius_title">Sphere Size</string>
+    <string name="pref_sphere_radius_summary">Adjust the radius of the 3D sphere</string>
+    <string name="pref_icon_size_title">Icon Size</string>
+    <string name="pref_icon_size_summary">Adjust the size of app icons on the sphere</string>
+    <string name="pref_rotation_speed_title">Rotation speed</string>
+    <string name="pref_rotation_speed_summary">Idle spin and fling momentum multiplier (100 = 1×)</string>
+
+    <!-- Performance -->
+    <string name="pref_category_performance">Performance</string>
+    <string name="pref_target_fps_title">Target Frame Rate</string>
+    <string name="pref_target_fps_summary">Higher values are smoother but use more battery</string>
+
+    <!-- Inline stepper content descriptions -->
+    <string name="stepper_decrement">Decrease page number</string>
+    <string name="stepper_increment">Increase page number</string>
+
+    <!-- Dialogs -->
+    <string name="dialog_group_name_hint">Group name (e.g., Social)</string>
+    <string name="dialog_delete_confirm">Delete group &#8220;%1$s&#8221;?</string>
+    <string name="dialog_delete_confirm_msg">The apps in this group will become ungrouped.</string>
+
+    <!-- Buttons -->
+    <string name="btn_save">Save</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_delete_group">Delete</string>
+
+    <!-- Toasts -->
+    <string name="toast_saved">Settings saved. Wallpaper will update.</string>
+    <string name="toast_group_name_empty">Please enter a group name.</string>
+    <string name="toast_group_exists">A group with this name already exists.</string>
+    <string name="toast_group_deleted">Group deleted.</string>
+
+    <!-- Background toasts -->
+    <string name="toast_background_saved">Background image saved.</string>
+    <string name="toast_background_failed">Could not load that image.</string>
+    <string name="background_choose_new">Choose new photo</string>
+    <string name="background_remove">Remove photo</string>
+    <string name="background_remove_cancel">Cancel</string>
+
+    <!-- Summaries -->
+    <string name="summary_apps_selected">%1$d apps selected</string>
+    <string name="summary_no_apps">No apps selected — tap to choose</string>
+    <string name="summary_groups_count">%1$d groups configured</string>
+    <string name="summary_no_groups">No groups — tap to create</string>
+
+    <!-- Fragment / UI titles -->
+    <string name="search_apps_hint">Search apps…</string>
+    <string name="title_groups">Groups</string>
+    <string name="title_new_group">New group</string>
+    <string name="title_edit_group">Edit group</string>
+    <string name="fab_new_group">New group</string>
+    <string name="empty_groups">No groups yet.\nTap + to create one.</string>
+    <string name="member_in_other_group">Already in %1$s</string>
+    <string name="group_member_count">%1$d apps</string>
+    <string name="wallpaper_hint_no_apps">Open AuraOrbit settings\nto pick your apps</string>
+    <string name="selected_count">%1$d selected</string>
+    <string name="picker_select_all">Select all</string>
+    <string name="picker_clear_all">Clear all</string>
+
+    <!-- Group color names (in palette order) -->
+    <string-array name="group_color_names">
+        <item>Aura Violet</item>
+        <item>Emerald</item>
+        <item>Ember Orange</item>
+        <item>Rose</item>
+        <item>Azure</item>
+        <item>Gold</item>
+        <item>Royal Purple</item>
+        <item>Sage</item>
+    </string-array>
+
+    <string-array name="target_fps_entries">
+        <item>60 FPS (Battery Saver)</item>
+        <item>90 FPS (Balanced)</item>
+        <item>120 FPS (Ultra Smooth)</item>
+    </string-array>
+
+    <string-array name="target_fps_values">
+        <item>60</item>
+        <item>90</item>
+        <item>120</item>
+    </string-array>
+</resources>

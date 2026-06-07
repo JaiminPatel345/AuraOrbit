@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Widget-area layout for PageStepperPreference.
+  Inflated by PageStepperPreference.setWidgetLayoutResource(...).
+  The preference framework places this view in the end (right) area of the row.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <!-- Decrement button: uses vector icon, not text — fixes invisible-glyph bug -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/stepper_decrement"
+        style="?attr/materialIconButtonOutlinedStyle"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:contentDescription="@string/stepper_decrement"
+        android:insetLeft="0dp"
+        android:insetTop="0dp"
+        android:insetRight="0dp"
+        android:insetBottom="0dp"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        app:icon="@drawable/ic_remove" />
+
+    <!-- Current value display -->
+    <TextView
+        android:id="@+id/stepper_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="40dp"
+        android:gravity="center"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        android:paddingHorizontal="4dp" />
+
+    <!-- Increment button: uses vector icon, not text — fixes invisible-glyph bug -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/stepper_increment"
+        style="?attr/materialIconButtonOutlinedStyle"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:contentDescription="@string/stepper_increment"
+        android:insetLeft="0dp"
+        android:insetTop="0dp"
+        android:insetRight="0dp"
+        android:insetBottom="0dp"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        app:icon="@drawable/ic_add" />
+
+</LinearLayout>

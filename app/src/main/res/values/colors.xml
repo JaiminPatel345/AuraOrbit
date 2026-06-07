@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Group palette — single source of truth is GroupStore.PALETTE;
+         this array mirrors it for UI pickers. Keep both in sync. -->
+    <string-array name="group_color_hex">
+        <item>#7F77DD</item>
+        <item>#1D9E75</item>
+        <item>#D85A30</item>
+        <item>#D4537E</item>
+        <item>#4A90D9</item>
+        <item>#C9A227</item>
+        <item>#8E5AC8</item>
+        <item>#5AA88A</item>
+    </string-array>
+</resources>
