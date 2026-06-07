@@ -82,7 +82,7 @@
     <string name="title_edit_group">Edit group</string>
     <string name="fab_new_group">New group</string>
     <string name="empty_groups">No groups yet.\nTap + to create one.</string>
-    <string name="member_in_other_group">In %1$s — saving will move it</string>
+    <string name="member_in_other_group">Already in %1$s</string>
     <string name="group_member_count">%1$d apps</string>
     <string name="wallpaper_hint_no_apps">Open AuraOrbit settings\nto pick your apps</string>
     <string name="selected_count">%1$d selected</string>

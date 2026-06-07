@@ -582,10 +582,11 @@ public class GroupEditFragment extends Fragment {
             holder.icon.setImageDrawable(row.icon);
             holder.label.setText(row.label);
 
-            // ─── "In other group" subtitle ───────────────────────────────
+            // ─── "Already in other group" subtitle + disabled state ───────
             // Handle BOTH states explicitly to handle recycled views that
             // previously showed the subtitle but now should not.
-            if (row.inOtherGroupName != null) {
+            boolean lockedByOtherGroup = row.inOtherGroupName != null;
+            if (lockedByOtherGroup) {
                 holder.subtitle.setText(getString(
                         R.string.member_in_other_group, row.inOtherGroupName));
                 holder.subtitle.setVisibility(View.VISIBLE);
@@ -596,20 +597,36 @@ public class GroupEditFragment extends Fragment {
             // ─── Checkbox state ───────────────────────────────────────────
             // Detach listener before setting state to avoid re-entrant calls.
             holder.check.setOnCheckedChangeListener(null);
-            boolean isMember = workingMembers.contains(row.packageName);
-            holder.check.setChecked(isMember);
 
-            // Row click toggles membership in the working set.
-            holder.itemView.setOnClickListener(v -> {
-                boolean nowMember = workingMembers.contains(row.packageName);
-                if (nowMember) {
-                    workingMembers.remove(row.packageName);
-                    holder.check.setChecked(false);
-                } else {
-                    workingMembers.add(row.packageName);
-                    holder.check.setChecked(true);
-                }
-            });
+            if (lockedByOtherGroup) {
+                // App belongs to a DIFFERENT group: disable the row entirely.
+                // The checkbox must be unchecked so it can never enter workingMembers.
+                holder.check.setChecked(false);
+                holder.check.setEnabled(false);
+                holder.itemView.setEnabled(false);
+                holder.itemView.setAlpha(0.45f);
+                holder.itemView.setOnClickListener(null); // row click does nothing
+            } else {
+                // App is ungrouped or already in THIS group: fully interactive.
+                holder.check.setEnabled(true);
+                holder.itemView.setEnabled(true);
+                holder.itemView.setAlpha(1f);
+
+                boolean isMember = workingMembers.contains(row.packageName);
+                holder.check.setChecked(isMember);
+
+                // Row click toggles membership in the working set.
+                holder.itemView.setOnClickListener(v -> {
+                    boolean nowMember = workingMembers.contains(row.packageName);
+                    if (nowMember) {
+                        workingMembers.remove(row.packageName);
+                        holder.check.setChecked(false);
+                    } else {
+                        workingMembers.add(row.packageName);
+                        holder.check.setChecked(true);
+                    }
+                });
+            }
         }
 
         @Override
