@@ -233,6 +233,17 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
             currentHolder = holder;
             activeEngine = this; // track most-recent engine in the service
 
+            // ─── Belt-and-suspenders: authoritative preview state on first frame ──
+            // The libGDX previewStateChange() notification may arrive late or be
+            // missed entirely on OEM Apply flows (One UI engine-swap ordering).
+            // Push the authoritative value now so the sphere's first frame has the
+            // correct preview flag before any rendering or dead-reckoning occurs.
+            if (sphereEngine != null) {
+                sphereEngine.setPreviewModeAuthoritative(isPreview());
+                Log.d(TAG, "onSurfaceCreated: pushed isPreview=" + isPreview()
+                        + " to sphereEngine");
+            }
+
             // ─── Apply the user's frame rate preference to this surface ──
             applyFrameRate(holder);
         }
@@ -397,15 +408,48 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
 
         /**
          * Handle visibility changes to pause/resume expensive rendering.
-         * When the wallpaper is not visible (e.g., app is in foreground),
-         * libGDX automatically pauses, but we can do additional cleanup here.
+         *
+         * <p>When the wallpaper becomes VISIBLE, we push the authoritative
+         * preview-mode state BEFORE forwarding {@link SphereEngine#setVisible(boolean)}.
+         * This is the fix for GitHub issue #9 (sphere visible on ALL pages after
+         * settings → Apply on One UI):
+         *
+         * <p>On Samsung One UI's Apply flow the process stays alive, so the preview
+         * engine is torn down without a guaranteed {@code previewStateChange(false)}
+         * reaching the shared {@link SphereEngine}.  The new home engine then calls
+         * {@code onVisibilityChanged(true)}, at which point {@code isPreview()} is
+         * authoritative and {@code false}.  We use that value to clear any stale
+         * {@code isPreviewMode=true} before {@link SphereEngine#setVisible} re-anchors
+         * dead-reckoning (which must see the correct preview flag to behave right).
+         *
+         * <p>Ordering contract: {@code setPreviewModeAuthoritative} → {@code setVisible(true)}
+         * — the preview flag must be correct before dead-reckoning re-anchoring runs.
+         *
+         * <p>We MUST call {@code super.onVisibilityChanged(visible)} — libGDX's
+         * {@code AndroidWallpaperEngine.onVisibilityChanged} routes the
+         * pause/resume lifecycle and fires {@code previewStateChange} via
+         * {@code notifyPreviewState}. Skipping super would break rendering.
+         *
+         * <p>No double-forwarding risk: {@code sphereEngine.setVisible(visible)}
+         * is called once here; libGDX's super path drives only the render pause/resume
+         * (via {@code onResume}/{@code onPause}) and does NOT call setVisible itself.
          */
         @Override
         public void onVisibilityChanged(boolean visible) {
+            // MUST call super first — libGDX handles pause/resume + previewStateChange.
             super.onVisibilityChanged(visible);
-            Log.d(TAG, "Visibility changed: " + visible);
+            Log.d(TAG, "Visibility changed: " + visible + " isPreview=" + isPreview());
 
             if (sphereEngine != null) {
+                if (visible) {
+                    // Push authoritative preview state BEFORE setVisible so dead-reckoning
+                    // re-anchoring inside setVisible sees the correct isPreviewMode flag.
+                    // This is the fix for the stale-preview-mode bug (GitHub issue #9):
+                    // isPreview() is always correct on the CURRENT engine, while
+                    // SphereEngine.isPreviewMode may be stale from a previous preview
+                    // engine that was torn down without sending previewStateChange(false).
+                    sphereEngine.setPreviewModeAuthoritative(isPreview());
+                }
                 sphereEngine.setVisible(visible);
             }
         }

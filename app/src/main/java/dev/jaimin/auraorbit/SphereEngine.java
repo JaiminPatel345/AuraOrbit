@@ -2738,13 +2738,68 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
     @Override
     public void previewStateChange(boolean isPreview) {
-        // Track preview mode so tap() knows whether to launch (no command path in preview).
-        this.isPreviewMode = isPreview;
-        // In preview mode (wallpaper picker), always render at full visibility.
-        // Page inference must never run in preview — the sphere is always visible there.
-        if (isPreview) {
+        // libGDX path — best-effort, may be missed on engine-swap (One UI Apply flow).
+        // Route through the authoritative method to avoid divergent logic.
+        // The VISIBLE engine's WallpaperService.Engine.isPreview() is the true source
+        // of truth; see setPreviewModeAuthoritative() for the authoritative path.
+        setPreviewModeAuthoritative(isPreview);
+    }
+
+    /**
+     * Authoritatively sets the preview-mode flag and re-anchors related state.
+     *
+     * <p><b>Source of truth</b>: the VISIBLE engine's
+     * {@code WallpaperService.Engine.isPreview()} is the only reliable indicator of
+     * whether the current rendering engine is a preview engine.  libGDX's
+     * {@link #previewStateChange} is best-effort: on Samsung One UI's Apply flow,
+     * the preview engine may be torn down without the libGDX
+     * {@code previewStateChange(false)} notification reaching this listener (the
+     * {@code linkedEngine} swap and the preview-engine teardown races).  This leaves
+     * {@link #isPreviewMode} stuck at {@code true} on the new home engine, causing
+     * {@link #updatePageVisibility}'s preview hard-guard to lock
+     * {@code pageVisibility = 1f} on every page — the root cause of GitHub issue #9.
+     *
+     * <p><b>Call site</b>: {@code AuraOrbitEngine.onVisibilityChanged(true)} calls
+     * this BEFORE forwarding {@link #setVisible(true)} so that the preview flag is
+     * correct before dead-reckoning re-anchoring happens inside {@code setVisible}.
+     * {@code onSurfaceCreated} calls it as belt-and-suspenders for the engine's first
+     * frame.
+     *
+     * <p><b>Transition preview→non-preview</b>: re-anchors dead-reckoning state as
+     * if starting fresh from the home screen — {@link #inferredPage} = {@link #activePage}
+     * and {@link #wallpaperZoom} = 0 — so the new home engine always greets the user
+     * with the sphere visible on the configured page.
+     *
+     * <p><b>Thread</b>: must be called on the GL thread (or before the GL thread
+     * starts for the engine, which is the case from {@code onSurfaceCreated}).
+     * All fields touched here are GL-thread-owned except the {@code volatile}
+     * {@link #wallpaperZoom}.
+     *
+     * @param preview {@code true} if this engine is in the wallpaper-picker preview,
+     *                {@code false} if it is the live home-screen engine.
+     */
+    public void setPreviewModeAuthoritative(boolean preview) {
+        boolean wasPreview = this.isPreviewMode;
+        this.isPreviewMode = preview;
+
+        if (preview) {
+            // In preview mode (wallpaper picker), always render at full visibility.
+            // Page inference must never run in preview — the sphere is always visible.
             pageVisibility = 1f;
+        } else if (wasPreview) {
+            // Transitioning preview → non-preview (home engine taking over after Apply).
+            // Re-anchor dead-reckoning as if starting fresh so the home engine always
+            // shows the sphere on the configured page immediately, without inheriting
+            // any stale inferredPage from the preview session.
+            inferredPage = activePage;
+            // Reset zoom to zero — entering the home screen fresh; any residual preview
+            // zoom would incorrectly suppress the direct-tap fallback path.
+            wallpaperZoom = 0f;
+            Log.d(TAG, "setPreviewModeAuthoritative: preview→home transition, "
+                    + "re-anchored inferredPage=" + inferredPage
+                    + " (activePage=" + activePage + ")");
         }
+
         // Zoom lifecycle hardening: reset stale zoom on both preview transitions.
         // A lock-screen or recents animation can leave wallpaperZoom at 1.0; resetting
         // here ensures the direct-tap fallback is not suppressed after the transition.
@@ -2757,6 +2812,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         returnScaleFactor = 1f;
         returnAlphaFactor = 1f;
         returnAnimPending = false;
+
+        Log.d(TAG, "setPreviewModeAuthoritative: isPreviewMode=" + preview
+                + " (wasPreview=" + wasPreview + ")");
     }
 
     // ═══════════════════════════════════════════════════════════════════════
