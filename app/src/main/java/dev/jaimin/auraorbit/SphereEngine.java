@@ -387,6 +387,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * Dead-reckoning page estimate for offset-silent launchers (e.g. Samsung
      * One UI on the Galaxy S25 Ultra, which never reports xOffsetStep).
      *
+     * <b>Relative anchor</b>: reset to {@link #activePage} in every
+     * {@link #applyConfig} call (fresh engine start, rebuild after any settings
+     * change, including a change of the Sphere page preference).  This makes the
+     * "Sphere page" relative on One UI — the sphere is always visible on the page
+     * where the wallpaper was applied or last restarted; swiping N pages away hides
+     * it, swiping back shows it.
+     *
      * Incremented/decremented in {@link #commitPageSwipe} after each committed
      * horizontal page swipe when {@link #offsetsSeen} is false.  Clamped to
      * [0, 8] so boundary pages always re-sync after enough swipes.
@@ -867,6 +874,22 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // ─── Read fresh configuration ────────────────────────────────────
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         readConfig(prefs);
+
+        // ─── Anchor dead-reckoning page counter to current position ─────────
+        // On offset-silent launchers (e.g. Samsung One UI, Galaxy S25 Ultra) the
+        // absolute page number is unknowable at (re)start.  We anchor inferredPage
+        // to activePage so the sphere is immediately visible wherever the user is
+        // when the wallpaper starts or when a setting changes (including the Sphere
+        // page preference itself).  Swipe counting then proceeds RELATIVELY from
+        // here: N pages left of the start page hides the sphere, N pages right
+        // hides it too — the configured page is always the current page at start.
+        //
+        // On offset-reporting launchers (Pixel Launcher, etc.) offsetsSeen will
+        // become true quickly and the inferred counter is unused; this assignment
+        // is harmless in that case (it just initialises an idle variable).
+        inferredPage = activePage;
+        Log.d(TAG, "applyConfig: anchored inferredPage=" + inferredPage
+                + " (activePage=" + activePage + ", offsetsSeen=" + offsetsSeen + ")");
 
         // ─── Update camera position for new radius ───────────────────────
         // Camera uses sphereRadius (the slider) as its reference so that the
@@ -2171,17 +2194,40 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * counter maintained by {@link #commitPageSwipe()}.  The same falloff formula
      * is applied so behaviour is identical to the offset path at the page level.
      *
+     * RELATIVE anchor: {@link #inferredPage} is initialised to {@link #activePage}
+     * in every {@link #applyConfig} call (fresh start, rebuild after settings change,
+     * or change of the Sphere page preference).  This means the "Sphere page" on One
+     * UI is the page where the wallpaper was applied / restarted — the sphere is
+     * always visible exactly where the user currently is.  Swiping N pages away then
+     * hides the sphere; swiping back shows it.  On offset-reporting launchers (Pixel
+     * Launcher etc.) {@link #offsetsSeen} becomes true quickly and the inferred
+     * counter is not used.
+     *
      * When {@link #offsetsSeen} is true but the current step happens to be zero
      * (transient state during launcher animations), we stay fully visible rather
      * than snapping to an inferred page — this is the least disruptive behaviour
      * for the brief moment the step is absent.
      *
-     * Preview mode: {@link #previewStateChange} sets pageVisibility = 1 directly
-     * and inference is gated out in {@link #commitPageSwipe}, so this path never
-     * applies to the preview engine.
+     * Preview mode: A hard guard at the top of this method returns early with
+     * {@code targetVisibility = 1f}, bypassing all page math.  This prevents the
+     * dead-reckoning branch from fading the sphere in the wallpaper-picker preview
+     * (where there are no pages and inferredPage/activePage may differ).
      */
     private void updatePageVisibility(float delta) {
         float targetVisibility;
+
+        // ─── Preview hard guard ───────────────────────────────────────────────
+        // In the wallpaper-picker preview there are no pages and no offsets.
+        // The dead-reckoning branch would immediately compute pageDistance ≥ 1
+        // (inferredPage=0, activePage=e.g. 2) and fade the sphere out within ~1 s.
+        // Skip ALL page math in preview: the sphere is always fully visible there.
+        // previewStateChange() already snaps pageVisibility=1 at transition time;
+        // this guard keeps it locked at 1f every subsequent frame.
+        if (isPreviewMode) {
+            targetVisibility = 1f;
+            pageVisibility = MathUtils.lerp(pageVisibility, targetVisibility, delta * 8f);
+            return;
+        }
 
         if (xOffsetStep > 0f) {
             // ─── Real offset path: launcher reports page positions ──────────
