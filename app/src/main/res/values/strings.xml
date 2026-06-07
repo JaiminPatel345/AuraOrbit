@@ -44,9 +44,11 @@
     <string name="pref_target_fps_title">Target Frame Rate</string>
     <string name="pref_target_fps_summary">Higher values are smoother but use more battery</string>
 
+    <!-- Inline stepper content descriptions -->
+    <string name="stepper_decrement">Decrease page number</string>
+    <string name="stepper_increment">Increase page number</string>
+
     <!-- Dialogs -->
-    <string name="dialog_page_number_title">Sphere page</string>
-    <string name="pref_active_page_summary_current">Currently: page %1$d</string>
     <string name="dialog_group_name_hint">Group name (e.g., Social)</string>
     <string name="dialog_delete_confirm">Delete group &#8220;%1$s&#8221;?</string>
     <string name="dialog_delete_confirm_msg">The apps in this group will become ungrouped.</string>

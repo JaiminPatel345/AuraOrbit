@@ -12,13 +12,8 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
-import android.text.Editable;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Toast;
-
-import com.google.android.material.button.MaterialButton;
-import com.google.android.material.textfield.TextInputEditText;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.PickVisualMediaRequest;
@@ -34,6 +29,7 @@ import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.color.DynamicColors;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -318,14 +314,6 @@ public class LiveWallpaperSettings extends AppCompatActivity {
                 });
             }
 
-            // ─── pref_active_page → number input dialog ───────────────────
-            Preference activePage = findPreference("pref_active_page");
-            if (activePage != null) {
-                activePage.setOnPreferenceClickListener(pref -> {
-                    showPageNumberDialog();
-                    return true;
-                });
-            }
         }
 
         @Override
@@ -521,89 +509,6 @@ public class LiveWallpaperSettings extends AppCompatActivity {
         }
 
         // ─────────────────────────────────────────────────────────────────
-        //  Sphere page number-input dialog
-        // ─────────────────────────────────────────────────────────────────
-
-        /**
-         * Shows a Material Alert Dialog with a custom +/− stepper for choosing
-         * the home-screen page number that the sphere should track (1-based, 1..20).
-         *
-         * <p>The value is stored as an {@code int} under key {@code "pref_active_page"}
-         * so that {@link SphereEngine}'s preference-change listener receives an
-         * {@code int} exactly as before (compatible with any existing stored value).</p>
-         */
-        private void showPageNumberDialog() {
-            android.content.SharedPreferences prefs =
-                    PreferenceManager.getDefaultSharedPreferences(requireContext());
-            final int current = prefs.getInt("pref_active_page", 1);
-
-            // Inflate the custom stepper layout
-            View dialogView = LayoutInflater.from(requireContext())
-                    .inflate(R.layout.dialog_page_number, null, false);
-
-            final TextInputEditText etPage = dialogView.findViewById(R.id.et_page_number);
-            final MaterialButton btnDecrement = dialogView.findViewById(R.id.btn_decrement);
-            final MaterialButton btnIncrement = dialogView.findViewById(R.id.btn_increment);
-
-            // Initialise the field with the current value
-            etPage.setText(String.valueOf(current));
-            // Place cursor at end for convenience
-            etPage.setSelection(etPage.getText() != null ? etPage.getText().length() : 0);
-
-            // Helper: read current numeric value from the EditText (returns -1 on parse failure)
-            // Stored in a single-element array so the lambdas below can read a fresh parse each time.
-            final int[] parsedHolder = {current};
-
-            btnDecrement.setOnClickListener(v -> {
-                Editable text = etPage.getText();
-                int val;
-                try {
-                    val = Integer.parseInt(text != null ? text.toString().trim() : "");
-                } catch (NumberFormatException e) {
-                    val = parsedHolder[0];
-                }
-                val = Math.max(1, val - 1);
-                parsedHolder[0] = val;
-                etPage.setText(String.valueOf(val));
-                etPage.setSelection(etPage.getText() != null ? etPage.getText().length() : 0);
-            });
-
-            btnIncrement.setOnClickListener(v -> {
-                Editable text = etPage.getText();
-                int val;
-                try {
-                    val = Integer.parseInt(text != null ? text.toString().trim() : "");
-                } catch (NumberFormatException e) {
-                    val = parsedHolder[0];
-                }
-                val = Math.min(20, val + 1);
-                parsedHolder[0] = val;
-                etPage.setText(String.valueOf(val));
-                etPage.setSelection(etPage.getText() != null ? etPage.getText().length() : 0);
-            });
-
-            new MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(R.string.dialog_page_number_title)
-                    .setView(dialogView)
-                    .setPositiveButton(R.string.btn_save, (dialog, which) -> {
-                        // Parse the EditText; fall back to the current value on invalid input
-                        Editable text = etPage.getText();
-                        int newVal;
-                        try {
-                            newVal = Integer.parseInt(text != null ? text.toString().trim() : "");
-                        } catch (NumberFormatException e) {
-                            newVal = current; // keep old value if field is empty/invalid
-                        }
-                        // Clamp to valid range
-                        newVal = Math.max(1, Math.min(20, newVal));
-                        prefs.edit().putInt("pref_active_page", newVal).apply();
-                        updateSummaries();
-                    })
-                    .setNegativeButton(R.string.btn_cancel, null) // no change on cancel
-                    .show();
-        }
-
-        // ─────────────────────────────────────────────────────────────────
         //  Summary helpers
         // ─────────────────────────────────────────────────────────────────
 
@@ -665,16 +570,6 @@ public class LiveWallpaperSettings extends AppCompatActivity {
                         : R.string.pref_system_wallpaper_summary_denied);
             }
 
-            // ─── Active page summary ──────────────────────────────────────
-            // Show the explanatory base text followed by the current page number
-            // so the user can see at-a-glance what is configured without opening the dialog.
-            Preference activePage = findPreference("pref_active_page");
-            if (activePage != null) {
-                int page = prefs.getInt("pref_active_page", 1);
-                activePage.setSummary(
-                        getString(R.string.pref_active_page_summary)
-                        + "\n" + getString(R.string.pref_active_page_summary_current, page));
-            }
         }
     }
 }

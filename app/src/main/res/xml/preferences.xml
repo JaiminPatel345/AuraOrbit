@@ -58,9 +58,11 @@
             android:entries="@array/target_fps_entries"
             android:entryValues="@array/target_fps_values"
             android:defaultValue="120" />
-        <Preference
+        <dev.jaimin.auraorbit.ui.PageStepperPreference
             android:key="pref_active_page"
             android:title="@string/pref_active_page_title"
-            android:summary="@string/pref_active_page_summary" />
+            android:summary="@string/pref_active_page_summary"
+            android:defaultValue="1"
+            android:persistent="true" />
     </PreferenceCategory>
 </PreferenceScreen>
