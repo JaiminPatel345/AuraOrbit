@@ -108,6 +108,37 @@
             </intent-filter>
         </activity>
 
+        <!-- ═══════════════════════════════════════════════════════════════
+             3. LAUNCHER STATE ACCESSIBILITY SERVICE (opt-in)
+
+             Fixes #10 + #11: On One UI, live wallpapers receive no page-offset
+             or drawer-state callbacks. This accessibility service reads the
+             Samsung launcher's page indicator so the sphere knows the exact
+             home page and whether the app drawer is open, suppressing spurious
+             app launches through the drawer.
+
+             Scope: com.sec.android.app.launcher only (declared in
+             res/xml/launcher_state_service.xml). Reads only page indicator
+             contentDescriptions — no user data is accessed.
+
+             The service is opt-in: it does nothing until the user enables it
+             from Settings → Accessibility → AuraOrbit.
+             ═══════════════════════════════════════════════════════════════ -->
+        <service
+            android:name=".LauncherStateService"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/launcher_state_service" />
+        </service>
+
     </application>
 
 </manifest>

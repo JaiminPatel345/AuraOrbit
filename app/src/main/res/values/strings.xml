@@ -92,6 +92,27 @@
     <string name="member_in_other_group">Already in %1$s</string>
     <string name="group_member_count">%1$d apps</string>
     <string name="wallpaper_hint_no_apps">Open AuraOrbit settings\nto pick your apps</string>
+
+    <!-- Permission onboarding dialog -->
+    <string name="onboarding_title">Let AuraOrbit work fully</string>
+    <string name="onboarding_item_a11y">• Exact page detection — reads only your launcher\'s page indicator so the sphere knows which home screen you\'re on.</string>
+    <string name="onboarding_item_storage">• Wallpaper background — your current wallpaper appears behind the sphere (no photo needed).</string>
+    <string name="onboarding_btn_enable_page_detection">Enable page detection</string>
+    <string name="onboarding_btn_wallpaper_access">Wallpaper access</string>
+    <string name="onboarding_btn_grant_access">Grant access</string>
+    <string name="onboarding_btn_later">Later</string>
+
+    <!-- Accessibility service description (shown in Settings → Accessibility) -->
+    <string name="a11y_service_description">Reads the Samsung launcher\'s page indicator (e.g. "Page 1 of 4") to show the 3D sphere on the correct home page and to detect when the app drawer is open. Only the launcher\'s page indicator is read — no other app content is accessed.</string>
+
+    <!-- Exact page detection preference category -->
+    <string name="pref_category_sphere_detection">Launcher Integration</string>
+
+    <!-- Exact page detection preference (Sphere category) -->
+    <string name="pref_exact_page_detection_title_disabled">Exact page detection</string>
+    <string name="pref_exact_page_detection_title_enabled">Exact page detection ✓</string>
+    <string name="pref_exact_page_detection_summary_disabled">One UI doesn\'t tell wallpapers which page you\'re on. Enable the AuraOrbit accessibility service so the sphere knows the exact page and the app drawer — it reads only the launcher\'s page indicator.</string>
+    <string name="pref_exact_page_detection_summary_enabled">Reading the launcher page indicator</string>
     <string name="selected_count">%1$d selected</string>
     <string name="picker_select_all">Select all</string>
     <string name="picker_clear_all">Clear all</string>

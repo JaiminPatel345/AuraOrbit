@@ -1,6 +1,7 @@
 package dev.jaimin.auraorbit;
 
 import android.app.WallpaperManager;
+import android.accessibilityservice.AccessibilityServiceInfo;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -12,6 +13,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
 import android.view.View;
+import android.view.accessibility.AccessibilityManager;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -240,6 +242,13 @@ public class LiveWallpaperSettings extends AppCompatActivity {
         // are serialised and never race each other on disk.
         private ExecutorService executor;
 
+        // ─── Onboarding guard ─────────────────────────────────────────────
+        // True once the permission-onboarding dialog has been shown (or skipped)
+        // during this particular instance of the fragment. Resets on every new
+        // app open (new instance), so users who haven't granted both permissions
+        // are reminded each time they return to the settings screen.
+        private boolean onboardingShownThisInstance = false;
+
         // ─── Photo picker launcher ────────────────────────────────────────
         // MUST be registered as a field initialiser (i.e. before STARTED state)
         // because ActivityResultContracts requires registration before the
@@ -302,6 +311,18 @@ public class LiveWallpaperSettings extends AppCompatActivity {
                 });
             }
 
+            // ─── pref_exact_page_detection → Accessibility Settings ──────
+            // Sends the user to the system Accessibility Settings screen where
+            // they can enable or disable the LauncherStateService. Title and
+            // summary are refreshed in onResume() to reflect current state.
+            Preference exactPage = findPreference("pref_exact_page_detection");
+            if (exactPage != null) {
+                exactPage.setOnPreferenceClickListener(pref -> {
+                    handleExactPageDetectionClick();
+                    return true;
+                });
+            }
+
             // ─── pref_gesture_tips → informational dialog ─────────────────
             Preference gestureTips = findPreference("pref_gesture_tips");
             if (gestureTips != null) {
@@ -328,6 +349,8 @@ public class LiveWallpaperSettings extends AppCompatActivity {
             requireActivity().setTitle(R.string.settings_title);
             // Refresh all dynamic summaries.
             updateSummaries();
+            // Show the permission onboarding dialog at most once per instance.
+            maybeShowPermissionOnboarding();
         }
 
         @Override
@@ -461,6 +484,61 @@ public class LiveWallpaperSettings extends AppCompatActivity {
         }
 
         // ─────────────────────────────────────────────────────────────────
+        //  Exact page detection (accessibility service)
+        // ─────────────────────────────────────────────────────────────────
+
+        /**
+         * Returns {@code true} when {@link LauncherStateService} is currently
+         * enabled in the system's Accessibility Settings.
+         *
+         * Implementation: query {@link AccessibilityManager} for the list of
+         * enabled accessibility services and look for our component name.
+         * This works on API 14+ and is the standard approach — it avoids
+         * reading Settings.Secure directly (which requires special permissions
+         * on some API levels).
+         */
+        private boolean isA11yServiceEnabled() {
+            AccessibilityManager am = (AccessibilityManager)
+                    requireContext().getSystemService(android.content.Context.ACCESSIBILITY_SERVICE);
+            if (am == null) return false;
+
+            ComponentName ourComponent = new ComponentName(
+                    requireContext(), LauncherStateService.class);
+
+            java.util.List<AccessibilityServiceInfo> enabled =
+                    am.getEnabledAccessibilityServiceList(
+                            AccessibilityServiceInfo.FEEDBACK_ALL_MASK);
+            if (enabled == null) return false;
+
+            for (AccessibilityServiceInfo info : enabled) {
+                if (ourComponent.flattenToString().equals(
+                        info.getId())) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Handles taps on the exact-page-detection preference row.
+         *
+         * Opens the system Accessibility Settings screen. The user enables or
+         * disables the service there; on return to this Activity, onResume()
+         * calls updateSummaries() to reflect the new state.
+         */
+        private void handleExactPageDetectionClick() {
+            try {
+                startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+            } catch (ActivityNotFoundException e) {
+                Toast.makeText(
+                        requireContext(),
+                        "Could not open Accessibility Settings — please enable it manually.",
+                        Toast.LENGTH_LONG
+                ).show();
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────
         //  Gesture tips dialog
         // ─────────────────────────────────────────────────────────────────
 
@@ -533,6 +611,78 @@ public class LiveWallpaperSettings extends AppCompatActivity {
         }
 
         // ─────────────────────────────────────────────────────────────────
+        //  Permission onboarding dialog
+        // ─────────────────────────────────────────────────────────────────
+
+        /**
+         * Shows a guided onboarding dialog the first time (per fragment instance)
+         * that one or both special-access grants are missing.
+         *
+         * <p>Android does not allow programmatic granting of Accessibility service
+         * or All-files-access; both require the user to navigate to a system
+         * Settings screen. This dialog deep-links to those screens so the user
+         * doesn't have to hunt for them.</p>
+         *
+         * <p>The dialog is shown AT MOST ONCE per activity instance. Because we do
+         * NOT persist a "never show again" flag, the dialog will re-appear the next
+         * time the user opens the settings activity if a grant is still missing.</p>
+         */
+        private void maybeShowPermissionOnboarding() {
+            // Guard: show at most once per fragment instance.
+            if (onboardingShownThisInstance) return;
+
+            boolean needA11y    = !isA11yServiceEnabled();
+            boolean needStorage = !isExternalStorageManager();
+
+            // Nothing missing — no dialog needed.
+            if (!needA11y && !needStorage) return;
+
+            // Mark as shown for this instance before we build the dialog so that
+            // the flag is set even if the user rotates mid-dialog.
+            onboardingShownThisInstance = true;
+
+            // Build the message body from the missing items.
+            StringBuilder message = new StringBuilder();
+            if (needA11y) {
+                message.append(getString(R.string.onboarding_item_a11y));
+            }
+            if (needA11y && needStorage) {
+                message.append("\n\n");
+            }
+            if (needStorage) {
+                message.append(getString(R.string.onboarding_item_storage));
+            }
+
+            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.onboarding_title)
+                    .setMessage(message.toString());
+
+            if (needA11y && needStorage) {
+                // Both missing: three buttons — a11y (positive), storage (neutral), Later (negative).
+                builder
+                        .setPositiveButton(R.string.onboarding_btn_enable_page_detection,
+                                (d, w) -> handleExactPageDetectionClick())
+                        .setNeutralButton(R.string.onboarding_btn_wallpaper_access,
+                                (d, w) -> handleSystemWallpaperClick())
+                        .setNegativeButton(R.string.onboarding_btn_later, null);
+            } else if (needA11y) {
+                // Only a11y missing.
+                builder
+                        .setPositiveButton(R.string.onboarding_btn_enable_page_detection,
+                                (d, w) -> handleExactPageDetectionClick())
+                        .setNegativeButton(R.string.onboarding_btn_later, null);
+            } else {
+                // Only storage missing.
+                builder
+                        .setPositiveButton(R.string.onboarding_btn_grant_access,
+                                (d, w) -> handleSystemWallpaperClick())
+                        .setNegativeButton(R.string.onboarding_btn_later, null);
+            }
+
+            builder.show();
+        }
+
+        // ─────────────────────────────────────────────────────────────────
         //  Summary helpers
         // ─────────────────────────────────────────────────────────────────
 
@@ -592,6 +742,20 @@ public class LiveWallpaperSettings extends AppCompatActivity {
                 sysWallpaper.setSummary(granted
                         ? R.string.pref_system_wallpaper_summary_granted
                         : R.string.pref_system_wallpaper_summary_denied);
+            }
+
+            // ─── Exact page detection summary ─────────────────────────────
+            // Refreshed on every resume so the user sees up-to-date state
+            // when returning from the Accessibility Settings screen.
+            Preference exactPage = findPreference("pref_exact_page_detection");
+            if (exactPage != null) {
+                boolean a11yEnabled = isA11yServiceEnabled();
+                exactPage.setTitle(a11yEnabled
+                        ? R.string.pref_exact_page_detection_title_enabled
+                        : R.string.pref_exact_page_detection_title_disabled);
+                exactPage.setSummary(a11yEnabled
+                        ? R.string.pref_exact_page_detection_summary_enabled
+                        : R.string.pref_exact_page_detection_summary_disabled);
             }
 
         }
