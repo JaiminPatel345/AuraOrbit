@@ -470,6 +470,70 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      */
     private static final long LAUNCH_DEBOUNCE_MS = 500L;
 
+    // ─── In-sphere launch animation ─────────────────────────────────────
+
+    /**
+     * Duration in seconds for the out-animation when an icon is tapped:
+     * the tapped icon zooms up while the rest of the sphere fades out.
+     */
+    private static final float LAUNCH_ANIM_DURATION = 0.22f;
+
+    /**
+     * Node index of the icon currently animating toward launch, or -1 when
+     * no launch animation is in progress. Reset to -1 after the actual
+     * startActivity call and also in applyConfig() on scene rebuild.
+     */
+    private int launchingNodeIdx = -1;
+
+    /**
+     * Normalized launch animation progress [0, 1].
+     * Advanced by delta / LAUNCH_ANIM_DURATION each frame while launchingNodeIdx >= 0.
+     * When it reaches 1 the deferred startActivity fires and returnAnim is armed.
+     */
+    private float launchAnim = 0f;
+
+    /**
+     * Package name deferred for launch — set when the animation starts so the
+     * actual startActivity can fire at the end of the animation.
+     */
+    private String pendingLaunchPkg = null;
+
+    /**
+     * Return animation factor [0, 1]. Driven from 0 → 1 over 0.3 s when the
+     * wallpaper becomes visible again after a launch (setVisible(true) with
+     * returnAnimPending == true). Multiplied into scale/alpha everywhere that
+     * pageVisibility already scales things, so the sphere "appears" by growing
+     * and fading in from slightly below full size.
+     *
+     * Initialized to 1 so the sphere is always visible before the first launch.
+     * Reset to 1 in applyConfig() and previewStateChange() so it can never
+     * wedge at 0 due to interrupted animations.
+     */
+    private float returnAnim = 1f;
+
+    /** Duration in seconds for the return animation (sphere fading back in). */
+    private static final float RETURN_ANIM_DURATION = 0.3f;
+
+    /**
+     * True when a return animation should begin the next time setVisible(true) is
+     * called. Set to true when a launch fires; cleared by setVisible(true) when it
+     * starts the return animation by setting returnAnim = 0.
+     */
+    private boolean returnAnimPending = false;
+
+    /**
+     * Per-frame easeOut scale factor derived from returnAnim: lerp(0.85, 1.0, easeOut(t)).
+     * Recomputed in render() and consumed by renderDecals() and renderGroupBackdrops()
+     * without extra allocations.
+     */
+    private float returnScaleFactor = 1f;
+
+    /**
+     * Per-frame alpha factor derived from returnAnim: easeOut(t) (0 → 1).
+     * Recomputed in render() and consumed by renderDecals() and renderGroupBackdrops().
+     */
+    private float returnAlphaFactor = 1f;
+
     /**
      * Whether the current launcher has ever sent an {@code android.wallpaper.tap}
      * command to this session.  Starts {@code false} (unknown / Samsung-assumed).
@@ -812,6 +876,18 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         float vpH = camera.viewportHeight > 0 ? camera.viewportHeight : Gdx.graphics.getHeight();
         camera.position.set(0f, 0f, computeCameraDistance(vpW, vpH));
         camera.update();
+
+        // ─── Reset animation state on rebuild ────────────────────────────
+        // applyConfig disposes all decals so any in-flight launch animation
+        // would reference stale node indices. Clear all animation state here
+        // so neither launch nor return animations can wedge after a rebuild.
+        launchingNodeIdx = -1;
+        launchAnim = 0f;
+        pendingLaunchPkg = null;
+        returnAnim = 1f;          // force fully visible immediately after rebuild
+        returnScaleFactor = 1f;
+        returnAlphaFactor = 1f;
+        returnAnimPending = false;
 
         // ─── Re-fetch apps, redistribute, recreate decals and backdrops ──
         appNodes = AppFetcher.fetchSelectedApps(context);
@@ -1922,6 +1998,35 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // ─── Update page visibility ─────────────────────────────────────
         updatePageVisibility(delta);
 
+        // ─── Advance launch animation ────────────────────────────────────
+        if (launchingNodeIdx >= 0) {
+            launchAnim = Math.min(1f, launchAnim + delta / LAUNCH_ANIM_DURATION);
+            if (launchAnim >= 1f) {
+                // Animation complete — fire the deferred launch.
+                final String pkg = pendingLaunchPkg;
+                if (pkg != null) {
+                    Gdx.app.postRunnable(() -> AppFetcher.launchApp(context, pkg));
+                }
+                pendingLaunchPkg = null;
+                launchingNodeIdx = -1;
+                launchAnim = 0f;
+                returnAnimPending = true;
+            }
+        }
+
+        // ─── Advance return animation ────────────────────────────────────
+        // returnAnim drives sphere-back-in after a launch: 0→1 over RETURN_ANIM_DURATION.
+        if (returnAnim < 1f) {
+            returnAnim = Math.min(1f, returnAnim + delta / RETURN_ANIM_DURATION);
+        }
+        // Compute per-frame easeOut scale and alpha from returnAnim (no allocations).
+        // easeOut(t) = 1 - (1-t)^2; gives fast-in, slow-settle feel.
+        float returnEased = 1f - (1f - returnAnim) * (1f - returnAnim);
+        // Scale: sphere starts at 0.85× and grows to 1.0×.
+        returnScaleFactor = 0.85f + 0.15f * returnEased;
+        // Alpha: sphere fades from fully invisible to fully opaque.
+        returnAlphaFactor = returnEased;
+
         // ─── Clear screen ───────────────────────────────────────────────
         // Fixed deep-navy clear color provides a consistent base for the
         // gradient fallback. Alpha=1 so we always own our pixel.
@@ -1941,7 +2046,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         }
 
         // ─── Layer 3: App Icon Decals (Billboarded) ─────────────────────
-        if (decals != null && decals.size > 0 && pageVisibility > 0.01f) {
+        // Guard also on returnAnim > 0.01f to avoid rendering fully-transparent
+        // decals during the first few frames of the return animation.
+        if (decals != null && decals.size > 0 && pageVisibility > 0.01f && returnAnim > 0.01f) {
             renderDecals();
         }
 
@@ -2203,14 +2310,25 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // Build the sphere-rotation matrix once per frame (avoids per-patch alloc).
         tmpMat.set(sphereRotation);
 
+        // ─── Launch animation: non-launching icons fade out ───────────────
+        // When a launch is in progress, other icons (and backdrops) fade out
+        // by (1 - easeOut(t)). t==0 means full visibility; t==1 means invisible.
+        // easeOut(t) = 1 - (1-t)^2 (no allocations, inline computation below).
+        float otherFade = 1f; // multiplier for non-launching elements
+        if (launchingNodeIdx >= 0) {
+            float eased = 1f - (1f - launchAnim) * (1f - launchAnim);
+            otherFade = 1f - eased; // 1→0 as animation progresses
+        }
+
         modelBatch.begin(camera);
 
         for (int i = 0; i < groupBackdrops.size; i++) {
             ModelInstance instance = groupBackdrops.get(i);
 
-            // Compose: sphereRotation, then scale for page visibility.
+            // Compose: sphereRotation, then scale for page visibility × return animation.
+            // returnScaleFactor: lerp(0.85, 1.0, easeOut(returnAnim)) — sphere grows back.
             // Identity base — geometry is already in sphere-local coordinates.
-            instance.transform.set(tmpMat).scl(pageVisibility);
+            instance.transform.set(tmpMat).scl(pageVisibility * returnScaleFactor);
 
             // ── Front/back depth-cue opacity ──────────────────────────────
             // Rotate the patch's centroid unit direction by the current sphere
@@ -2219,8 +2337,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             if (groupPatchDirs != null && i < groupPatchDirs.size) {
                 tmpVec.set(groupPatchDirs.get(i));
                 sphereRotation.transform(tmpVec);
-                // z in [-1, 1]: map to alpha in [0.12, 0.35]
-                float alpha = MathUtils.lerp(0.12f, 0.35f, (tmpVec.z + 1f) * 0.5f);
+                // z in [-1, 1]: map to alpha in [0.12, 0.35], then multiply otherFade and returnAlphaFactor
+                float alpha = MathUtils.lerp(0.12f, 0.35f, (tmpVec.z + 1f) * 0.5f) * otherFade * returnAlphaFactor;
 
                 // Mutate this instance's BlendingAttribute (safe: ModelInstance
                 // copies materials, so this only affects this instance).
@@ -2273,6 +2391,18 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * the illusion of flat 2D icons floating in 3D space.
      */
     private void renderDecals() {
+        // ─── Launch animation pre-computation (no allocations) ───────────
+        // easeOut(t) = 1 - (1-t)^2; gives fast-start, slow-finish feel.
+        // launchScale: launching icon grows from 1 → 2.2 as t goes 0 → 1.
+        // otherFade:   all other icons fade from 1 → 0 as t goes 0 → 1.
+        float launchScaleMult = 1f;
+        float otherFade = 1f;
+        if (launchingNodeIdx >= 0) {
+            float eased = 1f - (1f - launchAnim) * (1f - launchAnim);
+            launchScaleMult = 1f + 1.2f * eased;  // lerp(1, 2.2, eased)
+            otherFade = 1f - eased;                 // 1→0 as animation progresses
+        }
+
         for (int i = 0; i < decals.size; i++) {
             Decal decal = decals.get(i);
 
@@ -2291,23 +2421,34 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             float depthScale = 0.5f + 0.5f * nd;    // far icons half size
             float depthAlpha = 0.35f + 0.65f * nd;  // far icons dimmed
 
-            // ─── Apply page visibility scale ────────────────────────────
-            // Scale position toward origin when page visibility < 1
-            rotatedPos.scl(pageVisibility);
+            // ─── Per-icon launch animation multipliers ───────────────────
+            // isLaunching: only true for the icon whose index matches launchingNodeIdx.
+            // We check nodeIdx (the appNodes index) against launchingNodeIdx which was
+            // set in raycastAndLaunch using the appNodes index.
+            boolean isLaunching = (launchingNodeIdx >= 0 && nodeIdx == launchingNodeIdx);
+            float animScaleMult = isLaunching ? launchScaleMult : otherFade;
+            float animAlphaMult = isLaunching ? 1f : otherFade;
+
+            // ─── Apply page visibility + return animation scale ──────────
+            // Scale position toward origin when page visibility < 1.
+            // returnScaleFactor: lerp(0.85, 1.0, easeOut(returnAnim)) for the scale effect.
+            // returnAlphaFactor: easeOut(returnAnim) for the alpha effect (0→1).
+            float pageScaleFactor = pageVisibility * returnScaleFactor;
+            rotatedPos.scl(pageScaleFactor);
 
             // ─── Update decal transform ─────────────────────────────────
             decal.setPosition(rotatedPos.x, rotatedPos.y, rotatedPos.z);
 
-            // Icon size combines depth perspective and page visibility.
+            // Icon size: depth × page-visibility-scale × return-scale × launch-anim.
             // effectiveIconSize is used here (not raw iconSize) so per-frame
             // sizing matches the spacing-preserving decal size from createDecals().
             decal.setDimensions(
-                    effectiveIconSize * depthScale * pageVisibility,
-                    effectiveIconSize * depthScale * pageVisibility
+                    effectiveIconSize * depthScale * pageScaleFactor * animScaleMult,
+                    effectiveIconSize * depthScale * pageScaleFactor * animScaleMult
             );
 
-            // Apply depth alpha combined with page visibility
-            decal.setColor(1f, 1f, 1f, depthAlpha * pageVisibility);
+            // Apply depth alpha combined with page-visibility, return-anim-alpha, and launch-anim.
+            decal.setColor(1f, 1f, 1f, depthAlpha * pageVisibility * returnAlphaFactor * animAlphaMult);
 
             // ─── Billboard: always face the camera ──────────────────────
             decal.lookAt(camera.position, camera.up);
@@ -2480,6 +2621,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // here ensures the direct-tap fallback is not suppressed after the transition.
         // The launcher will re-send the correct value if it is genuinely zoomed.
         wallpaperZoom = 0f;
+
+        // Force returnAnim to 1 so the sphere never wedges invisible in the
+        // wallpaper-picker preview (no launch → no return cycle in preview).
+        returnAnim = 1f;
+        returnScaleFactor = 1f;
+        returnAlphaFactor = 1f;
+        returnAnimPending = false;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -2540,6 +2688,11 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         long now = System.currentTimeMillis();
         if (now - lastLaunchTime < LAUNCH_DEBOUNCE_MS) return false;
 
+        // ─── Guard: launch animation already in flight ─────────────────
+        // Prevents stacking animations or double-launching while the icon
+        // is already animating out.
+        if (launchingNodeIdx >= 0) return false;
+
         // ─── Cast a pick ray from camera through screen point ─────────
         // camera.getPickRay expects screen coordinates with origin top-left.
         // GestureDetector and wallpaper tap commands both provide surface-
@@ -2569,17 +2722,19 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             }
         }
 
-        // ─── Launch the tapped app ─────────────────────────────────────
+        // ─── Start launch animation for the tapped app ────────────────
         if (closestIdx >= 0) {
             AppFetcher.AppNode tappedNode = appNodes.get(closestIdx);
-            Log.i(TAG, "Launching app: " + tappedNode.appName
+            Log.i(TAG, "Starting launch animation for: " + tappedNode.appName
                     + " (" + tappedNode.packageName + ")");
 
             lastLaunchTime = now;
-            final String pkg = tappedNode.packageName;
-            // AppFetcher.launchApp must run on the UI (main) thread;
-            // postRunnable marshals from GL thread to main thread.
-            Gdx.app.postRunnable(() -> AppFetcher.launchApp(context, pkg));
+
+            // Begin in-sphere animation — actual startActivity fires when
+            // launchAnim reaches 1.0 (after LAUNCH_ANIM_DURATION seconds).
+            launchingNodeIdx = closestIdx;
+            launchAnim = 0f;
+            pendingLaunchPkg = tappedNode.packageName;
 
             return true;
         }
@@ -2698,6 +2853,17 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // The launcher will re-send the correct value if still zoomed; until then
             // assume home-screen view (zoom = 0) so direct-tap works immediately.
             wallpaperZoom = 0f;
+
+            // ─── Return animation: sphere fades/scales back in after a launch ──
+            // If a launch was the reason the wallpaper became invisible, arm the
+            // sphere-return animation (starts from 0.85 scale + alpha 0, grows to 1).
+            // Normal resume (e.g. lock screen) has returnAnimPending = false, so
+            // returnAnim stays at 1 and the sphere appears at full visibility.
+            if (returnAnimPending) {
+                returnAnim = 0f;
+                returnAnimPending = false;
+                Log.d(TAG, "setVisible: return animation armed");
+            }
         }
     }
 

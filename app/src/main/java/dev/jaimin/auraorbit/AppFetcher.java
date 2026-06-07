@@ -1,5 +1,6 @@
 package dev.jaimin.auraorbit;
 
+import android.app.ActivityOptions;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -11,6 +12,7 @@ import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Environment;
 import android.app.WallpaperManager;
 import android.util.Log;
@@ -562,6 +564,18 @@ public class AppFetcher {
      * context (WallpaperService), not an Activity. Without this flag,
      * Android would throw an exception.
      *
+     * ─── One UI-style enter transition ─────────────────────────────────────
+     *
+     * Wraps startActivity with ActivityOptions.makeCustomAnimation so the
+     * launched app enters with a scale-up + fade-in (sphere_launch_enter.xml,
+     * 250ms decelerate) and the wallpaper exits with a subtle fade
+     * (sphere_launch_exit.xml, 200ms). This matches the polished open-feel of
+     * Samsung One UI's native launcher icon-tap animation.
+     *
+     * The ActivityOptions path is wrapped in its own try/catch so that OEMs
+     * that throw from non-Activity contexts (rare but observed) degrade
+     * silently to a plain startActivity — the launch always succeeds.
+     *
      * @param context      Android context (the WallpaperService)
      * @param packageName  Package to launch (e.g., "com.whatsapp")
      * @return true if the app was launched successfully
@@ -574,7 +588,28 @@ public class AppFetcher {
             if (launchIntent != null) {
                 // FLAG_ACTIVITY_NEW_TASK: Required when starting Activity from non-Activity
                 launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(launchIntent);
+
+                // ─── One UI-style enter transition via ActivityOptions ──────────
+                // Try the animated path first; degrade to plain startActivity on
+                // any exception (some OEMs restrict ActivityOptions from Service).
+                boolean launched = false;
+                try {
+                    ActivityOptions options = ActivityOptions.makeCustomAnimation(
+                            context,
+                            R.anim.sphere_launch_enter,
+                            R.anim.sphere_launch_exit);
+                    Bundle bundle = options.toBundle();
+                    context.startActivity(launchIntent, bundle);
+                    launched = true;
+                    Log.d(TAG, "Launched app with animation: " + packageName);
+                } catch (Exception animEx) {
+                    Log.d(TAG, "ActivityOptions animation failed, falling back to plain launch: " + animEx.getMessage());
+                }
+
+                if (!launched) {
+                    context.startActivity(launchIntent);
+                }
+
                 Log.i(TAG, "Launched app: " + packageName);
                 return true;
             } else {
