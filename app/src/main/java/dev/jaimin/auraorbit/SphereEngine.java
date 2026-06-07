@@ -116,7 +116,11 @@ import java.util.TreeSet;
  *
  * ─── Input ──────────────────────────────────────────────────────────────────
  *
- * - GestureDetector handles pan (rotation), fling (momentum), and tap (launch)
+ * - GestureDetector handles pan (one-finger rotation), fling (momentum),
+ *   tap (launch), and pinch/two-finger-drag (priority rotation channel)
+ * - Two-finger drag is the "priority channel": the launcher ignores two-finger
+ *   drags on the wallpaper surface, so the sphere rotates without fighting the
+ *   launcher's swipe-up / swipe-left one-finger gesture claims.
  * - 3D ray picking via Camera.getPickRay() + Intersector for app selection
  */
 public class SphereEngine implements ApplicationListener, AndroidWallpaperListener {
@@ -284,6 +288,35 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private boolean userInteracting = false;
     private float idleTimer = 0f;
     private static final float IDLE_DELAY = 3f; // Seconds before auto-spin resumes
+
+    // ─── Two-finger drag state ──────────────────────────────────────────
+    /**
+     * WHY TWO-FINGER DRAG EXISTS — Launcher gesture conflict:
+     *
+     * Android live wallpapers cannot consume single-pointer (one-finger) touch
+     * events because the home screen launcher always claims them first:
+     * swipe-up opens the app drawer, swipe-left opens Discover, etc. This makes
+     * one-finger sphere rotation unreliable — the launcher fights the wallpaper
+     * for every gesture.
+     *
+     * The launcher ignores two-finger drags on the home screen (it only acts on
+     * them as pinch-zoom on its own views, which are not the wallpaper). The
+     * AndroidLiveWallpaper backend forwards ALL pointer events to libGDX when
+     * touch is enabled, so the wallpaper reliably receives two-finger drags.
+     *
+     * This makes two-finger drag the wallpaper's "priority channel" — a
+     * dedicated gesture the launcher won't fight over.
+     *
+     * pinchActive: true while two pointers are down (between first pinch() and
+     * pinchStop()). Used to gate out one-finger pan() so the two gestures
+     * never double-apply rotation in the same frame.
+     *
+     * lastPinchMidX/Y: screen-space midpoint from the previous pinch() call,
+     * used to compute the per-frame delta that drives rotation.
+     */
+    private boolean pinchActive = false;
+    private float lastPinchMidX = 0f;
+    private float lastPinchMidY = 0f;
 
     // ─── Live settings listener ──────────────────────────────────────────
 
@@ -1173,9 +1206,14 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
     /**
      * Configures input handling with a GestureDetector for:
-     * - **Pan**: Converts 2D screen drag into 3D sphere rotation
+     * - **Pan** (one-finger): Converts 2D screen drag into 3D sphere rotation
      * - **Fling**: Applies angular momentum for inertial spinning
      * - **Tap**: Raycasts to detect which app was tapped and launches it
+     * - **Pinch / two-finger drag**: Priority rotation channel — uses the
+     *   midpoint delta of two pointers to rotate the sphere.  The launcher
+     *   ignores two-finger drags on the wallpaper, so this gesture is never
+     *   contested.  One-finger pan() is suppressed while pinchActive is true
+     *   to prevent double-application.
      */
     private void setupInput() {
         GestureDetector gestureDetector = new GestureDetector(new GestureDetector.GestureAdapter() {
@@ -1264,6 +1302,14 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
              */
             @Override
             public boolean pan(float x, float y, float deltaX, float deltaY) {
+                // ─── Two-finger drag has priority — suppress one-finger pan ─
+                // GestureDetector may still fire pan() for the first pointer
+                // while a two-finger drag is active.  We must ignore it here
+                // so the two code paths never double-apply rotation in the
+                // same frame (the pinch() callback handles all rotation while
+                // two fingers are down).
+                if (pinchActive) return false;
+
                 userInteracting = true;
                 // Reset idle spin completely — ramp restarts from zero on next release.
                 idleTimer = 0f;
@@ -1324,6 +1370,89 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             public boolean panStop(float x, float y, int pointer, int button) {
                 userInteracting = false;
                 return true;
+            }
+
+            /**
+             * ─── PINCH (two-finger drag) → Sphere Rotation ───────────────
+             *
+             * WHY: The launcher fights one-finger drags on the home screen
+             * (swipe-up = app drawer, swipe-left = Discover).  Two-finger
+             * drags are ignored by the launcher on its wallpaper surface, so
+             * this is the wallpaper's "priority channel" — a dedicated gesture
+             * that gives the sphere exclusive control without launcher conflict.
+             *
+             * libGDX's GestureDetector calls pinch() continuously while two
+             * pointers are down and at least one is moving.  We track the
+             * midpoint of the two pointers and rotate the sphere by the
+             * midpoint delta each call — exactly the same world-space
+             * pre-multiplication used by pan() for frame-rate independence.
+             *
+             * On the FIRST call of a gesture (pinchActive == false) we just
+             * record the midpoint and arm the state; no rotation is applied
+             * (there is no previous midpoint to delta from yet).
+             *
+             * No per-call allocations: midpoint arithmetic uses only the four
+             * float parameters; no Vector2 objects are created here.
+             */
+            @Override
+            public boolean pinch(Vector2 initialPointer1, Vector2 initialPointer2,
+                                 Vector2 pointer1, Vector2 pointer2) {
+                // Midpoint of the two current pointer positions (screen pixels).
+                float midX = (pointer1.x + pointer2.x) * 0.5f;
+                float midY = (pointer1.y + pointer2.y) * 0.5f;
+
+                if (!pinchActive) {
+                    // First call of this two-finger gesture — arm state, no rotation.
+                    pinchActive = true;
+                    lastPinchMidX = midX;
+                    lastPinchMidY = midY;
+                    return true;
+                }
+
+                // Delta since the previous pinch() call (screen pixels).
+                float deltaX = midX - lastPinchMidX;
+                float deltaY = midY - lastPinchMidY;
+
+                // Rotate sphere using the same sensitivity and world-space
+                // pre-multiplication as the one-finger pan() handler so the
+                // feel is identical regardless of which gesture is used.
+                float angleY = -deltaX * ROTATION_SENSITIVITY;
+                float angleX =  deltaY * ROTATION_SENSITIVITY;
+
+                tmpQuat.setFromAxis(Vector3.Y, (float) Math.toDegrees(angleY));
+                sphereRotation.mulLeft(tmpQuat);
+
+                tmpQuat.setFromAxis(Vector3.X, (float) Math.toDegrees(angleX));
+                sphereRotation.mulLeft(tmpQuat);
+
+                // Mark as interacting: suppresses idle spin and resets its ramp.
+                userInteracting = true;
+                idleTimer = 0f;
+                idleBlend = 0f;
+
+                // Kill any existing fling momentum while dragging.
+                angularVelocity.setZero();
+
+                // Advance midpoint for next delta calculation.
+                lastPinchMidX = midX;
+                lastPinchMidY = midY;
+
+                return true;
+            }
+
+            /**
+             * ─── PINCH STOP → Disarm two-finger state ────────────────────
+             *
+             * Called by GestureDetector when a finger lifts during a pinch
+             * gesture.  Clearing pinchActive here re-enables one-finger pan()
+             * and ensures any subsequent single-finger gesture is processed
+             * normally.  userInteracting is also cleared so the idle-spin
+             * ramp resumes after the interaction ends (same as panStop).
+             */
+            @Override
+            public void pinchStop() {
+                pinchActive = false;
+                userInteracting = false;
             }
         });
 
