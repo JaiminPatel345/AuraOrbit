@@ -8,7 +8,11 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
+import android.os.Environment;
+import android.app.WallpaperManager;
 import android.util.Log;
 
 import androidx.preference.PreferenceManager;
@@ -18,6 +22,8 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -282,6 +288,160 @@ public class AppFetcher {
             return t;
         } catch (Exception e) {
             Log.e(TAG, "Failed to load background texture", e);
+            return null;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  Public API — System Wallpaper Mirror (API 24+)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Returns true if the app has the permission required to read the system
+     * wallpaper via {@link WallpaperManager#getDrawable()}.
+     *
+     * On API >= 30 this requires MANAGE_EXTERNAL_STORAGE ("All files access").
+     * Below API 30, the attempt is always made (with try/catch as protection).
+     *
+     * @param context  Android context
+     * @return true if the permission is granted (or API < 30 where it is not needed)
+     */
+    public static boolean canReadSystemWallpaper(Context context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { // API 30
+            return Environment.isExternalStorageManager();
+        }
+        return true; // Below API 30 we attempt anyway; SecurityException is caught
+    }
+
+    /**
+     * Returns the WallpaperManager ID of the current system (static) wallpaper.
+     *
+     * Used by SphereEngine's configSnapshot() to detect when the user changes
+     * their system wallpaper so the background can be reloaded on the next resume().
+     *
+     * Requires no special permission (getWallpaperId is available from API 24).
+     * Returns -1 on any failure.
+     *
+     * @param context  Android context
+     * @return Wallpaper ID, or -1 if unavailable
+     */
+    public static int systemWallpaperId(Context context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) { // API 24
+            return -1;
+        }
+        try {
+            return WallpaperManager.getInstance(context)
+                    .getWallpaperId(WallpaperManager.FLAG_SYSTEM);
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
+    /**
+     * Loads the current system (static) wallpaper as a libGDX Texture by
+     * mirroring it: when AuraOrbit IS the active live wallpaper,
+     * {@link WallpaperManager#getDrawable()} returns the last static wallpaper
+     * that was set — exactly what we want as the background layer.
+     *
+     * MUST be called on the GL thread (same contract as loadBackgroundTexture).
+     *
+     * ─── Permission ─────────────────────────────────────────────────────────
+     *
+     * On API >= 30, MANAGE_EXTERNAL_STORAGE is required; callers should first
+     * invoke {@link #canReadSystemWallpaper(Context)} and skip this method if
+     * false. Below API 30 we attempt anyway; SecurityException is caught.
+     * A one-time INFO log is emitted when permission is absent.
+     *
+     * ─── Bitmap pipeline ────────────────────────────────────────────────────
+     *
+     * The system wallpaper Drawable is rasterized to a Bitmap, downscaled so
+     * the max dimension is ≤ 2048 (same policy as BackgroundStore), compressed
+     * to a cache JPEG, then loaded as a libGDX Texture — reusing the same
+     * file-path loading pattern as loadBackgroundTexture for consistency.
+     *
+     * @param context  Android context
+     * @return Texture with linear filtering, or null if unavailable/failed
+     */
+    public static Texture loadSystemWallpaperTexture(Context context) {
+        // ─── Permission gate ────────────────────────────────────────────────
+        if (!canReadSystemWallpaper(context)) {
+            Log.i(TAG, "loadSystemWallpaperTexture: MANAGE_EXTERNAL_STORAGE not granted; skipping");
+            return null;
+        }
+
+        try {
+            // ─── Obtain the system wallpaper Drawable ───────────────────────
+            WallpaperManager wm = WallpaperManager.getInstance(context);
+            Drawable d = wm.getDrawable();
+            if (d == null) {
+                Log.i(TAG, "loadSystemWallpaperTexture: WallpaperManager returned null Drawable");
+                return null;
+            }
+
+            // ─── Drawable → Bitmap ─────────────────────────────────────────
+            Bitmap bitmap;
+            if (d instanceof BitmapDrawable) {
+                // Fast path: extract the underlying Bitmap directly (no rasterization).
+                Bitmap src = ((BitmapDrawable) d).getBitmap();
+                if (src == null) return null;
+                bitmap = src; // Do NOT recycle — owned by the Drawable
+            } else {
+                // General path: rasterize the Drawable onto a canvas.
+                int w = d.getIntrinsicWidth();
+                int h = d.getIntrinsicHeight();
+                // Guard against Drawables with no intrinsic size (use screen size).
+                if (w <= 0) w = context.getResources().getDisplayMetrics().widthPixels;
+                if (h <= 0) h = context.getResources().getDisplayMetrics().heightPixels;
+                // Clamp to reasonable bounds to avoid OOM.
+                if (w > 4096) w = 4096;
+                if (h > 4096) h = 4096;
+
+                bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+                Canvas canvas = new Canvas(bitmap);
+                d.setBounds(0, 0, w, h);
+                d.draw(canvas);
+            }
+
+            // ─── Downscale so max dimension ≤ 2048 (same policy as BackgroundStore) ──
+            int bw = bitmap.getWidth();
+            int bh = bitmap.getHeight();
+            final int MAX_DIM = 2048;
+            if (Math.max(bw, bh) > MAX_DIM) {
+                float scale = MAX_DIM / (float) Math.max(bw, bh);
+                int nw = Math.max(1, Math.round(bw * scale));
+                int nh = Math.max(1, Math.round(bh * scale));
+                Bitmap scaled = Bitmap.createScaledBitmap(bitmap, nw, nh, true);
+                // Only recycle the intermediate bitmap if we created it ourselves
+                // (the BitmapDrawable fast path returns a Drawable-owned bitmap).
+                if (!(d instanceof BitmapDrawable)) {
+                    bitmap.recycle();
+                }
+                bitmap = scaled;
+            }
+
+            // ─── Write bitmap to cache file as JPEG ────────────────────────
+            // Using a cache file + Gdx.files.absolute() follows the exact same
+            // loading path as loadBackgroundTexture so format/filtering match.
+            File cacheFile = new File(context.getCacheDir(), "system_wallpaper.jpg");
+            try (FileOutputStream fos = new FileOutputStream(cacheFile)) {
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
+            } finally {
+                // Only recycle bitmaps we created (not the BitmapDrawable-owned one).
+                if (!(d instanceof BitmapDrawable)) {
+                    if (!bitmap.isRecycled()) bitmap.recycle();
+                }
+            }
+
+            // ─── Load as libGDX Texture ─────────────────────────────────────
+            Texture t = new Texture(Gdx.files.absolute(cacheFile.getAbsolutePath()));
+            t.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            return t;
+
+        } catch (SecurityException se) {
+            Log.i(TAG, "loadSystemWallpaperTexture: SecurityException — permission not granted");
+            return null;
+        } catch (Exception e) {
+            Log.e(TAG, "loadSystemWallpaperTexture: failed", e);
             return null;
         }
     }

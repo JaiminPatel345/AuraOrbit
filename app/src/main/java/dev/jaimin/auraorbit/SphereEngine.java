@@ -66,9 +66,11 @@ import java.util.TreeSet;
  * ─── Rendering Pipeline ────────────────────────────────────────────────────
  *
  * 1. **Background Layer** (SpriteBatch, 2D)
- *    Always rendered. Draws the user-selected background photo (via
- *    BackgroundStore/AppFetcher.loadBackgroundTexture) when one is set;
- *    falls back to a procedural vertical gradient texture otherwise.
+ *    Always rendered. Priority chain: custom photo (BackgroundStore /
+ *    AppFetcher.loadBackgroundTexture) when one is set; else the current
+ *    system (static) wallpaper mirrored via WallpaperManager.getDrawable()
+ *    so the live wallpaper appears transparent; else a procedural vertical
+ *    gradient texture as a final fallback.
  *
  * 2. **Group Backdrop Layer** (ModelBatch, 3D)
  *    Renders translucent colored convex-hull polygon patches behind each app
@@ -496,7 +498,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         sb.append(prefs.getInt("pref_sphere_radius", 50)).append('|');
         sb.append(prefs.getInt("pref_icon_size", 50)).append('|');
         sb.append(prefs.getInt("pref_rotation_speed", 100)).append('|');
-        sb.append(prefs.getInt("pref_active_page", 1)); // raw 1-based value (UI default)
+        sb.append(prefs.getInt("pref_active_page", 1)).append('|'); // raw 1-based value (UI default)
+
+        // System-wallpaper mirror: changing the system wallpaper or granting
+        // MANAGE_EXTERNAL_STORAGE must both trigger a background rebuild on next
+        // resume(). getWallpaperId() needs no permission and is stable per-wallpaper.
+        sb.append(AppFetcher.systemWallpaperId(context)).append('|');
+        sb.append(AppFetcher.canReadSystemWallpaper(context));
 
         return sb.toString();
     }
@@ -579,9 +587,27 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         createDecals();
         buildGroupBackdrops();
 
-        // ─── Reload background photo if enabled ──────────────────────────
+        // ─── Reload background: custom photo > system wallpaper mirror > gradient ──
+        //
+        // Priority chain:
+        //   1. Custom photo (BackgroundStore.exists → loadBackgroundTexture)
+        //   2. System wallpaper mirror (loadSystemWallpaperTexture) — requires
+        //      MANAGE_EXTERNAL_STORAGE on API 30+; no-ops silently if absent.
+        //   3. Procedural gradient (gradientTexture) — always available.
+        //
+        // showBackground pref controls whether ANY background photo is drawn.
+        // When false, backgroundTexture stays null and only the gradient is used.
         if (showBackground) {
-            backgroundTexture = AppFetcher.loadBackgroundTexture(context);
+            if (BackgroundStore.exists(context)) {
+                // User has uploaded a custom photo — use it exclusively.
+                backgroundTexture = AppFetcher.loadBackgroundTexture(context);
+            } else {
+                // No custom photo — mirror the current system (static) wallpaper
+                // so the live wallpaper appears transparent to the user.
+                backgroundTexture = AppFetcher.loadSystemWallpaperTexture(context);
+                // backgroundTexture may be null here (e.g. permission not granted);
+                // renderBackground() falls through to the gradient automatically.
+            }
         }
 
         // Snapshot recorded AFTER successful rebuild so a failed rebuild can
@@ -1716,8 +1742,15 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
     /**
      * Renders the background as a full-screen 2D sprite. Always draws
-     * something — the user photo if one has been loaded, otherwise the
-     * procedural gradient texture.
+     * something — applying the priority chain:
+     *   1. Custom photo (BackgroundStore) if one has been uploaded.
+     *   2. System wallpaper mirror (WallpaperManager) to approximate transparency
+     *      when no custom photo is set.
+     *   3. Procedural gradient (gradientTexture) as the final fallback.
+     *
+     * backgroundTexture holds whichever of (1) or (2) was loaded by applyConfig();
+     * when null, the gradient is used. showBackground=false keeps backgroundTexture
+     * null so only the gradient is drawn.
      *
      * Uses SpriteBatch which internally sets up an orthographic projection,
      * unaffected by our 3D PerspectiveCamera. The depth buffer is temporarily
@@ -1725,7 +1758,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      *
      * The gradient texture (1×256) is always stretched full-screen — that is
      * correct since it is a uniform gradient with no meaningful aspect ratio.
-     * The user photo (backgroundTexture) is center-cropped (aspect-fill) so
+     * The backgroundTexture (custom photo or system wallpaper) is center-cropped
+     * (aspect-fill) so
      * it fills the screen without distortion regardless of photo dimensions.
      */
     private void renderBackground() {

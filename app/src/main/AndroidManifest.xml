@@ -16,7 +16,22 @@
          the Android Photo Picker (ACTION_PICK_IMAGES), which grants one-time URI
          access without needing broad storage permissions.
      ═══════════════════════════════════════════════════════════════════════════ -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ─── Storage Permissions ──────────────────────────────────────────── -->
+    <!--
+         MANAGE_EXTERNAL_STORAGE ("All files access") is required on API 30+
+         to read the current system wallpaper via WallpaperManager.getDrawable()
+         when OUR live wallpaper is the active wallpaper. On Android 13+,
+         WallpaperManager.getDrawable() throws SecurityException without this
+         permission even though the drawable is read-only. This is intentional
+         for this personal/sideload app. tools:ignore suppresses Play Store
+         linting (not applicable here).
+    -->
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
 
     <!-- ─── Feature Declarations ─────────────────────────────────────────── -->
     <!--
