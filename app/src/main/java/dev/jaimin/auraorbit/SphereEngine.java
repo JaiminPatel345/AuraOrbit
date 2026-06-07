@@ -371,17 +371,36 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private float pageVisibility = 1f;     // 0.0 (hidden) → 1.0 (full render)
 
     /**
-     * Whether this session has ever received a valid xOffsetStep > 0 from the
-     * launcher.  Set to {@code true} in {@link #onOffsetsChanged} the first time
-     * a non-zero step arrives.  Used by {@link #updatePageVisibility} to
-     * distinguish "launcher never reports offsets" (false) from "offsets briefly
-     * zero during a transition" (true but step == 0 right now).
+     * Whether the launcher has ever reported a valid xOffsetStep > 0 at any
+     * point in this session.  Once true it stays true.
      *
-     * Written on the main thread (onOffsetsChanged callback); read on the GL
-     * thread (updatePageVisibility, called from render).  Declared
-     * {@code volatile} for cross-thread visibility.
+     * Used together with {@link #lastOffsetTimeNanos} to determine whether
+     * offsets are currently "live" (see {@link #updatePageVisibility}).
+     *
+     * Written on the main/GL thread (offset callbacks); read on the GL thread.
+     * Declared {@code volatile} for cross-thread visibility.
      */
-    private volatile boolean offsetsSeen = false;
+    private volatile boolean offsetEverSeen = false;
+
+    /**
+     * Nanosecond timestamp (from {@link System#nanoTime()}) of the most recent
+     * offset event that arrived with xOffsetStep &gt; 0.
+     *
+     * Initialized to {@code Long.MIN_VALUE / 2} so the initial age calculation
+     * (System.nanoTime() − lastOffsetTimeNanos) yields a very large positive
+     * number, safely exceeding the 10-second liveness window.  Using half of
+     * {@code Long.MIN_VALUE} avoids overflow when the difference is computed.
+     *
+     * On real offset-reporting launchers (Pixel Launcher, etc.) this timestamp
+     * is refreshed continuously while the user swipes, so offsets stay live
+     * indefinitely.  An isolated spurious event from an OEM transition expires
+     * after 10 seconds, causing {@link #updatePageVisibility} to fall back to
+     * dead-reckoning.
+     *
+     * Written on the main/GL thread (offset callbacks); read on the GL thread.
+     * Declared {@code volatile} for cross-thread visibility.
+     */
+    private volatile long lastOffsetTimeNanos = Long.MIN_VALUE / 2;
 
     /**
      * Dead-reckoning page estimate for offset-silent launchers (e.g. Samsung
@@ -395,13 +414,14 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * it, swiping back shows it.
      *
      * Incremented/decremented in {@link #commitPageSwipe} after each committed
-     * horizontal page swipe when {@link #offsetsSeen} is false.  Clamped to
-     * [0, 8] so boundary pages always re-sync after enough swipes.
+     * horizontal page swipe when offsets are not live (see {@link #offsetEverSeen}
+     * / {@link #lastOffsetTimeNanos}).  Clamped to [0, 8] so boundary pages always
+     * re-sync after enough swipes.
      *
      * Written and read exclusively on the GL thread (libGDX input callbacks run
      * on the GL thread) — plain int, no volatile needed.
      *
-     * Drift caveat: partial swipes below the 35% threshold are ignored, so the
+     * Drift caveat: partial swipes below the 30% threshold are ignored, so the
      * dead-reckoning can drift if the user frequently cancels swipes.  Clamping
      * at the extremes re-syncs when the user reaches the first or last page.
      */
@@ -884,12 +904,12 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // here: N pages left of the start page hides the sphere, N pages right
         // hides it too — the configured page is always the current page at start.
         //
-        // On offset-reporting launchers (Pixel Launcher, etc.) offsetsSeen will
+        // On offset-reporting launchers (Pixel Launcher, etc.) offsetEverSeen will
         // become true quickly and the inferred counter is unused; this assignment
         // is harmless in that case (it just initialises an idle variable).
         inferredPage = activePage;
         Log.d(TAG, "applyConfig: anchored inferredPage=" + inferredPage
-                + " (activePage=" + activePage + ", offsetsSeen=" + offsetsSeen + ")");
+                + " (activePage=" + activePage + ", offsetEverSeen=" + offsetEverSeen + ")");
 
         // ─── Update camera position for new radius ───────────────────────
         // Camera uses sphereRadius (the slider) as its reference so that the
@@ -1743,9 +1763,12 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 userInteracting = false;
 
                 // Page inference: try to commit a page swipe on gesture end.
+                // Pass velocityX/Y so commitPageSwipe() can use the fling-velocity
+                // path (path B) to match One UI's fling-commit semantics for fast
+                // short swipes that travel less than 30 % of the screen width.
                 // gestureCounted guard prevents double-counting if panStop also fired.
                 if (!gestureCounted) {
-                    commitPageSwipe();
+                    commitPageSwipe(velocityX, velocityY);
                     gestureCounted = true;
                 }
                 // Reset gesture tracking for next gesture.
@@ -1772,9 +1795,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             public boolean panStop(float x, float y, int pointer, int button) {
                 userInteracting = false;
                 // Page inference: try to commit a page swipe on gesture end.
+                // No fling velocity available here (slow-drag stop), so pass 0,0.
                 // gestureCounted guard prevents double-counting if fling follows.
                 if (!gestureCounted) {
-                    commitPageSwipe();
+                    commitPageSwipe(0f, 0f);
                     gestureCounted = true;
                 }
                 // Reset gesture tracking for next gesture.
@@ -1932,7 +1956,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * NOT already been counted ({@link #gestureCounted} guard prevents
      * double-counting when both callbacks fire for the same gesture).
      *
-     * <p>Conditions required to count a page change (all must be true):
+     * <p>Conditions required to count a page change (all must be true for ALL paths):
      * <ol>
      *   <li>Not in preview mode — inference never runs in preview; the sphere
      *       is always fully visible there and previewStateChange forces
@@ -1942,55 +1966,87 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      *   <li>Wallpaper not zoomed ({@code wallpaperZoom < 0.2f}) — One UI zooms
      *       the wallpaper during drawer/recents/edit mode; swipes in those
      *       contexts should not advance the page counter.</li>
-     *   <li>Total horizontal drag exceeds 35 % of viewport width — filters out
-     *       short taps and sphere-rotation micro-drags that did not cross a
-     *       page boundary.</li>
-     *   <li>Horizontal dominates vertical (|dx| > 1.5 × |dy|) — rejects
-     *       near-vertical swipes such as notification-shade pulls.</li>
+     *   <li>Offsets are not live (see {@link #offsetEverSeen} /
+     *       {@link #lastOffsetTimeNanos}) — the offset path handles visibility
+     *       when the launcher continuously reports page positions.</li>
      * </ol>
      *
-     * <p>Direction: swipe left (totalDx &lt; 0) → next page (inferredPage++);
-     * swipe right (totalDx &gt; 0) → previous page (inferredPage--).
+     * <p>A page change is counted when EITHER of these conditions is satisfied:
+     * <ul>
+     *   <li><b>Slow committed drag (path A)</b>: |totalDx| &gt; 0.30 × viewportW
+     *       AND |totalDx| &gt; 1.5 × |totalDy|.  The 30 % threshold (lowered from
+     *       35 %) better matches launchers that commit pages at a smaller travel.</li>
+     *   <li><b>Velocity flick (path B)</b>: gesture ended in {@code fling()} with
+     *       |velocityX| &gt; 1 200 px/s AND |velocityX| &gt; 1.5 × |velocityY| AND
+     *       |totalDx| &gt; 0.04 × viewportW.  The tiny travel floor (4 %) rejects
+     *       micro-jitter events that are not real lateral swipes.  This path
+     *       matches Samsung One UI's fling-commit semantics where a short fast
+     *       flick changes pages even when the finger traveled less than 30 % of
+     *       screen width.</li>
+     * </ul>
+     *
+     * <p>Note on rotation drags: a horizontal rotation drag on the sphere is the
+     * same physical gesture as a page swipe on One UI — the launcher scrolls its
+     * pages regardless of whether the wallpaper consumed the touch.  Counting such
+     * drags here is therefore correct: if the launcher committed a page change,
+     * our dead-reckoning counter should too.
+     *
+     * <p>Direction: totalDx (or velocityX for path B) &lt; 0 → next page
+     * (inferredPage++); &gt; 0 → previous page (inferredPage--).
      * Clamped to [0, 8]; reaching 0 or 8 re-syncs the counter at the
      * launcher's boundary even if prior drift accumulated.
      *
-     * <p>This is dead-reckoning: partial swipes or multi-page flings may cause
-     * drift.  The clamp at the boundaries provides the only re-sync point.
-     * The zoom filter removes most spurious drawer/recents swipes.
-     * This makes the "Sphere page" preference functional on One UI devices
-     * that report no offsets whatsoever.
-     *
      * <p>Called on the GL thread (GestureDetector callbacks run on GL thread).
      * All fields accessed here are GL-thread-owned — no synchronization needed.
+     *
+     * @param velocityX  Fling velocity in px/s along X (positive = right); 0 when called
+     *                   from panStop (no fling velocity available).
+     * @param velocityY  Fling velocity in px/s along Y; 0 when called from panStop.
      */
-    private void commitPageSwipe() {
+    private void commitPageSwipe(float velocityX, float velocityY) {
         // Skip inference in preview: sphere always fully visible there.
         if (isPreviewMode) return;
 
         // Skip if two-finger pinch is active (pinch swipes are not page changes).
         if (pinchActive) return;
 
-        // Skip if launcher reports real offsets — the offset path handles visibility.
-        // offsetsSeen true but step currently 0 = transient; still use inference for
-        // the current frame but do not record new page changes (will auto-recover).
-        if (offsetsSeen) return;
+        // Skip if launcher offsets are live — the offset path handles visibility.
+        // "Live" means the launcher has ever reported a valid step AND a step > 0
+        // arrived within the last 10 seconds (recency guard, see offsetEverSeen /
+        // lastOffsetTimeNanos).  An isolated spurious OEM event expires after 10 s
+        // so dead-reckoning resumes automatically on offset-silent launchers.
+        boolean offsetsLive = offsetEverSeen
+                && (System.nanoTime() - lastOffsetTimeNanos) < 10_000_000_000L;
+        if (offsetsLive) return;
 
         // Zoom filter: drawer/recents/edit-mode swipes should not change page.
         if (wallpaperZoom >= 0.2f) return;
 
         float viewportWidth = Gdx.graphics.getWidth();
 
-        // Threshold: 35 % of viewport width for a committed page swipe.
-        if (Math.abs(totalDx) <= viewportWidth * 0.35f) return;
+        // ─── Path A: slow committed drag ───────────────────────────────────
+        // |totalDx| > 30 % viewport AND horizontal dominates vertical.
+        boolean slowDrag = Math.abs(totalDx) > viewportWidth * 0.30f
+                && Math.abs(totalDx) > 1.5f * Math.abs(totalDy);
 
-        // Direction dominance: horizontal must exceed 1.5× vertical to be a page swipe.
-        if (Math.abs(totalDx) <= 1.5f * Math.abs(totalDy)) return;
+        // ─── Path B: velocity flick (matches One UI fling-commit semantics) ──
+        // |velocityX| > 1200 px/s AND horizontal dominates vertical AND a tiny
+        // travel floor (4 % viewport) rejects micro-jitter events.
+        boolean velocityFlick = Math.abs(velocityX) > 1200f
+                && Math.abs(velocityX) > 1.5f * Math.abs(velocityY)
+                && Math.abs(totalDx) > viewportWidth * 0.04f;
 
-        // Commit: left swipe → next page, right swipe → previous page.
-        int delta = totalDx < 0 ? 1 : -1;
+        if (!slowDrag && !velocityFlick) return;
+
+        // Direction: use velocityX for path B (more accurate for fast flicks),
+        // totalDx for path A.  Both are negative for left-swipe (→ next page).
+        float directionSignal = velocityFlick ? velocityX : totalDx;
+        int delta = directionSignal < 0 ? 1 : -1;
         inferredPage = MathUtils.clamp(inferredPage + delta, 0, 8);
 
-        Log.d(TAG, "commitPageSwipe: totalDx=" + totalDx + " → inferredPage=" + inferredPage);
+        Log.d(TAG, "commitPageSwipe: totalDx=" + totalDx + " velocityX=" + velocityX
+                + " path=" + (velocityFlick ? "FLING" : "DRAG")
+                + " → inferredPage=" + inferredPage);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -2189,24 +2245,24 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      *
      * ─── Offset-silent launcher path (Samsung One UI) ─────────────────────
      *
-     * When {@link #offsetsSeen} is false (the launcher has never reported a
-     * valid xOffsetStep), this method uses the dead-reckoning {@link #inferredPage}
-     * counter maintained by {@link #commitPageSwipe()}.  The same falloff formula
-     * is applied so behaviour is identical to the offset path at the page level.
+     * When offsets are not live (see {@link #offsetEverSeen} /
+     * {@link #lastOffsetTimeNanos}), this method uses the dead-reckoning
+     * {@link #inferredPage} counter maintained by {@link #commitPageSwipe()}.
+     * The same falloff formula is applied so behaviour is identical to the
+     * offset path at the page level.
      *
-     * RELATIVE anchor: {@link #inferredPage} is initialised to {@link #activePage}
-     * in every {@link #applyConfig} call (fresh start, rebuild after settings change,
-     * or change of the Sphere page preference).  This means the "Sphere page" on One
-     * UI is the page where the wallpaper was applied / restarted — the sphere is
-     * always visible exactly where the user currently is.  Swiping N pages away then
-     * hides the sphere; swiping back shows it.  On offset-reporting launchers (Pixel
-     * Launcher etc.) {@link #offsetsSeen} becomes true quickly and the inferred
-     * counter is not used.
+     * RELATIVE anchor: {@link #inferredPage} is re-anchored to {@link #activePage}
+     * in every {@link #applyConfig} call (fresh start / settings change) AND in
+     * every {@link #setVisible(boolean) setVisible(true)} call (home-screen return).
+     * This means any drift accumulated within a single home-screen session is cleared
+     * the moment the user leaves and comes back.  Swiping N pages away then hides the
+     * sphere; swiping back shows it.  On offset-reporting launchers (Pixel Launcher
+     * etc.) offsets are live and the inferred counter is not used.
      *
-     * When {@link #offsetsSeen} is true but the current step happens to be zero
-     * (transient state during launcher animations), we stay fully visible rather
-     * than snapping to an inferred page — this is the least disruptive behaviour
-     * for the brief moment the step is absent.
+     * When offsets are live but the current step happens to be zero (transient state
+     * during launcher animations), we stay fully visible rather than snapping to an
+     * inferred page — this is the least disruptive behaviour for the brief moment the
+     * step is absent.
      *
      * Preview mode: A hard guard at the top of this method returns early with
      * {@code targetVisibility = 1f}, bypassing all page math.  This prevents the
@@ -2229,7 +2285,29 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             return;
         }
 
-        if (xOffsetStep > 0f) {
+        // ─── Determine whether launcher offsets are currently live ────────────
+        // Offsets are "live" when the launcher has ever reported a valid step AND
+        // a step > 0 arrived within the last 10 seconds.
+        //
+        // Rationale for the recency window: on real offset-reporting launchers
+        // (Pixel Launcher, etc.) xOffsetStep events arrive continuously while the
+        // user swipes, so lastOffsetTimeNanos is always fresh and offsets stay live
+        // indefinitely.  On offset-silent launchers (e.g. Samsung One UI) no events
+        // ever arrive and offsetEverSeen stays false — dead-reckoning is used from
+        // the start.  A problematic third case is OEM transitions that emit a single
+        // spurious offset event with step > 0: without the recency window that one
+        // event would permanently latch the engine onto the offset path with stale
+        // values (symptom: sphere frozen visible-everywhere or hidden-everywhere).
+        // With a 10-second window the spurious event expires and dead-reckoning
+        // resumes automatically.
+        //
+        // nanoTime arithmetic: both values are from System.nanoTime() so the
+        // subtraction is monotonic and safe from clock-skew.  lastOffsetTimeNanos
+        // is initialised to Long.MIN_VALUE/2 so the initial age is safely huge.
+        boolean offsetsLive = offsetEverSeen
+                && (System.nanoTime() - lastOffsetTimeNanos) < 10_000_000_000L;
+
+        if (xOffsetStep > 0f && offsetsLive) {
             // ─── Real offset path: launcher reports page positions ──────────
             // Calculate current page number from continuous offset.
             float currentPage = currentXOffset / xOffsetStep;
@@ -2242,9 +2320,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // target must reach 0 — with 1.4 it left a 2% ghost (1−0.7×1.4=0.02)
             // visible on the adjacent page.
             targetVisibility = MathUtils.clamp(1f - (pageDistance - 0.3f) * 1.5f, 0f, 1f);
-        } else if (!offsetsSeen) {
+        } else if (!offsetsLive) {
             // ─── Dead-reckoning path: offset-silent launcher (e.g. Samsung One UI) ─
-            // The launcher has NEVER reported a valid step, so we use the inferred
+            // The launcher has never reported a valid step, OR the last valid step
+            // was more than 10 seconds ago (spurious-event guard).  Use the inferred
             // page count maintained by commitPageSwipe().  Apply the same falloff
             // formula so the "Sphere page" preference is functional on One UI.
             // Dead-reckoning caveat: partial swipes / multi-page flings may drift;
@@ -2252,8 +2331,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             float pageDistance = Math.abs(inferredPage - activePage);
             targetVisibility = MathUtils.clamp(1f - (pageDistance - 0.3f) * 1.5f, 0f, 1f);
         } else {
-            // ─── Transient zero-step: offsetsSeen=true but step currently 0 ──
-            // Launcher normally reports offsets but the step is momentarily zero
+            // ─── Transient zero-step: offsets are live but step momentarily 0 ──
+            // Launcher normally reports offsets but the step is transiently zero
             // (e.g. during a launcher animation or home-screen reset).  Keep the
             // sphere visible to avoid a brief invisible flash.
             targetVisibility = 1f;
@@ -2647,9 +2726,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                              int xPixelOffset, int yPixelOffset) {
         this.currentXOffset = xOffset;
         this.xOffsetStep = xOffsetStep;
-        // Latch offsetsSeen if the launcher reports a real step (same as onOffsetsChanged).
-        if (xOffsetStep > 0f && !offsetsSeen) {
-            offsetsSeen = true;
+        // Update liveness timestamp whenever a real step arrives.
+        // On real offset-reporting launchers this fires continuously while swiping,
+        // keeping offsets live indefinitely.  A single spurious OEM transition event
+        // expires after 10 s so dead-reckoning resumes on offset-silent launchers.
+        if (xOffsetStep > 0f) {
+            offsetEverSeen = true;
+            lastOffsetTimeNanos = System.nanoTime();
         }
     }
 
@@ -2685,20 +2768,24 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * This provides the raw WallpaperService.Engine offset values before
      * libGDX's AndroidWallpaperListener processes them.
      *
-     * Sets {@link #offsetsSeen} to {@code true} the first time a positive
-     * xOffsetStep is received, marking that this launcher reports real page offsets.
-     * Once set, updatePageVisibility() will use the launcher-reported offset path
-     * rather than dead-reckoning from swipe counts.
+     * Updates {@link #offsetEverSeen} and {@link #lastOffsetTimeNanos} whenever a
+     * positive xOffsetStep is received.  {@link #updatePageVisibility} considers
+     * offsets "live" only if an offset with step &gt; 0 arrived within the last
+     * 10 seconds, preventing a single spurious OEM transition event from permanently
+     * switching the engine to the offset path with stale values.
      */
     public void onOffsetsChanged(float xOffset, float yOffset,
                                  float xOffsetStep, float yOffsetStep) {
         this.currentXOffset = xOffset;
         this.xOffsetStep = xOffsetStep;
-        // Latch offsetsSeen the first time the launcher reports a real step.
-        // volatile write — cross-thread: written on main thread, read on GL thread.
-        if (xOffsetStep > 0f && !offsetsSeen) {
-            offsetsSeen = true;
-            Log.d(TAG, "onOffsetsChanged: launcher reports real offsets (step=" + xOffsetStep + ")");
+        // Update liveness timestamp whenever a real step arrives.
+        // volatile writes — cross-thread: written on main thread, read on GL thread.
+        if (xOffsetStep > 0f) {
+            if (!offsetEverSeen) {
+                Log.d(TAG, "onOffsetsChanged: launcher reports real offsets (step=" + xOffsetStep + ")");
+            }
+            offsetEverSeen = true;
+            lastOffsetTimeNanos = System.nanoTime();
         }
     }
 
@@ -2899,6 +2986,20 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // The launcher will re-send the correct value if still zoomed; until then
             // assume home-screen view (zoom = 0) so direct-tap works immediately.
             wallpaperZoom = 0f;
+
+            // ─── Re-anchor dead-reckoning page counter on every visibility regain ──
+            // Every return to the home screen (from lock, recents, or any app) is a
+            // natural synchronisation point.  By resetting inferredPage to activePage
+            // here we bound drift to at most one home-screen session: any missed or
+            // extra page count can only misbehave until the user opens any app or
+            // locks the phone — after that the counter resets.  On offset-silent
+            // launchers this means the sphere always greets you on whatever page you
+            // return to, and hides when you swipe ≥1 page away within that session.
+            // On offset-reporting launchers (Pixel Launcher, etc.) this field is
+            // unused — the assignment is harmless.
+            inferredPage = activePage;
+            Log.d(TAG, "setVisible: re-anchored inferredPage=" + inferredPage
+                    + " (activePage=" + activePage + ")");
 
             // ─── Return animation: sphere fades/scales back in after a launch ──
             // If a launch was the reason the wallpaper became invisible, arm the
