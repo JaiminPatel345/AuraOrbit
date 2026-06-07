@@ -242,6 +242,13 @@ public class LiveWallpaperSettings extends AppCompatActivity {
         // are serialised and never race each other on disk.
         private ExecutorService executor;
 
+        // ─── Onboarding guard ─────────────────────────────────────────────
+        // True once the permission-onboarding dialog has been shown (or skipped)
+        // during this particular instance of the fragment. Resets on every new
+        // app open (new instance), so users who haven't granted both permissions
+        // are reminded each time they return to the settings screen.
+        private boolean onboardingShownThisInstance = false;
+
         // ─── Photo picker launcher ────────────────────────────────────────
         // MUST be registered as a field initialiser (i.e. before STARTED state)
         // because ActivityResultContracts requires registration before the
@@ -342,6 +349,8 @@ public class LiveWallpaperSettings extends AppCompatActivity {
             requireActivity().setTitle(R.string.settings_title);
             // Refresh all dynamic summaries.
             updateSummaries();
+            // Show the permission onboarding dialog at most once per instance.
+            maybeShowPermissionOnboarding();
         }
 
         @Override
@@ -599,6 +608,78 @@ public class LiveWallpaperSettings extends AppCompatActivity {
                     updateSummaries();
                 });
             });
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        //  Permission onboarding dialog
+        // ─────────────────────────────────────────────────────────────────
+
+        /**
+         * Shows a guided onboarding dialog the first time (per fragment instance)
+         * that one or both special-access grants are missing.
+         *
+         * <p>Android does not allow programmatic granting of Accessibility service
+         * or All-files-access; both require the user to navigate to a system
+         * Settings screen. This dialog deep-links to those screens so the user
+         * doesn't have to hunt for them.</p>
+         *
+         * <p>The dialog is shown AT MOST ONCE per activity instance. Because we do
+         * NOT persist a "never show again" flag, the dialog will re-appear the next
+         * time the user opens the settings activity if a grant is still missing.</p>
+         */
+        private void maybeShowPermissionOnboarding() {
+            // Guard: show at most once per fragment instance.
+            if (onboardingShownThisInstance) return;
+
+            boolean needA11y    = !isA11yServiceEnabled();
+            boolean needStorage = !isExternalStorageManager();
+
+            // Nothing missing — no dialog needed.
+            if (!needA11y && !needStorage) return;
+
+            // Mark as shown for this instance before we build the dialog so that
+            // the flag is set even if the user rotates mid-dialog.
+            onboardingShownThisInstance = true;
+
+            // Build the message body from the missing items.
+            StringBuilder message = new StringBuilder();
+            if (needA11y) {
+                message.append(getString(R.string.onboarding_item_a11y));
+            }
+            if (needA11y && needStorage) {
+                message.append("\n\n");
+            }
+            if (needStorage) {
+                message.append(getString(R.string.onboarding_item_storage));
+            }
+
+            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.onboarding_title)
+                    .setMessage(message.toString());
+
+            if (needA11y && needStorage) {
+                // Both missing: three buttons — a11y (positive), storage (neutral), Later (negative).
+                builder
+                        .setPositiveButton(R.string.onboarding_btn_enable_page_detection,
+                                (d, w) -> handleExactPageDetectionClick())
+                        .setNeutralButton(R.string.onboarding_btn_wallpaper_access,
+                                (d, w) -> handleSystemWallpaperClick())
+                        .setNegativeButton(R.string.onboarding_btn_later, null);
+            } else if (needA11y) {
+                // Only a11y missing.
+                builder
+                        .setPositiveButton(R.string.onboarding_btn_enable_page_detection,
+                                (d, w) -> handleExactPageDetectionClick())
+                        .setNegativeButton(R.string.onboarding_btn_later, null);
+            } else {
+                // Only storage missing.
+                builder
+                        .setPositiveButton(R.string.onboarding_btn_grant_access,
+                                (d, w) -> handleSystemWallpaperClick())
+                        .setNegativeButton(R.string.onboarding_btn_later, null);
+            }
+
+            builder.show();
         }
 
         // ─────────────────────────────────────────────────────────────────
