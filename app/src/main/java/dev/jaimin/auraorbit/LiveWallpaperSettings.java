@@ -302,6 +302,15 @@ public class LiveWallpaperSettings extends AppCompatActivity {
                 });
             }
 
+            // ─── pref_gesture_tips → informational dialog ─────────────────
+            Preference gestureTips = findPreference("pref_gesture_tips");
+            if (gestureTips != null) {
+                gestureTips.setOnPreferenceClickListener(pref -> {
+                    showGestureTipsDialog();
+                    return true;
+                });
+            }
+
         }
 
         @Override
@@ -449,6 +458,33 @@ public class LiveWallpaperSettings extends AppCompatActivity {
                         Toast.LENGTH_LONG
                 ).show();
             }
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        //  Gesture tips dialog
+        // ─────────────────────────────────────────────────────────────────
+
+        /**
+         * Shows a read-only informational dialog explaining how to spin the
+         * sphere without triggering launcher gestures.
+         *
+         * <p>Key points covered:
+         * <ul>
+         *   <li>Two-finger drag is the conflict-free rotation gesture.</li>
+         *   <li>One-finger drag is shared with the launcher by Android design —
+         *       no app can change that.</li>
+         *   <li>Last-home-page trick to reduce page-switch conflicts.</li>
+         *   <li>One UI setting and Good Lock tip to suppress the notification
+         *       panel pull-down.</li>
+         * </ul>
+         * </p>
+         */
+        private void showGestureTipsDialog() {
+            new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.dialog_gesture_tips_title)
+                    .setMessage(R.string.dialog_gesture_tips_message)
+                    .setPositiveButton(R.string.dialog_gesture_tips_ok, null)
+                    .show();
         }
 
         /**
