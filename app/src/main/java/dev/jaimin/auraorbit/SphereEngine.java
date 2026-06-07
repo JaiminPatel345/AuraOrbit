@@ -446,8 +446,11 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // Background visibility (replaces old pref_keep_wallpaper)
         showBackground = prefs.getBoolean("pref_show_background", true);
 
-        // Active home-screen page for visibility fade
-        activePage = prefs.getInt("pref_active_page", 0);
+        // Active home-screen page for visibility fade.
+        // User-facing value is 1-based (UI: 1 = first page, SeekBar range 1..9).
+        // Internally we use 0-based index for all page-visibility math.
+        // Default raw value 1 → internal 0 (first page).
+        activePage = Math.max(0, prefs.getInt("pref_active_page", 1) - 1);
 
         // Sphere radius: pref value 20–100 mapped to world units 3.0–8.0
         int radiusPref = prefs.getInt("pref_sphere_radius", 50);
@@ -493,7 +496,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         sb.append(prefs.getInt("pref_sphere_radius", 50)).append('|');
         sb.append(prefs.getInt("pref_icon_size", 50)).append('|');
         sb.append(prefs.getInt("pref_rotation_speed", 100)).append('|');
-        sb.append(prefs.getInt("pref_active_page", 0));
+        sb.append(prefs.getInt("pref_active_page", 1)); // raw 1-based value (UI default)
 
         return sb.toString();
     }
@@ -1205,7 +1208,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
-     * Configures input handling with a GestureDetector for:
+     * Configures input handling with a subclassed GestureDetector for:
      * - **Pan** (one-finger): Converts 2D screen drag into 3D sphere rotation
      * - **Fling**: Applies angular momentum for inertial spinning
      * - **Tap**: Raycasts to detect which app was tapped and launches it
@@ -1214,8 +1217,27 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      *   ignores two-finger drags on the wallpaper, so this gesture is never
      *   contested.  One-finger pan() is suppressed while pinchActive is true
      *   to prevent double-application.
+     *
+     * ─── Why subclass GestureDetector? ──────────────────────────────────────
+     *
+     * GestureDetector.touchCancelled() (verified in libGDX 1.13.0 bytecode)
+     * calls only cancel() internally, which clears longPressFired but does NOT
+     * clear the internal `pinching` flag.  Separately, reset() clears panning
+     * and inTapRectangle but also does NOT clear `pinching`.  Two paths that
+     * bypass pinchStop() are therefore:
+     *   • touchCancelled (fires on notification-shade pull, system gesture, etc.)
+     *   • reset()
+     * Without interception our pinchActive would stay true forever after any
+     * of these paths, permanently killing one-finger pan.  The subclass below
+     * intercepts both touchCancelled and touchDown so the outer pinchActive
+     * flag is always consistent with the actual touch state.
      */
     private void setupInput() {
+        // Subclass GestureDetector to intercept touchCancelled and touchDown
+        // before the gesture listener sees them.  Signature verified against
+        // libGDX 1.13.0 decompiled bytecode:
+        //   touchCancelled(int screenX, int screenY, int pointer, int button)
+        //   touchDown(int screenX, int screenY, int pointer, int button)
         GestureDetector gestureDetector = new GestureDetector(new GestureDetector.GestureAdapter() {
 
             /**
@@ -1454,7 +1476,49 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 pinchActive = false;
                 userInteracting = false;
             }
-        });
+        }) {
+            /**
+             * Fix 1a + Fix 2 — override touchDown (pointer 0 = new gesture start).
+             *
+             * When pointer 0 goes down it signals the start of a new gesture
+             * sequence.  Any stale pinchActive from a previous aborted two-finger
+             * drag must be cleared now so the very first pinch() of the NEW gesture
+             * records a fresh midpoint instead of computing a delta against a
+             * potentially stale one hundreds of pixels away (Fix 2 rotation jolt).
+             *
+             * Delegates to super so GestureDetector's own touchDown logic runs.
+             */
+            @Override
+            public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+                if (pointer == 0) {
+                    // New gesture starts: clear any stale pinch state so the next
+                    // pinch() re-arms from the current midpoint (no rotation jolt).
+                    pinchActive = false;
+                }
+                return super.touchDown(screenX, screenY, pointer, button);
+            }
+
+            /**
+             * Fix 1a — override touchCancelled to clear pinchActive.
+             *
+             * libGDX 1.13.0 GestureDetector.touchCancelled() calls only cancel()
+             * (which clears longPressFired only) then delegates to InputAdapter —
+             * it does NOT clear the internal pinching flag.  On real hardware,
+             * touchCancelled fires on: notification-shade pull, system gesture
+             * interception (e.g. back/home swipe), and window switches.  Without
+             * this override, pinchActive would stay true forever after any such
+             * event, making one-finger pan permanently unresponsive.
+             *
+             * Delegates to super so GestureDetector's own cancel path also runs.
+             */
+            @Override
+            public boolean touchCancelled(int screenX, int screenY, int pointer, int button) {
+                // Clear our outer pinch state that super cannot reach.
+                pinchActive = false;
+                userInteracting = false;
+                return super.touchCancelled(screenX, screenY, pointer, button);
+            }
+        };
 
         Gdx.input.setInputProcessor(gestureDetector);
     }
@@ -1470,6 +1534,16 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         if (!isVisible) return;
 
         float delta = Gdx.graphics.getDeltaTime();
+
+        // ─── Fix 1b: Defensive pinch-state self-heal ─────────────────────
+        // If pinchActive is true but the second pointer is no longer down,
+        // a touchCancelled or other event was missed (e.g. reset() path in
+        // GestureDetector that does not clear its pinching flag).  Clear
+        // now so one-finger pan is never permanently blocked.
+        if (pinchActive && !Gdx.input.isTouched(1)) {
+            pinchActive = false;
+            userInteracting = false;
+        }
 
         // ─── Update physics ─────────────────────────────────────────────
         updatePhysics(delta);
@@ -1966,9 +2040,20 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     /**
      * Called from MyWallpaperService when wallpaper visibility changes.
      * When not visible, we skip the render loop entirely.
+     *
+     * Fix 1c: gesture state must not survive visibility edges.  A two-finger
+     * drag that was in progress when the wallpaper became invisible will never
+     * receive a touchCancelled or pinchStop on some devices (the events are
+     * swallowed by the system).  Clearing here prevents pinchActive from
+     * getting stuck true across a visibility change.
      */
     public void setVisible(boolean visible) {
         this.isVisible = visible;
+        if (!visible) {
+            // Gesture state must not survive across visibility edges (Fix 1c).
+            pinchActive = false;
+            userInteracting = false;
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -1997,7 +2082,11 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
     @Override
     public void pause() {
-        // Live wallpaper is going to background — reduce state
+        // Live wallpaper is going to background — reduce state.
+        // Fix 1c: clear gesture state so pinchActive cannot survive a pause/resume
+        // cycle (the paired finger-up events are dropped when the window loses focus).
+        pinchActive = false;
+        userInteracting = false;
         Log.d(TAG, "Paused");
     }
 
