@@ -22,8 +22,8 @@
 
     <!-- Sphere -->
     <string name="pref_category_sphere">Sphere</string>
-    <string name="pref_active_page_title">Active Home Screen Page</string>
-    <string name="pref_active_page_summary">Only render the sphere at full size on this page (saves battery)</string>
+    <string name="pref_active_page_title">Sphere page</string>
+    <string name="pref_active_page_summary">Home screen page that shows the sphere (1 = first page). Android doesn\'t let apps add launcher pages — create extra pages by dragging any app icon to the screen\'s right edge, then pick its number here.</string>
     <string name="pref_sphere_radius_title">Sphere Size</string>
     <string name="pref_sphere_radius_summary">Adjust the radius of the 3D sphere</string>
     <string name="pref_icon_size_title">Icon Size</string>

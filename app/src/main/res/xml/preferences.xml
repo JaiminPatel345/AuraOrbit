@@ -56,7 +56,7 @@
             android:key="pref_active_page"
             android:title="@string/pref_active_page_title"
             android:summary="@string/pref_active_page_summary"
-            android:defaultValue="0" android:max="6"
-            app:min="0" app:showSeekBarValue="true" />
+            android:defaultValue="1" android:max="9"
+            app:min="1" app:showSeekBarValue="true" />
     </PreferenceCategory>
 </PreferenceScreen>
