@@ -724,6 +724,18 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private float lastPinchMidX = 0f;
     private float lastPinchMidY = 0f;
 
+    // ─── Edge exclusion zones (issue #14, round 2) ──────────────────────
+    /**
+     * True while the current one-finger gesture STARTED in the top or bottom
+     * screen-edge zone. Such gestures belong to the system on every launcher
+     * (top = notification shade, bottom = gesture nav / drawer-from-dock) and
+     * emit no wallpaper signal whatsoever — so the sphere must simply never
+     * react to them: no rotation, no fling momentum, no page counting.
+     */
+    private boolean edgeClaimedGesture = false;
+    /** Fraction of screen height treated as system edge at top and bottom. */
+    private static final float EDGE_EXCLUSION_FRACTION = 0.07f;
+
     // ─── Live settings listener ──────────────────────────────────────────
 
     /**
@@ -1808,6 +1820,12 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 // two fingers are down).
                 if (pinchActive) return false;
 
+                // ─── Edge exclusion: system-born gestures never touch the sphere ─
+                // Shade pull (top edge) and gesture-nav/drawer (bottom edge) reach
+                // the wallpaper as ordinary touches with no claim signal. The flag
+                // is set once per gesture in touchDown from the start position.
+                if (edgeClaimedGesture) return false;
+
                 userInteracting = true;
                 // Reset idle spin completely — ramp restarts from zero on next release.
                 idleTimer = 0f;
@@ -1882,6 +1900,14 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             public boolean fling(float velocityX, float velocityY, int button) {
                 userInteracting = false;
 
+                // ─── Edge exclusion: no momentum from system-born gestures ───
+                if (edgeClaimedGesture) {
+                    edgeClaimedGesture = false;
+                    panInProgress = false;
+                    gestureCounted = true; // never page-count a system gesture
+                    return false;
+                }
+
                 // Record gesture-end time for the launcher-claim revert window.
                 // wallpaperZoom can rise tens of ms AFTER the finger lifts, so we
                 // allow the revert to be triggered up to CLAIM_WINDOW_NS after here.
@@ -1926,6 +1952,14 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             @Override
             public boolean panStop(float x, float y, int pointer, int button) {
                 userInteracting = false;
+
+                // ─── Edge exclusion: system-born gesture ends without effects ─
+                if (edgeClaimedGesture) {
+                    edgeClaimedGesture = false;
+                    panInProgress = false;
+                    gestureCounted = true; // never page-count a system gesture
+                    return false;
+                }
 
                 // Record gesture-end time for the launcher-claim revert window.
                 lastGestureEndNanos = System.nanoTime();
@@ -2053,6 +2087,18 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                     totalDx = 0f;
                     totalDy = 0f;
 
+                    // ── Edge exclusion zones (issue #14, round 2) ────────────────
+                    // Gestures STARTING at the screen's top or bottom edge belong to
+                    // the system, on every launcher: top edge = notification shade
+                    // pull, bottom edge = gesture navigation / drawer-from-dock.
+                    // Neither emits any wallpaper signal (no zoom for the shade, and
+                    // One UI emits nothing at all), so the zoom-revert cannot catch
+                    // them. Deterministic fix: a one-finger gesture born in these
+                    // zones never rotates the sphere and never counts page swipes.
+                    float hFrac = (float) screenY / Math.max(1, Gdx.graphics.getHeight());
+                    edgeClaimedGesture = hFrac < EDGE_EXCLUSION_FRACTION
+                            || hFrac > 1f - EDGE_EXCLUSION_FRACTION;
+
                     // ── Gesture rotation snapshot for launcher-claim revert ──────
                     // Capture the sphere's current orientation so we can slerp back
                     // to it if the launcher claims this gesture (wallpaperZoom rises).
@@ -2091,6 +2137,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 // Clear our outer pinch state that super cannot reach.
                 pinchActive = false;
                 userInteracting = false;
+                edgeClaimedGesture = false;
                 // Reset page-inference gesture state on cancellation.
                 panInProgress = false;
                 gestureCounted = false;
