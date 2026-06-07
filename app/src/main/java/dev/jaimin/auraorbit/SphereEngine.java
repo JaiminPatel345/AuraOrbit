@@ -119,11 +119,24 @@ import java.util.TreeSet;
  * ─── Input ──────────────────────────────────────────────────────────────────
  *
  * - GestureDetector handles pan (one-finger rotation), fling (momentum),
- *   tap (launch), and pinch/two-finger-drag (priority rotation channel)
+ *   tap (preview-only launch), and pinch/two-finger-drag (priority rotation channel)
  * - Two-finger drag is the "priority channel": the launcher ignores two-finger
  *   drags on the wallpaper surface, so the sphere rotates without fighting the
  *   launcher's swipe-up / swipe-left one-finger gesture claims.
  * - 3D ray picking via Camera.getPickRay() + Intersector for app selection
+ *
+ * ─── Command-Gated Launching ─────────────────────────────────────────────────
+ *
+ * On the real home screen, apps launch ONLY via {@link #onWallpaperTapCommand},
+ * which is called by {@code AuraOrbitEngine.onCommand} when the launcher sends an
+ * {@code android.wallpaper.tap} command.  Launchers send this command exclusively
+ * for taps on empty workspace — taps consumed by the app drawer, icon grid, widgets,
+ * or search bar never produce a wallpaper tap command.  This prevents the sphere from
+ * launching apps when the user taps on drawer UI layered over the wallpaper.
+ *
+ * In the wallpaper-picker preview there is no launcher, so no commands arrive.
+ * The GestureDetector tap() path is therefore active only in preview mode, allowing
+ * tap-to-launch to be tested without going to the real home screen.
  */
 public class SphereEngine implements ApplicationListener, AndroidWallpaperListener {
 
@@ -279,6 +292,34 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
     // ─── Visibility ─────────────────────────────────────────────────────
     private boolean isVisible = true;
+
+    /**
+     * Whether the wallpaper is currently shown in the wallpaper-picker preview
+     * (as opposed to the live home screen). Set by {@link #previewStateChange}.
+     *
+     * In preview mode, launcher tap commands are never sent (there is no launcher),
+     * so the GestureDetector tap() path is the only way to test app launching.
+     * On the real home screen, the command-gated path {@link #onWallpaperTapCommand}
+     * is used instead and GestureDetector tap() is silenced.
+     *
+     * Default: false (assume home screen until told otherwise).
+     */
+    private boolean isPreviewMode = false;
+
+    /**
+     * Timestamp of the last successful app launch (from {@link System#currentTimeMillis()}).
+     * Used to debounce double-fires: if a launch is requested within
+     * {@link #LAUNCH_DEBOUNCE_MS} of the previous one it is silently ignored.
+     * 0 means no previous launch this session.
+     */
+    private long lastLaunchTime = 0L;
+
+    /**
+     * Minimum milliseconds that must elapse between consecutive app launches.
+     * Guards against the rare case where both the wallpaper tap command and
+     * the GestureDetector tap() fire for the same physical tap (e.g. in preview).
+     */
+    private static final long LAUNCH_DEBOUNCE_MS = 500L;
 
     // ─── Reusable math objects (avoid GC pressure) ──────────────────────
     private final Vector3 tmpVec = new Vector3();
@@ -1267,65 +1308,30 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         GestureDetector gestureDetector = new GestureDetector(new GestureDetector.GestureAdapter() {
 
             /**
-             * ─── TAP → App Launch ────────────────────────────────────────
+             * ─── TAP → App Launch (preview mode only) ───────────────────
              *
-             * On tap, we cast a 3D ray from the camera through the tap
-             * point and check intersection with each app node's bounding
-             * sphere. The closest intersected node's app is launched.
+             * On the real home screen, launching is gated on the
+             * {@code android.wallpaper.tap} command (see
+             * {@link #onWallpaperTapCommand}).  Launchers send that command
+             * only for taps on empty workspace — taps consumed by the app
+             * drawer, icon grid, widgets, or search bar never produce a
+             * wallpaper tap command.  Allowing GestureDetector tap() to
+             * launch on the home screen would let drawer-UI taps
+             * accidentally reach sphere apps underneath.
              *
-             * Taps are ignored when pageVisibility < 0.5 so apps on other
-             * home-screen pages (where the sphere is invisible) cannot be
-             * accidentally launched.
+             * In the wallpaper-picker preview there is no launcher and no
+             * commands arrive, so the GestureDetector path is the only
+             * way to exercise tap-to-launch there.
              */
             @Override
             public boolean tap(float x, float y, int count, int button) {
-                if (appNodes == null || appNodes.isEmpty()) return false;
+                // ─── Home screen: command path only ────────────────────
+                // On the real home screen the launcher sends wallpaper tap
+                // commands; GestureDetector tap() must not launch here.
+                if (!isPreviewMode) return false;
 
-                // ─── Ignore taps when sphere is mostly invisible ────────
-                // The sphere fully fades to 0 on non-active pages; tapping
-                // through it would silently launch apps the user cannot see.
-                if (pageVisibility < 0.5f) return false;
-
-                // ─── Cast a pick ray from camera through screen point ───
-                Ray pickRay = camera.getPickRay(x, y);
-
-                int closestIdx = -1;
-                float closestDist = Float.MAX_VALUE;
-
-                // ─── Test intersection with each app node ───────────────
-                // Each node is treated as a sphere with radius = iconSize/2
-                // positioned at the rotated node position.
-                float hitRadius = iconSize * 0.6f; // Slightly larger than visual for forgiving taps
-
-                for (int i = 0; i < appNodes.size(); i++) {
-                    // Get the current rotated position of this node
-                    Vector3 rotatedPos = getRotatedPosition(i);
-
-                    // Sphere intersection test
-                    if (Intersector.intersectRaySphere(pickRay, rotatedPos, hitRadius, tmpVec)) {
-                        // Use squared distance to avoid sqrt per node
-                        float dist = pickRay.origin.dst2(tmpVec);
-                        if (dist < closestDist) {
-                            closestDist = dist;
-                            closestIdx = i;
-                        }
-                    }
-                }
-
-                // ─── Launch the tapped app ──────────────────────────────
-                if (closestIdx >= 0) {
-                    AppFetcher.AppNode tappedNode = appNodes.get(closestIdx);
-                    Log.i(TAG, "Tapped app: " + tappedNode.appName
-                            + " (" + tappedNode.packageName + ")");
-
-                    // Launch on the main (UI) thread since we're in GL thread
-                    final String pkg = tappedNode.packageName;
-                    Gdx.app.postRunnable(() -> AppFetcher.launchApp(context, pkg));
-
-                    return true;
-                }
-
-                return false;
+                // ─── Preview: run the raycast+launch directly ───────────
+                return raycastAndLaunch(x, y);
             }
 
             /**
@@ -2050,6 +2056,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
     @Override
     public void previewStateChange(boolean isPreview) {
+        // Track preview mode so tap() knows whether to launch (no command path in preview).
+        this.isPreviewMode = isPreview;
         // In preview mode (wallpaper picker), always render at full visibility
         if (isPreview) {
             pageVisibility = 1f;
@@ -2069,6 +2077,112 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                                  float xOffsetStep, float yOffsetStep) {
         this.currentXOffset = xOffset;
         this.xOffsetStep = xOffsetStep;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  Launch Logic — shared by command path and preview tap path
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Raycasts from the camera through screen point (x, y) and launches the
+     * closest intersected app icon, if any.
+     *
+     * <p>Must be called on the GL thread — it reads {@link #camera},
+     * {@link #appNodes}, {@link #nodePositions}, and {@link #sphereRotation}
+     * which are all GL-thread-owned.
+     *
+     * <p>The debounce guard ({@link #LAUNCH_DEBOUNCE_MS}) prevents double-fires
+     * that could theoretically occur if the same tap triggers both this method
+     * (via {@link #onWallpaperTapCommand}) and the preview GestureDetector path.
+     *
+     * @param x  Screen-space X coordinate (pixels, origin top-left)
+     * @param y  Screen-space Y coordinate (pixels, origin top-left)
+     * @return   {@code true} if an app was launched, {@code false} otherwise
+     */
+    private boolean raycastAndLaunch(float x, float y) {
+        if (appNodes == null || appNodes.isEmpty()) return false;
+
+        // ─── Ignore taps when sphere is mostly invisible ──────────────
+        // The sphere fully fades to 0 on non-active pages; tapping through
+        // it would silently launch apps the user cannot see.
+        if (pageVisibility < 0.5f) return false;
+
+        // ─── Debounce: ignore rapid double-fire within 500 ms ─────────
+        long now = System.currentTimeMillis();
+        if (now - lastLaunchTime < LAUNCH_DEBOUNCE_MS) return false;
+
+        // ─── Cast a pick ray from camera through screen point ─────────
+        // camera.getPickRay expects screen coordinates with origin top-left.
+        // GestureDetector and wallpaper tap commands both provide surface-
+        // relative pixels with the same origin, so no conversion is needed.
+        Ray pickRay = camera.getPickRay(x, y);
+
+        int closestIdx = -1;
+        float closestDist = Float.MAX_VALUE;
+
+        // ─── Test intersection with each app node ──────────────────────
+        // Each node is treated as a sphere with radius = iconSize * 0.6f
+        // (slightly larger than the visual for forgiving tap targets).
+        float hitRadius = iconSize * 0.6f;
+
+        for (int i = 0; i < appNodes.size(); i++) {
+            Vector3 rotatedPos = getRotatedPosition(i);
+
+            if (Intersector.intersectRaySphere(pickRay, rotatedPos, hitRadius, tmpVec)) {
+                // Squared distance avoids sqrt per node.
+                float dist = pickRay.origin.dst2(tmpVec);
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closestIdx = i;
+                }
+            }
+        }
+
+        // ─── Launch the tapped app ─────────────────────────────────────
+        if (closestIdx >= 0) {
+            AppFetcher.AppNode tappedNode = appNodes.get(closestIdx);
+            Log.i(TAG, "Launching app: " + tappedNode.appName
+                    + " (" + tappedNode.packageName + ")");
+
+            lastLaunchTime = now;
+            final String pkg = tappedNode.packageName;
+            // AppFetcher.launchApp must run on the UI (main) thread;
+            // postRunnable marshals from GL thread to main thread.
+            Gdx.app.postRunnable(() -> AppFetcher.launchApp(context, pkg));
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Called from {@code MyWallpaperService.AuraOrbitEngine.onCommand} when
+     * the launcher sends an {@code android.wallpaper.tap} command.
+     *
+     * <p>Launchers send {@code android.wallpaper.tap} exclusively for taps on
+     * empty workspace — taps consumed by the app drawer, icon grid, widgets,
+     * or the search bar never produce this command.  Gating launching on this
+     * command therefore prevents the sphere from launching apps when the user
+     * taps on drawer UI layered over the wallpaper.
+     *
+     * <p>The command arrives on the Android main thread; the raycast must run
+     * on the libGDX GL thread.  {@code Gdx.app.postRunnable} performs that
+     * marshal safely.
+     *
+     * <p>Coordinate spaces: the command x/y are surface-relative pixels with
+     * top-left origin, identical to the coordinates that GestureDetector passes
+     * to {@code tap()} — both are directly suitable for
+     * {@code camera.getPickRay(x, y)}.
+     *
+     * @param x  Surface-relative X coordinate in pixels (top-left origin)
+     * @param y  Surface-relative Y coordinate in pixels (top-left origin)
+     */
+    public void onWallpaperTapCommand(int x, int y) {
+        // Marshal from main thread to GL thread for raycast safety.
+        final float fx = x;
+        final float fy = y;
+        Gdx.app.postRunnable(() -> raycastAndLaunch(fx, fy));
     }
 
     /**

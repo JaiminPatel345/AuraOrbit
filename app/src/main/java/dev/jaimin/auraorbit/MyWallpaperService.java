@@ -2,6 +2,7 @@ package dev.jaimin.auraorbit;
 
 import android.content.SharedPreferences;
 import android.os.Build;
+import android.os.Bundle;
 import android.service.wallpaper.WallpaperService;
 import android.util.Log;
 import android.view.Surface;
@@ -202,6 +203,12 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
      *    determine which home screen page is active and adjust rendering
      *    intensity accordingly.
      *
+     * 3. Gate app launching on the {@code android.wallpaper.tap} command
+     *    via {@link #onCommand}. Launchers send this command only for taps
+     *    on empty workspace — taps on the app drawer, icon grid, widgets,
+     *    or search bar are never forwarded to the wallpaper as this command.
+     *    This prevents sphere app launches from firing when drawer UI is open.
+     *
      * ─── Why setFrameRate and not setFrameRateCategory? ─────────────────
      *
      * setFrameRateCategory (Android 15+) is category-based and doesn't give
@@ -234,6 +241,37 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
         public void onSurfaceDestroyed(SurfaceHolder holder) {
             currentHolder = null;
             super.onSurfaceDestroyed(holder);
+        }
+
+        /**
+         * ─────────────────────────────────────────────────────────────────
+         * Wallpaper Command Handler — Tap-to-Launch Gate
+         * ─────────────────────────────────────────────────────────────────
+         *
+         * Android launchers send the {@code android.wallpaper.tap} command
+         * exclusively for taps on <em>empty workspace</em> — taps consumed by
+         * the app drawer, icon grid, widgets, or the search bar never produce
+         * this command.  By forwarding only this command to
+         * {@link SphereEngine#onWallpaperTapCommand}, we ensure that app
+         * launches cannot fire while the app drawer (or any other launcher UI)
+         * is open and overlaying the wallpaper.
+         *
+         * @param action           The command action string (e.g.
+         *                         {@code "android.wallpaper.tap"}).
+         * @param x                Surface-relative X coordinate in pixels.
+         * @param y                Surface-relative Y coordinate in pixels.
+         * @param z                Unused (always 0 for tap commands).
+         * @param extras           Optional command extras (may be null).
+         * @param resultRequested  Whether the caller expects a result Bundle.
+         * @return                 Result Bundle forwarded from super, or null.
+         */
+        @Override
+        public Bundle onCommand(String action, int x, int y, int z,
+                                Bundle extras, boolean resultRequested) {
+            if ("android.wallpaper.tap".equals(action) && sphereEngine != null) {
+                sphereEngine.onWallpaperTapCommand(x, y);
+            }
+            return super.onCommand(action, x, y, z, extras, resultRequested);
         }
 
         /**
