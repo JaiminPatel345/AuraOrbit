@@ -191,6 +191,25 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      */
     private float effectiveRadius;
 
+    /**
+     * Spacing-preserving icon size — computed after effectiveRadius is clamped.
+     * When the screen-width cap binds (ideal radius 0.52·iconSize·√N exceeds
+     * sphereRadius), the sphere cannot grow to accommodate the user's icon size,
+     * so the spacing-to-icon ratio collapses and icons crowd at dense rotations.
+     * effectiveIconSize shrinks icons instead so the lattice spacing-to-icon
+     * ratio stays constant (~1.92×) regardless of the cap regime.
+     *
+     * Identity case: when the cap does NOT bind (uncapped or floor regime),
+     * effectiveIconSize == iconSize — no visual change for small N or generous
+     * slider settings.
+     *
+     * Used everywhere icon size drives visual output: decal dimensions, hit
+     * radius, group cloth pad. NOT used in computeCameraDistance (camera stays
+     * slider-referenced) and NOT in the effectiveRadius formula itself (radius
+     * prefers to grow first; shrink only handles the already-capped regime).
+     */
+    private float effectiveIconSize;
+
     private List<AppFetcher.AppNode> appNodes;  // The loaded app data
     private Array<Decal> decals;           // libGDX decals for each app
     /**
@@ -770,7 +789,20 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 1.6f * iconSize,
                 sphereRadius);
 
-        Log.d(TAG, "distributeNodesOnSphere: N=" + N + " effectiveRadius=" + effectiveRadius);
+        // ─── Spacing guarantee: auto-shrink icons when the cap binds ─────
+        // When the screen-width cap (sphereRadius) stops the sphere from growing
+        // to fit N icons at the user's chosen size, shrink icons instead so the
+        // lattice spacing-to-icon ratio stays constant (~1.92×) and icons never
+        // crowd. Formula: effIcon = effR / (0.52 × √N).
+        // Identity cases:
+        //   • Uncapped (ideal < sphereRadius): effR/(0.52·√N) = iconSize exactly.
+        //   • Floor regime (1.6·iconSize binds for small N): effR/(0.52·√N) > iconSize
+        //     so min() keeps the user's size — no shrink for sparse sets.
+        effectiveIconSize = Math.min(iconSize,
+                effectiveRadius / (0.52f * (float) Math.sqrt(Math.max(1, N))));
+
+        Log.d(TAG, "distributeNodesOnSphere: N=" + N + " effectiveRadius=" + effectiveRadius
+                + " effectiveIconSize=" + effectiveIconSize);
 
         if (N == 1) {
             // Edge case: single app → place at sphere front facing the camera.
@@ -936,9 +968,11 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
             if (node.iconRegion == null) continue;
 
-            // Create a 2D decal from the app icon texture
-            // hasTransparency=true enables alpha blending for round icons
-            Decal decal = Decal.newDecal(iconSize, iconSize, node.iconRegion, true);
+            // Create a 2D decal from the app icon texture.
+            // Uses effectiveIconSize (not raw iconSize) so decal quads match the
+            // spacing-preserving size when the screen-width cap is active.
+            // hasTransparency=true enables alpha blending for round icons.
+            Decal decal = Decal.newDecal(effectiveIconSize, effectiveIconSize, node.iconRegion, true);
 
             // Position at the uniform-Fibonacci point on the sphere
             decal.setPosition(nodePositions[i].x, nodePositions[i].y, nodePositions[i].z);
@@ -1073,7 +1107,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // with a smooth rounded margin. M==2 (collinear) naturally produces
             // a stadium shape — no special-case capsule path needed.
             final int K = 12;
-            float pad = (0.8f * iconSize) / effectiveRadius;
+            // Pad uses effectiveIconSize so the cloth margin scales with the icon
+            // when the screen-width cap is active (preserves visual proportion).
+            float pad = (0.8f * effectiveIconSize) / effectiveRadius;
             int totalSamples = M * K;
             float[] allU = new float[totalSamples];
             float[] allV = new float[totalSamples];
@@ -1923,10 +1959,12 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // ─── Update decal transform ─────────────────────────────────
             decal.setPosition(rotatedPos.x, rotatedPos.y, rotatedPos.z);
 
-            // Icon size combines depth perspective and page visibility
+            // Icon size combines depth perspective and page visibility.
+            // effectiveIconSize is used here (not raw iconSize) so per-frame
+            // sizing matches the spacing-preserving decal size from createDecals().
             decal.setDimensions(
-                    iconSize * depthScale * pageVisibility,
-                    iconSize * depthScale * pageVisibility
+                    effectiveIconSize * depthScale * pageVisibility,
+                    effectiveIconSize * depthScale * pageVisibility
             );
 
             // Apply depth alpha combined with page visibility
@@ -2152,9 +2190,11 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         float closestDist = Float.MAX_VALUE;
 
         // ─── Test intersection with each app node ──────────────────────
-        // Each node is treated as a sphere with radius = iconSize * 0.6f
+        // Each node is treated as a sphere with radius = effectiveIconSize * 0.6f
         // (slightly larger than the visual for forgiving tap targets).
-        float hitRadius = iconSize * 0.6f;
+        // effectiveIconSize keeps the hit radius proportional to the actual
+        // rendered icon size when the screen-width cap is active.
+        float hitRadius = effectiveIconSize * 0.6f;
 
         for (int i = 0; i < appNodes.size(); i++) {
             Vector3 rotatedPos = getRotatedPosition(i);
