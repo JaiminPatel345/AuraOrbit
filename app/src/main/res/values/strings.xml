@@ -23,6 +23,10 @@
     <string name="pref_background_title">Background image</string>
     <string name="summary_background_set">Custom photo — tap to change or remove</string>
     <string name="summary_background_not_set">Default gradient — tap to choose a photo</string>
+    <string name="pref_system_wallpaper_title_granted">Real wallpaper visible ✓</string>
+    <string name="pref_system_wallpaper_summary_granted">Without a custom photo, your system wallpaper shows behind the sphere</string>
+    <string name="pref_system_wallpaper_title_denied">Show my real wallpaper</string>
+    <string name="pref_system_wallpaper_summary_denied">Allow access so your current wallpaper can appear behind the sphere (no custom photo needed)</string>
 
     <!-- Sphere -->
     <string name="pref_category_sphere">Sphere</string>

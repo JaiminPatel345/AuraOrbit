@@ -6,9 +6,12 @@ import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.text.Editable;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -303,6 +306,18 @@ public class LiveWallpaperSettings extends AppCompatActivity {
                 });
             }
 
+            // ─── pref_system_wallpaper_access → grant All-files-access ───
+            // On API < 30 the permission concept does not exist so the row is
+            // always in the "granted" state and tapping is benign (no-op click
+            // handled in the listener below via the SDK guard).
+            Preference sysWallpaper = findPreference("pref_system_wallpaper_access");
+            if (sysWallpaper != null) {
+                sysWallpaper.setOnPreferenceClickListener(pref -> {
+                    handleSystemWallpaperClick();
+                    return true;
+                });
+            }
+
             // ─── pref_active_page → number input dialog ───────────────────
             Preference activePage = findPreference("pref_active_page");
             if (activePage != null) {
@@ -393,6 +408,70 @@ public class LiveWallpaperSettings extends AppCompatActivity {
             } else {
                 // No custom photo — go straight to the picker
                 launchPicker();
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        //  System-wallpaper access (All-files-access / MANAGE_EXTERNAL_STORAGE)
+        // ─────────────────────────────────────────────────────────────────
+
+        /**
+         * Returns {@code true} when the app holds the All-files-access special
+         * permission, or unconditionally on API levels below 30 where this
+         * permission does not exist.
+         */
+        private boolean isExternalStorageManager() {
+            if (Build.VERSION.SDK_INT >= 30) {
+                return Environment.isExternalStorageManager();
+            }
+            return true; // permission concept absent on API < 30 → treat as granted
+        }
+
+        /**
+         * Called when the user taps the system-wallpaper-access preference.
+         *
+         * <ul>
+         *   <li>API &lt; 30: no-op (permission not applicable; row shows granted state).</li>
+         *   <li>GRANTED: opens the app's Manage-All-Files-Access settings page so the
+         *       user can revoke permission if desired.</li>
+         *   <li>NOT granted: requests the permission via
+         *       {@link Settings#ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION}
+         *       with a package URI. Falls back to the non-package variant if the
+         *       specific action cannot be resolved, and finally falls back to a
+         *       {@link Toast} instructing the user.</li>
+         * </ul>
+         */
+        private void handleSystemWallpaperClick() {
+            if (Build.VERSION.SDK_INT < 30) {
+                // Permission not applicable — nothing to open.
+                return;
+            }
+
+            // Whether granted or not, we point to the same settings page so the
+            // user can either grant or revoke from one place.
+            String pkg = "package:" + requireContext().getPackageName();
+
+            try {
+                // Primary: app-specific Manage-All-Files-Access screen
+                startActivity(new Intent(
+                        Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                        Uri.parse(pkg)));
+                return;
+            } catch (ActivityNotFoundException ignored) {
+                // Fall through to the generic all-files screen
+            }
+
+            try {
+                // Fallback: generic Manage-All-Files-Access list (no package URI)
+                startActivity(new Intent(
+                        Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION));
+            } catch (ActivityNotFoundException ignored) {
+                // Neither intent resolved — instruct the user manually
+                Toast.makeText(
+                        requireContext(),
+                        R.string.pref_system_wallpaper_summary_denied,
+                        Toast.LENGTH_LONG
+                ).show();
             }
         }
 
@@ -570,6 +649,20 @@ public class LiveWallpaperSettings extends AppCompatActivity {
                 bgPref.setSummary(BackgroundStore.exists(requireContext())
                         ? R.string.summary_background_set
                         : R.string.summary_background_not_set);
+            }
+
+            // ─── System-wallpaper access summary ─────────────────────────
+            // Reflects current permission state so the user always sees an
+            // up-to-date label when returning from the system settings screen.
+            Preference sysWallpaper = findPreference("pref_system_wallpaper_access");
+            if (sysWallpaper != null) {
+                boolean granted = isExternalStorageManager();
+                sysWallpaper.setTitle(granted
+                        ? R.string.pref_system_wallpaper_title_granted
+                        : R.string.pref_system_wallpaper_title_denied);
+                sysWallpaper.setSummary(granted
+                        ? R.string.pref_system_wallpaper_summary_granted
+                        : R.string.pref_system_wallpaper_summary_denied);
             }
 
             // ─── Active page summary ──────────────────────────────────────

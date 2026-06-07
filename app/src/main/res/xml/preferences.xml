@@ -21,6 +21,12 @@
             android:key="pref_background_image"
             android:title="@string/pref_background_title"
             android:summary="@string/summary_background_not_set" />
+        <!-- System-wallpaper mirror: grant/revoke All-files-access.
+             Title and summary are set dynamically in MainSettingsFragment.updateSummaries(). -->
+        <Preference
+            android:key="pref_system_wallpaper_access"
+            android:title="@string/pref_system_wallpaper_title_denied"
+            android:summary="@string/pref_system_wallpaper_summary_denied" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/pref_category_sphere">
