@@ -2,6 +2,13 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <PreferenceCategory android:title="@string/pref_category_apply_wallpaper">
+        <Preference
+            android:key="pref_apply_wallpaper"
+            android:title="@string/pref_apply_wallpaper_title_inactive"
+            android:summary="@string/pref_apply_wallpaper_summary_inactive" />
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/pref_category_apps">
         <Preference
             android:key="pref_select_apps"

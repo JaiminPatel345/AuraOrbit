@@ -4,6 +4,14 @@
     <string name="settings_title">AuraOrbit Settings</string>
     <string name="wallpaper_description">A true 3D orbital sphere populated by your chosen app icons. Supports 120Hz, Fibonacci distribution, visual grouping, and native app launching.</string>
 
+    <!-- Apply Wallpaper -->
+    <string name="pref_category_apply_wallpaper">Wallpaper</string>
+    <string name="pref_apply_wallpaper_title_active">AuraOrbit is your wallpaper</string>
+    <string name="pref_apply_wallpaper_summary_active">The sphere is live on your home screen ✓</string>
+    <string name="pref_apply_wallpaper_title_inactive">Apply sphere wallpaper</string>
+    <string name="pref_apply_wallpaper_summary_inactive">Your wallpaper was changed — tap to bring the sphere back</string>
+    <string name="toast_apply_wallpaper_unavailable">Open system wallpaper settings to re-apply the sphere.</string>
+
     <!-- App Selection -->
     <string name="pref_category_apps">App Selection</string>
     <string name="pref_select_apps_title">Select Apps</string>

@@ -1,5 +1,10 @@
 package dev.jaimin.auraorbit;
 
+import android.app.WallpaperInfo;
+import android.app.WallpaperManager;
+import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -169,6 +174,15 @@ public class LiveWallpaperSettings extends AppCompatActivity {
             // click listeners for the three action preferences below.
             setPreferencesFromResource(R.xml.preferences, rootKey);
 
+            // ─── pref_apply_wallpaper → launch live-wallpaper preview ────
+            Preference applyWallpaper = findPreference("pref_apply_wallpaper");
+            if (applyWallpaper != null) {
+                applyWallpaper.setOnPreferenceClickListener(pref -> {
+                    launchLiveWallpaperPreview();
+                    return true;
+                });
+            }
+
             // ─── pref_select_apps → AppPickerFragment ────────────────────
             Preference selectApps = findPreference("pref_select_apps");
             if (selectApps != null) {
@@ -210,6 +224,9 @@ public class LiveWallpaperSettings extends AppCompatActivity {
             super.onResume();
             // Restore the root title in case a sub-fragment changed it.
             requireActivity().setTitle(R.string.settings_title);
+            // Reflect current wallpaper-active state (user may have just returned
+            // from the system wallpaper picker, so check every resume).
+            updateApplyWallpaperState();
             // Refresh all dynamic summaries.
             updateSummaries();
         }
@@ -323,6 +340,81 @@ public class LiveWallpaperSettings extends AppCompatActivity {
                     updateSummaries();
                 });
             });
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        //  Apply-wallpaper helpers
+        // ─────────────────────────────────────────────────────────────────
+
+        /**
+         * Updates the title and summary of {@code pref_apply_wallpaper} to reflect
+         * whether AuraOrbit is currently the active live wallpaper.
+         *
+         * <ul>
+         *   <li><b>Active</b>: {@link WallpaperInfo} is non-null and its package
+         *       matches ours — title "AuraOrbit is your wallpaper", summary with ✓.</li>
+         *   <li><b>Not active</b>: title "Apply sphere wallpaper", summary prompting
+         *       the user to tap and bring the sphere back.</li>
+         * </ul>
+         *
+         * Called from {@link #onResume} so the state is always current after the user
+         * returns from the system wallpaper picker or any other screen.
+         */
+        private void updateApplyWallpaperState() {
+            Preference applyWallpaper = findPreference("pref_apply_wallpaper");
+            if (applyWallpaper == null) return;
+
+            WallpaperInfo info =
+                    WallpaperManager.getInstance(requireContext()).getWallpaperInfo();
+            boolean isActive = info != null
+                    && info.getPackageName().equals(requireContext().getPackageName());
+
+            if (isActive) {
+                applyWallpaper.setTitle(R.string.pref_apply_wallpaper_title_active);
+                applyWallpaper.setSummary(R.string.pref_apply_wallpaper_summary_active);
+            } else {
+                applyWallpaper.setTitle(R.string.pref_apply_wallpaper_title_inactive);
+                applyWallpaper.setSummary(R.string.pref_apply_wallpaper_summary_inactive);
+            }
+        }
+
+        /**
+         * Launches the live-wallpaper preview pinned to {@link MyWallpaperService}.
+         *
+         * <p>Strategy (in order of preference):
+         * <ol>
+         *   <li>{@link WallpaperManager#ACTION_CHANGE_LIVE_WALLPAPER} with our component
+         *       extra — jumps directly to the AuraOrbit preview on most launchers.</li>
+         *   <li>{@link WallpaperManager#ACTION_LIVE_WALLPAPER_CHOOSER} — shows the
+         *       generic live-wallpaper picker as a fallback.</li>
+         *   <li>{@link Toast} — tells the user to set it manually if both intents fail.</li>
+         * </ol>
+         * </p>
+         */
+        private void launchLiveWallpaperPreview() {
+            // Primary: direct preview for our service
+            Intent direct = new Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER);
+            direct.putExtra(
+                    WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
+                    new ComponentName(requireContext(), MyWallpaperService.class));
+            try {
+                startActivity(direct);
+                return;
+            } catch (ActivityNotFoundException ignored) {
+                // Fall through to the generic chooser
+            }
+
+            // Fallback: generic live-wallpaper chooser
+            try {
+                startActivity(new Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER));
+            } catch (ActivityNotFoundException ignored) {
+                // Neither intent resolved — prompt the user to act manually
+                Toast.makeText(
+                        requireContext(),
+                        R.string.toast_apply_wallpaper_unavailable,
+                        Toast.LENGTH_LONG
+                ).show();
+            }
         }
 
         // ─────────────────────────────────────────────────────────────────
