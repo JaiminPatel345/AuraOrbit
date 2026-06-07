@@ -269,6 +269,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     // ─── Group Backdrop Meshes ──────────────────────────────────────────
     private Array<ModelInstance> groupBackdrops;
     private Array<Model> groupModels;  // Must be disposed
+    /**
+     * Parallel to {@link #groupBackdrops}: the unit centroid direction of each
+     * patch in sphere-local space. Used each frame to compute the rotated
+     * z-component for front/back depth-cue opacity modulation.
+     * vivid = front (facing camera), faint = far side (rotate to reach it).
+     */
+    private Array<Vector3> groupPatchDirs;
 
     // ─── Empty-state hint rendering ──────────────────────────────────────
     /**
@@ -954,12 +961,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      *
      * Each group gets a semi-transparent polygon positioned at radius
      * 0.90 × effectiveRadius — slightly inside the icon sphere so patches appear
-     * as colored cloth draped under the group's icons. The polygon precisely
-     * covers the group (padded by 0.75×iconSize beyond the outermost icons).
+     * as colored cloth draped under the group's icons. The polygon fully encloses
+     * every member icon with a smooth rounded margin via Minkowski-sum padding.
      *
      * IntAttribute.CullFace=GL_NONE disables back-face culling so patches are
-     * visible from both sides of the sphere — users can see where a group is
-     * even when it is on the far side and can rotate toward it.
+     * visible from both sides of the sphere. Opacity is modulated per-frame:
+     * vivid (alpha 0.35) when the patch faces the camera (front), faint (alpha 0.12)
+     * when on the far side — giving the user a clear depth cue to rotate toward it.
      *
      * ─── Why Gnomonic Projection? ─────────────────────────────────────────
      *
@@ -976,12 +984,16 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      *   1. Centroid direction c = normalized sum of member unit directions.
      *   2. Build tangent basis (t1, t2) at c.
      *   3. Gnomonic project each member d → (u, v): s = 1/(d·c), u=s(d·t1), v=s(d·t2).
-     *   4. Andrew's monotone chain 2D convex hull on (u,v) points.
-     *   5. Pad hull outward by pad = 0.75×iconSize/effectiveRadius.
-     *   6. Subdivide each hull edge so no segment spans > 0.15 gnomonic units.
-     *   7. Inverse-project boundary vertices back to sphere at 0.90R.
-     *   8. Fan-triangulate from centroid vertex; add mid-ring for sphere-curvature.
-     *   9. Material: group color at 32% alpha, GL_NONE cull face.
+     *   4. Minkowski-sum padding: for every member point (u,v) generate K=12 circle
+     *      samples of radius pad = 0.8×iconSize/effectiveRadius around it. Run
+     *      Andrew's monotone-chain hull over ALL M×K samples. This yields the convex
+     *      hull of the union of discs — every member icon sits fully inside the
+     *      colored area with a rounded margin. M==2 naturally yields a stadium shape.
+     *   5. Subdivide each hull edge so no segment spans > 0.15 gnomonic units.
+     *   6. Inverse-project boundary vertices back to sphere at 0.90R.
+     *   7. Fan-triangulate from centroid vertex; add mid-ring for sphere-curvature.
+     *   8. Material: group color at 32% alpha (base; overridden per-frame for depth cue),
+     *      GL_NONE cull face.
      *
      * ─── Geometry in sphere-local space ──────────────────────────────────
      *
@@ -990,8 +1002,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * (identity base — no per-cap orientation matrix needed).
      */
     private void buildGroupBackdrops() {
-        groupBackdrops = new Array<>();
-        groupModels    = new Array<>();
+        groupBackdrops  = new Array<>();
+        groupModels     = new Array<>();
+        groupPatchDirs  = new Array<>();
 
         if (appNodes == null || appNodes.isEmpty()) return;
 
@@ -1015,7 +1028,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             String groupId        = entry.getKey();
             List<Integer> indices = entry.getValue();
             int M = indices.size();
-            if (M < 2) continue;
+            if (M < 2) continue;  // backdrops only for groups with ≥2 members
 
             String colorHex = groupColorMap.getOrDefault(groupId, "#FFFFFF");
             Color gdxColor  = parseHexColor(colorHex, 0.32f);
@@ -1053,59 +1066,36 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 vs[k] = s * d.dot(t2);
             }
 
-            // ── 4. 2D convex hull via Andrew's monotone chain ─────────────
-            // Returns indices into us[]/vs[] in CCW order.
-            int[] hullIdx = convexHull2D(us, vs, M);
-
-            // ── 5. Pad hull outward from 2D centroid ──────────────────────
-            // pad in gnomonic units ≈ radians for small angles.
-            float pad = (0.75f * iconSize) / effectiveRadius;
-
-            // Compute 2D hull centroid.
-            float cu2d = 0f, cv2d = 0f;
-            for (int hi : hullIdx) { cu2d += us[hi]; cv2d += vs[hi]; }
-            cu2d /= hullIdx.length;
-            cv2d /= hullIdx.length;
-
-            // Degenerate capsule path: M==2 or collinear (hull has < 3 points).
-            float[] hullU, hullV;
-            if (hullIdx.length < 3) {
-                // Generate stadium/capsule: 8 circle points around each endpoint.
-                int nCap = 8;
-                hullU = new float[nCap * M];
-                hullV = new float[nCap * M];
-                int out = 0;
-                for (int k = 0; k < M; k++) {
-                    for (int a = 0; a < nCap; a++) {
-                        float ang = a * MathUtils.PI2 / nCap;
-                        hullU[out]   = us[k] + pad * MathUtils.cos(ang);
-                        hullV[out++] = vs[k] + pad * MathUtils.sin(ang);
-                    }
-                }
-                // Re-hull the circle points.
-                int[] rehull = convexHull2D(hullU, hullV, out);
-                float[] hu2 = new float[rehull.length];
-                float[] hv2 = new float[rehull.length];
-                for (int k = 0; k < rehull.length; k++) {
-                    hu2[k] = hullU[rehull[k]];
-                    hv2[k] = hullV[rehull[k]];
-                }
-                hullU = hu2; hullV = hv2;
-            } else {
-                // Pad normal hull outward.
-                hullU = new float[hullIdx.length];
-                hullV = new float[hullIdx.length];
-                for (int k = 0; k < hullIdx.length; k++) {
-                    float pu = us[hullIdx[k]] - cu2d;
-                    float pv = vs[hullIdx[k]] - cv2d;
-                    float len = (float) Math.sqrt(pu * pu + pv * pv);
-                    if (len < 1e-6f) { pu = 1f; pv = 0f; len = 1f; }
-                    hullU[k] = us[hullIdx[k]] + pad * pu / len;
-                    hullV[k] = vs[hullIdx[k]] + pad * pv / len;
+            // ── 4. Minkowski-sum hull: convex hull of union of discs ──────
+            // For each of the M member points, generate K=12 circle samples of
+            // radius pad around it. Run the hull over all M×K samples. This
+            // guarantees every member icon sits fully inside the colored area
+            // with a smooth rounded margin. M==2 (collinear) naturally produces
+            // a stadium shape — no special-case capsule path needed.
+            final int K = 12;
+            float pad = (0.8f * iconSize) / effectiveRadius;
+            int totalSamples = M * K;
+            float[] allU = new float[totalSamples];
+            float[] allV = new float[totalSamples];
+            int out = 0;
+            for (int k = 0; k < M; k++) {
+                for (int j = 0; j < K; j++) {
+                    float ang = j * MathUtils.PI2 / K;
+                    allU[out]   = us[k] + pad * MathUtils.cos(ang);
+                    allV[out++] = vs[k] + pad * MathUtils.sin(ang);
                 }
             }
+            int[] hullIdx = convexHull2D(allU, allV, totalSamples);
 
-            // ── 6. Subdivide hull edges so no segment > 0.15 gnomonic units ─
+            // Extract hull boundary coordinates.
+            float[] hullU = new float[hullIdx.length];
+            float[] hullV = new float[hullIdx.length];
+            for (int k = 0; k < hullIdx.length; k++) {
+                hullU[k] = allU[hullIdx[k]];
+                hullV[k] = allV[hullIdx[k]];
+            }
+
+            // ── 5. Subdivide hull edges so no segment > 0.15 gnomonic units ─
             List<Float> bdryU = new ArrayList<>();
             List<Float> bdryV = new ArrayList<>();
             int Hlen = hullU.length;
@@ -1123,7 +1113,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             }
             int B = bdryU.size(); // boundary vertex count after subdivision
 
-            // ── 7. Inverse-project boundary + centroid to sphere ──────────
+            // ── 6. Inverse-project boundary + centroid to sphere ──────────
             // dir = normalize(c + u*t1 + v*t2), placed at 0.90*effectiveRadius.
             float patchR = 0.90f * effectiveRadius;
 
@@ -1153,7 +1143,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // Centre vertex at patchR along the centroid direction.
             Vector3 centreVert = new Vector3(c).scl(patchR);
 
-            // ── 8. Build mesh: fan from centre through mid-ring to outer ring ─
+            // ── 7. Build mesh: fan from centre through mid-ring to outer ring ─
             // Usage.Position | Usage.Normal.
             int attributes = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal;
 
@@ -1205,6 +1195,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             Model model = modelBuilder.end();
             groupModels.add(model);
             groupBackdrops.add(new ModelInstance(model));
+            // Store unit centroid direction for per-frame front/back depth-cue opacity.
+            // c is already normalised (nor() called above); copy to keep it stable.
+            groupPatchDirs.add(new Vector3(c));
 
             Log.d(TAG, "Group '" + groupId + "': " + M + " apps, hull boundary=" + B
                     + " verts, centroid=" + c);
@@ -1813,6 +1806,23 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * No per-patch base-orientation matrix is needed because the patch geometry is
      * built in sphere-local coordinates (actual 3D positions) — the rotation
      * matrix alone is sufficient to rotate them with the sphere.
+     *
+     * ─── Front/Back Depth Cue ─────────────────────────────────────────────
+     *
+     * Opacity is modulated per instance each frame so groups on the front of the
+     * sphere appear vivid (alpha 0.35) while groups on the far side appear faint
+     * (alpha 0.12). This gives the user a clear visual signal to rotate the sphere
+     * toward a group that is currently on the back side.
+     *
+     * The rotated centroid z-component (in [-1, 1], +z = facing camera) is mapped
+     * to opacity via a lerp: alpha = lerp(0.12, 0.35, (z+1)*0.5).
+     *
+     * ModelInstance copies materials at construction time, so mutating the
+     * BlendingAttribute on an instance is safe and affects only that instance.
+     * No allocations occur in this path — tmpVec is a reusable field.
+     *
+     * pageVisibility < 0.01 skips rendering entirely (checked before this method
+     * is called), so no additional guard is needed here.
      */
     private void renderGroupBackdrops() {
         // Build the sphere-rotation matrix once per frame (avoids per-patch alloc).
@@ -1826,6 +1836,27 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // Compose: sphereRotation, then scale for page visibility.
             // Identity base — geometry is already in sphere-local coordinates.
             instance.transform.set(tmpMat).scl(pageVisibility);
+
+            // ── Front/back depth-cue opacity ──────────────────────────────
+            // Rotate the patch's centroid unit direction by the current sphere
+            // rotation to find its z in camera space (+z = facing camera).
+            // tmpVec reuse: set() then transform() — no allocation.
+            if (groupPatchDirs != null && i < groupPatchDirs.size) {
+                tmpVec.set(groupPatchDirs.get(i));
+                sphereRotation.transform(tmpVec);
+                // z in [-1, 1]: map to alpha in [0.12, 0.35]
+                float alpha = MathUtils.lerp(0.12f, 0.35f, (tmpVec.z + 1f) * 0.5f);
+
+                // Mutate this instance's BlendingAttribute (safe: ModelInstance
+                // copies materials, so this only affects this instance).
+                com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute ba =
+                        (com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute)
+                        instance.materials.get(0).get(
+                                com.badlogic.gdx.graphics.g3d.attributes.BlendingAttribute.Type);
+                if (ba != null) {
+                    ba.opacity = alpha;
+                }
+            }
 
             modelBatch.render(instance);
         }
