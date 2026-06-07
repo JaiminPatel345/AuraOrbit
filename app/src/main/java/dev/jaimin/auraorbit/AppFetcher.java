@@ -381,12 +381,19 @@ public class AppFetcher {
             }
 
             // ─── Drawable → Bitmap ─────────────────────────────────────────
+            // Ownership flag: true only for bitmaps WE create (must recycle);
+            // false for the BitmapDrawable-owned bitmap. Tracked explicitly
+            // because after a downscale the current bitmap is OURS even when
+            // the source Drawable was a BitmapDrawable — keying recycling off
+            // `d instanceof BitmapDrawable` leaked the scaled copy (QA finding).
             Bitmap bitmap;
+            boolean weOwnBitmap;
             if (d instanceof BitmapDrawable) {
                 // Fast path: extract the underlying Bitmap directly (no rasterization).
                 Bitmap src = ((BitmapDrawable) d).getBitmap();
                 if (src == null) return null;
                 bitmap = src; // Do NOT recycle — owned by the Drawable
+                weOwnBitmap = false;
             } else {
                 // General path: rasterize the Drawable onto a canvas.
                 int w = d.getIntrinsicWidth();
@@ -402,6 +409,7 @@ public class AppFetcher {
                 Canvas canvas = new Canvas(bitmap);
                 d.setBounds(0, 0, w, h);
                 d.draw(canvas);
+                weOwnBitmap = true;
             }
 
             // ─── Downscale so max dimension ≤ 2048 (same policy as BackgroundStore) ──
@@ -413,12 +421,14 @@ public class AppFetcher {
                 int nw = Math.max(1, Math.round(bw * scale));
                 int nh = Math.max(1, Math.round(bh * scale));
                 Bitmap scaled = Bitmap.createScaledBitmap(bitmap, nw, nh, true);
-                // Only recycle the intermediate bitmap if we created it ourselves
-                // (the BitmapDrawable fast path returns a Drawable-owned bitmap).
-                if (!(d instanceof BitmapDrawable)) {
+                // Recycle the intermediate only if WE created it; the scaled
+                // copy is always ours from here on. (createScaledBitmap can
+                // theoretically return the source — guard with !=.)
+                if (weOwnBitmap && scaled != bitmap) {
                     bitmap.recycle();
                 }
                 bitmap = scaled;
+                weOwnBitmap = true;
             }
 
             // ─── Write bitmap to cache file as JPEG ────────────────────────
@@ -428,10 +438,8 @@ public class AppFetcher {
             try (FileOutputStream fos = new FileOutputStream(cacheFile)) {
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
             } finally {
-                // Only recycle bitmaps we created (not the BitmapDrawable-owned one).
-                if (!(d instanceof BitmapDrawable)) {
-                    if (!bitmap.isRecycled()) bitmap.recycle();
-                }
+                // Only recycle bitmaps we own (never the BitmapDrawable-owned one).
+                if (weOwnBitmap && !bitmap.isRecycled()) bitmap.recycle();
             }
 
             // ─── Load as libGDX Texture ─────────────────────────────────────
