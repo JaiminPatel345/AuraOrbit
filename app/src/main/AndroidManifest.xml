@@ -86,26 +86,47 @@
         </service>
 
         <!-- ═══════════════════════════════════════════════════════════════
-             2. SETTINGS ACTIVITY
-             
-             Launched from the wallpaper picker's "Settings" button.
-             The user configures:
-               - Which apps to display on the sphere
-               - App grouping (folders with colors)
-               - Whether to retain the system wallpaper as background
-               - Active home screen page for rendering
-             
-             exported=true so the wallpaper picker can launch it via Intent.
+             2. SPHERE MODE ACTIVITY (launcher entry point)
+
+             The app icon opens this fullscreen sphere activity. The sphere
+             renders with the same SphereEngine as the wallpaper, but the
+             activity owns ALL input — no launcher gesture conflict.
+
+             MAIN + LAUNCHER: app icon opens Sphere Mode (not Settings).
+             LiveWallpaperSettings remains accessible via the gear button in
+             Sphere Mode and via the wallpaper picker's Settings link
+             (wallpaper.xml still points to LiveWallpaperSettings).
+             ═══════════════════════════════════════════════════════════════ -->
+        <activity
+            android:name=".SphereModeActivity"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.AuraOrbit.SphereMode"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|keyboardHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             3. SETTINGS ACTIVITY
+
+             Launched from:
+               - The gear button inside SphereModeActivity (explicit Intent).
+               - The wallpaper picker's "Settings" button (via wallpaper.xml
+                 which still points to LiveWallpaperSettings — unchanged).
+
+             The MAIN/LAUNCHER filter has been MOVED to SphereModeActivity.
+             LiveWallpaperSettings remains exported so the wallpaper picker
+             and explicit intents from SphereModeActivity can still reach it.
              ═══════════════════════════════════════════════════════════════ -->
         <activity
             android:name=".LiveWallpaperSettings"
             android:label="@string/settings_title"
             android:theme="@style/Theme.AuraOrbit.Settings"
             android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
 
         <!-- ═══════════════════════════════════════════════════════════════

@@ -178,6 +178,16 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     // ─── Android Context (passed from MyWallpaperService) ───────────────
     private final Context context;
 
+    /**
+     * When {@code true} this engine is running inside {@link SphereModeActivity}
+     * and owns ALL input exclusively (no launcher gesture conflict, no page
+     * isolation, no command gating).
+     *
+     * <p>Additive flag: every branch that checks this is a new {@code if (activityMode)}
+     * guard that did not exist before — wallpaper-mode behavior is unchanged.
+     */
+    private final boolean activityMode;
+
     // ─── Camera & Rendering ─────────────────────────────────────────────
     private PerspectiveCamera camera;
     private SpriteBatch spriteBatch;       // For 2D background and empty-state hint
@@ -783,7 +793,19 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      *                extends Context, so the service itself IS a Context.
      */
     public SphereEngine(Context context) {
+        this(context, false);
+    }
+
+    /**
+     * Activity-mode constructor.
+     *
+     * @param context      The Android context ({@link SphereModeActivity}).
+     * @param activityMode {@code true} when running inside a fullscreen activity
+     *                     that owns all input exclusively.
+     */
+    public SphereEngine(Context context, boolean activityMode) {
         this.context = context;
+        this.activityMode = activityMode;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -1767,6 +1789,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
              */
             @Override
             public boolean tap(float x, float y, int count, int button) {
+                // ─── Activity mode: exclusive input — launch directly ─────
+                // Inside our own activity the sphere owns all input. No launcher
+                // gesture conflict, no command gating, no zoom/drawer guards.
+                if (activityMode) {
+                    return raycastAndLaunch(x, y);
+                }
+
                 // ─── Command path: launcher handles launch gating ──────────
                 // If the launcher sends commands, only onWallpaperTapCommand
                 // should launch apps (drawer-safe gating). Stay silent here.
@@ -2095,9 +2124,16 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                     // One UI emits nothing at all), so the zoom-revert cannot catch
                     // them. Deterministic fix: a one-finger gesture born in these
                     // zones never rotates the sphere and never counts page swipes.
-                    float hFrac = (float) screenY / Math.max(1, Gdx.graphics.getHeight());
-                    edgeClaimedGesture = hFrac < EDGE_EXCLUSION_FRACTION
-                            || hFrac > 1f - EDGE_EXCLUSION_FRACTION;
+                    //
+                    // In activity mode: the activity owns ALL input — no edge
+                    // exclusion zones are needed; every gesture is ours.
+                    if (activityMode) {
+                        edgeClaimedGesture = false;
+                    } else {
+                        float hFrac = (float) screenY / Math.max(1, Gdx.graphics.getHeight());
+                        edgeClaimedGesture = hFrac < EDGE_EXCLUSION_FRACTION
+                                || hFrac > 1f - EDGE_EXCLUSION_FRACTION;
+                    }
 
                     // ── Gesture rotation snapshot for launcher-claim revert ──────
                     // Capture the sphere's current orientation so we can slerp back
@@ -2211,6 +2247,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private void commitPageSwipe(float velocityX, float velocityY) {
         // Skip inference in preview: sphere always fully visible there.
         if (isPreviewMode) return;
+        // Skip inference in activity mode: no launcher pages exist.
+        if (activityMode) return;
 
         // Skip if two-finger pinch is active (pinch swipes are not page changes).
         if (pinchActive) return;
@@ -2400,7 +2438,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // (launcher claimed the gesture), AND the gesture is either still in
         // progress OR ended within the CLAIM_WINDOW_NS window (zoom can arrive
         // after finger-lift).
-        if (gestureSnapshotValid && !revertActive && wallpaperZoom > ZOOM_CLAIM_THRESHOLD) {
+        //
+        // In activity mode: no launcher conflict exists — skip revert entirely.
+        if (!activityMode && gestureSnapshotValid && !revertActive && wallpaperZoom > ZOOM_CLAIM_THRESHOLD) {
             boolean gestureInProgress = panInProgress;
             boolean withinWindow = (System.nanoTime() - lastGestureEndNanos) < CLAIM_WINDOW_NS;
             if (gestureInProgress || withinWindow) {
@@ -2544,17 +2584,15 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         final boolean dbg = visDebugTimer >= 1f;
         if (dbg) visDebugTimer = 0f;
 
-        // ─── Preview hard guard ───────────────────────────────────────────────
-        // In the wallpaper-picker preview there are no pages and no offsets.
-        // The dead-reckoning branch would immediately compute pageDistance ≥ 1
-        // (inferredPage=0, activePage=e.g. 2) and fade the sphere out within ~1 s.
-        // Skip ALL page math in preview: the sphere is always fully visible there.
-        // previewStateChange() already snaps pageVisibility=1 at transition time;
-        // this guard keeps it locked at 1f every subsequent frame.
-        if (isPreviewMode) {
+        // ─── Activity-mode hard guard ─────────────────────────────────────────
+        // In activity mode the sphere is always fully visible — there are no
+        // home-screen pages, no launcher offsets, and no dead-reckoning needed.
+        // Reuse the preview guard pattern (OR-ing activityMode) so the sphere is
+        // pinned to pageVisibility = 1 every frame without any page math.
+        if (isPreviewMode || activityMode) {
             targetVisibility = 1f;
             pageVisibility = MathUtils.lerp(pageVisibility, targetVisibility, delta * 8f);
-            if (dbg) logVisDebug("PREVIEW", targetVisibility);
+            if (dbg) logVisDebug(activityMode ? "ACTIVITY" : "PREVIEW", targetVisibility);
             return;
         }
 
