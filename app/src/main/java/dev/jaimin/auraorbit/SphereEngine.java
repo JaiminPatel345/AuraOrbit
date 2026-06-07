@@ -134,18 +134,37 @@ import java.util.TreeSet;
  * is emitted exclusively for taps on empty workspace; taps consumed by the app
  * drawer, icon grid, widgets, or search bar never produce it.
  *
- * Samsung One UI's launcher NEVER sends {@code android.wallpaper.tap} commands.
- * The field {@link #launcherSendsCommands} starts {@code false}; the first command
- * received in {@link #onWallpaperTapCommand} flips it {@code true} permanently for
- * the session.  When the flag stays {@code false} (no command ever arrived), the
- * GestureDetector tap() path activates as a direct-tap fallback so that Samsung
- * users can actually launch apps.
+ * Samsung One UI's launcher NEVER sends {@code android.wallpaper.tap} commands on
+ * the home screen.  The field {@link #launcherSendsCommands} starts {@code false};
+ * the first command received in {@link #onWallpaperTapCommand} from a REAL home
+ * engine (not preview) flips it {@code true} permanently for the session.  When
+ * the flag stays {@code false} (no command ever arrived from home), the GestureDetector
+ * tap() path activates as a direct-tap fallback so that Samsung users can launch apps.
  *
  * On One UI, the launcher signals "leaving the plain home screen" (drawer/recents/
  * edit mode) by zooming the wallpaper out via {@code onZoomChanged} (API 30).  The
  * {@link #wallpaperZoom} field tracks this zoom level; the direct-tap path suppresses
  * launching when {@code wallpaperZoom > 0.4f} to guard against accidental launches
  * while the app drawer or recents overlay is open.
+ *
+ * ─── One UI Preview Bug: tap commands on every finger-up ─────────────────────
+ *
+ * Samsung One UI's wallpaper-PREVIEW screen DOES send {@code android.wallpaper.tap}
+ * commands — and fires them on every finger-up, including releases of rotation drags.
+ * This caused two separate bugs:
+ *
+ * 1. "Moving sphere in preview opens app when I release my finger" — the command
+ *    fired at the end of every drag in preview mode.
+ * 2. "Clicking not working on home, but works in preview" — if {@link #onWallpaperTapCommand}
+ *    were allowed to set {@link #launcherSendsCommands} during preview, the SHARED
+ *    engine would believe the launcher supports commands and suppress direct taps on
+ *    the home screen, where One UI home NEVER sends them.
+ *
+ * Fix: {@link #onWallpaperTapCommand} ignores commands entirely when
+ * {@link #isPreviewMode} is {@code true}.  Preview launching works through the
+ * GestureDetector tap() path, which correctly distinguishes taps from drag releases.
+ * Only home-screen commands (non-preview) are valid proof that the launcher supports
+ * the command protocol.
  *
  * In the wallpaper-picker preview there is no launcher, so no commands arrive and
  * {@link #launcherSendsCommands} stays {@code false}.  The GestureDetector path
@@ -329,6 +348,75 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private float xOffsetStep = 0f;        // Fraction per page
     private int activePage = 0;            // User-configured target page
     private float pageVisibility = 1f;     // 0.0 (hidden) → 1.0 (full render)
+
+    /**
+     * Whether this session has ever received a valid xOffsetStep > 0 from the
+     * launcher.  Set to {@code true} in {@link #onOffsetsChanged} the first time
+     * a non-zero step arrives.  Used by {@link #updatePageVisibility} to
+     * distinguish "launcher never reports offsets" (false) from "offsets briefly
+     * zero during a transition" (true but step == 0 right now).
+     *
+     * Written on the main thread (onOffsetsChanged callback); read on the GL
+     * thread (updatePageVisibility, called from render).  Declared
+     * {@code volatile} for cross-thread visibility.
+     */
+    private volatile boolean offsetsSeen = false;
+
+    /**
+     * Dead-reckoning page estimate for offset-silent launchers (e.g. Samsung
+     * One UI on the Galaxy S25 Ultra, which never reports xOffsetStep).
+     *
+     * Incremented/decremented in {@link #commitPageSwipe} after each committed
+     * horizontal page swipe when {@link #offsetsSeen} is false.  Clamped to
+     * [0, 8] so boundary pages always re-sync after enough swipes.
+     *
+     * Written and read exclusively on the GL thread (libGDX input callbacks run
+     * on the GL thread) — plain int, no volatile needed.
+     *
+     * Drift caveat: partial swipes below the 35% threshold are ignored, so the
+     * dead-reckoning can drift if the user frequently cancels swipes.  Clamping
+     * at the extremes re-syncs when the user reaches the first or last page.
+     */
+    private int inferredPage = 0;
+
+    // ─── Per-gesture horizontal drag accumulation (for page inference) ──
+
+    /**
+     * Accumulated horizontal drag (screen pixels) for the current gesture,
+     * reset at the start of each new gesture (first pan() after idle/touchdown).
+     * Used to decide whether the swipe committed a full page change.
+     *
+     * Written and read on the GL thread (GestureDetector callbacks run on the
+     * GL thread) — plain float, no volatile needed.
+     */
+    private float totalDx = 0f;
+
+    /**
+     * Accumulated vertical drag (screen pixels) for the current gesture.
+     * Used alongside {@link #totalDx} to reject near-vertical swipes from the
+     * page-inference path (they are likely pull-down notification shade gestures,
+     * not horizontal page swipes).
+     */
+    private float totalDy = 0f;
+
+    /**
+     * True while a pan gesture is in progress (between the first pan() call
+     * and panStop/fling).  Set to {@code false} initially and on reset; set
+     * to {@code true} on the first pan() call after a touch-down.  Allows
+     * {@link #pan} to detect the start of a new gesture and reset totalDx/totalDy.
+     */
+    private boolean panInProgress = false;
+
+    /**
+     * Guard flag that prevents double-counting a committed page swipe.
+     * A fling can follow a panStop; without this flag both would each try to
+     * count the same gesture.  Set to {@code true} the first time a gesture
+     * is counted (in either panStop or fling); reset to {@code false} at the
+     * start of each new gesture.
+     *
+     * Written and read on the GL thread — plain boolean, no volatile needed.
+     */
+    private boolean gestureCounted = false;
 
     // ─── Visibility ─────────────────────────────────────────────────────
     private boolean isVisible = true;
@@ -1470,6 +1558,17 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 idleTimer = 0f;
                 idleBlend = 0f;
 
+                // ─── Page-inference: detect gesture start and accumulate drag ─
+                // Detect new gesture start: first pan() call after idle/touchdown.
+                if (!panInProgress) {
+                    panInProgress = true;
+                    gestureCounted = false;
+                    totalDx = 0f;
+                    totalDy = 0f;
+                }
+                totalDx += deltaX;
+                totalDy += deltaY;
+
                 // Convert screen-space drag to rotation angles
                 // deltaX → rotate around Y axis (horizontal drag = horizontal spin)
                 // deltaY → rotate around X axis (vertical drag = vertical spin)
@@ -1504,6 +1603,15 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             public boolean fling(float velocityX, float velocityY, int button) {
                 userInteracting = false;
 
+                // Page inference: try to commit a page swipe on gesture end.
+                // gestureCounted guard prevents double-counting if panStop also fired.
+                if (!gestureCounted) {
+                    commitPageSwipe();
+                    gestureCounted = true;
+                }
+                // Reset gesture tracking for next gesture.
+                panInProgress = false;
+
                 // Map screen-space fling velocity to angular velocity, scaled
                 // by the user's rotation speed preference.
                 angularVelocity.set(
@@ -1524,6 +1632,14 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             @Override
             public boolean panStop(float x, float y, int pointer, int button) {
                 userInteracting = false;
+                // Page inference: try to commit a page swipe on gesture end.
+                // gestureCounted guard prevents double-counting if fling follows.
+                if (!gestureCounted) {
+                    commitPageSwipe();
+                    gestureCounted = true;
+                }
+                // Reset gesture tracking for next gesture.
+                panInProgress = false;
                 return true;
             }
 
@@ -1627,6 +1743,11 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                     // New gesture starts: clear any stale pinch state so the next
                     // pinch() re-arms from the current midpoint (no rotation jolt).
                     pinchActive = false;
+                    // Reset page-inference gesture state for the new touch sequence.
+                    panInProgress = false;
+                    gestureCounted = false;
+                    totalDx = 0f;
+                    totalDy = 0f;
                 }
                 return super.touchDown(screenX, screenY, pointer, button);
             }
@@ -1649,11 +1770,88 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 // Clear our outer pinch state that super cannot reach.
                 pinchActive = false;
                 userInteracting = false;
+                // Reset page-inference gesture state on cancellation.
+                panInProgress = false;
+                gestureCounted = false;
+                totalDx = 0f;
+                totalDy = 0f;
                 return super.touchCancelled(screenX, screenY, pointer, button);
             }
         };
 
         Gdx.input.setInputProcessor(gestureDetector);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  Page Inference — Dead-reckoning for offset-silent launchers
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Attempts to commit a horizontal page swipe to the dead-reckoning
+     * {@link #inferredPage} counter.  Called at the end of each pan/fling
+     * gesture (in {@code panStop} and {@code fling}) when the gesture has
+     * NOT already been counted ({@link #gestureCounted} guard prevents
+     * double-counting when both callbacks fire for the same gesture).
+     *
+     * <p>Conditions required to count a page change (all must be true):
+     * <ol>
+     *   <li>Not in preview mode — inference never runs in preview; the sphere
+     *       is always fully visible there and previewStateChange forces
+     *       pageVisibility = 1.</li>
+     *   <li>Not a two-finger pinch — pinchActive gates out this path so only
+     *       one-finger horizontal swipes are counted as page changes.</li>
+     *   <li>Wallpaper not zoomed ({@code wallpaperZoom < 0.2f}) — One UI zooms
+     *       the wallpaper during drawer/recents/edit mode; swipes in those
+     *       contexts should not advance the page counter.</li>
+     *   <li>Total horizontal drag exceeds 35 % of viewport width — filters out
+     *       short taps and sphere-rotation micro-drags that did not cross a
+     *       page boundary.</li>
+     *   <li>Horizontal dominates vertical (|dx| > 1.5 × |dy|) — rejects
+     *       near-vertical swipes such as notification-shade pulls.</li>
+     * </ol>
+     *
+     * <p>Direction: swipe left (totalDx &lt; 0) → next page (inferredPage++);
+     * swipe right (totalDx &gt; 0) → previous page (inferredPage--).
+     * Clamped to [0, 8]; reaching 0 or 8 re-syncs the counter at the
+     * launcher's boundary even if prior drift accumulated.
+     *
+     * <p>This is dead-reckoning: partial swipes or multi-page flings may cause
+     * drift.  The clamp at the boundaries provides the only re-sync point.
+     * The zoom filter removes most spurious drawer/recents swipes.
+     * This makes the "Sphere page" preference functional on One UI devices
+     * that report no offsets whatsoever.
+     *
+     * <p>Called on the GL thread (GestureDetector callbacks run on GL thread).
+     * All fields accessed here are GL-thread-owned — no synchronization needed.
+     */
+    private void commitPageSwipe() {
+        // Skip inference in preview: sphere always fully visible there.
+        if (isPreviewMode) return;
+
+        // Skip if two-finger pinch is active (pinch swipes are not page changes).
+        if (pinchActive) return;
+
+        // Skip if launcher reports real offsets — the offset path handles visibility.
+        // offsetsSeen true but step currently 0 = transient; still use inference for
+        // the current frame but do not record new page changes (will auto-recover).
+        if (offsetsSeen) return;
+
+        // Zoom filter: drawer/recents/edit-mode swipes should not change page.
+        if (wallpaperZoom >= 0.2f) return;
+
+        float viewportWidth = Gdx.graphics.getWidth();
+
+        // Threshold: 35 % of viewport width for a committed page swipe.
+        if (Math.abs(totalDx) <= viewportWidth * 0.35f) return;
+
+        // Direction dominance: horizontal must exceed 1.5× vertical to be a page swipe.
+        if (Math.abs(totalDx) <= 1.5f * Math.abs(totalDy)) return;
+
+        // Commit: left swipe → next page, right swipe → previous page.
+        int delta = totalDx < 0 ? 1 : -1;
+        inferredPage = MathUtils.clamp(inferredPage + delta, 0, 8);
+
+        Log.d(TAG, "commitPageSwipe: totalDx=" + totalDx + " → inferredPage=" + inferredPage);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -1818,15 +2016,29 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * cycles and ensuring the wallpaper only occupies the designated page.
      *
      * The lerp speed (8.0) gives a snappy ~150ms transition at 120 FPS.
+     *
+     * ─── Offset-silent launcher path (Samsung One UI) ─────────────────────
+     *
+     * When {@link #offsetsSeen} is false (the launcher has never reported a
+     * valid xOffsetStep), this method uses the dead-reckoning {@link #inferredPage}
+     * counter maintained by {@link #commitPageSwipe()}.  The same falloff formula
+     * is applied so behaviour is identical to the offset path at the page level.
+     *
+     * When {@link #offsetsSeen} is true but the current step happens to be zero
+     * (transient state during launcher animations), we stay fully visible rather
+     * than snapping to an inferred page — this is the least disruptive behaviour
+     * for the brief moment the step is absent.
+     *
+     * Preview mode: {@link #previewStateChange} sets pageVisibility = 1 directly
+     * and inference is gated out in {@link #commitPageSwipe}, so this path never
+     * applies to the preview engine.
      */
     private void updatePageVisibility(float delta) {
         float targetVisibility;
 
-        if (xOffsetStep <= 0f) {
-            // Can't determine page (some launchers don't report step) — always visible
-            targetVisibility = 1f;
-        } else {
-            // Calculate current page number from continuous offset
+        if (xOffsetStep > 0f) {
+            // ─── Real offset path: launcher reports page positions ──────────
+            // Calculate current page number from continuous offset.
             float currentPage = currentXOffset / xOffsetStep;
             float pageDistance = Math.abs(currentPage - activePage);
 
@@ -1837,6 +2049,21 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // target must reach 0 — with 1.4 it left a 2% ghost (1−0.7×1.4=0.02)
             // visible on the adjacent page.
             targetVisibility = MathUtils.clamp(1f - (pageDistance - 0.3f) * 1.5f, 0f, 1f);
+        } else if (!offsetsSeen) {
+            // ─── Dead-reckoning path: offset-silent launcher (e.g. Samsung One UI) ─
+            // The launcher has NEVER reported a valid step, so we use the inferred
+            // page count maintained by commitPageSwipe().  Apply the same falloff
+            // formula so the "Sphere page" preference is functional on One UI.
+            // Dead-reckoning caveat: partial swipes / multi-page flings may drift;
+            // clamping at [0,8] in commitPageSwipe re-syncs at the boundaries.
+            float pageDistance = Math.abs(inferredPage - activePage);
+            targetVisibility = MathUtils.clamp(1f - (pageDistance - 0.3f) * 1.5f, 0f, 1f);
+        } else {
+            // ─── Transient zero-step: offsetsSeen=true but step currently 0 ──
+            // Launcher normally reports offsets but the step is momentarily zero
+            // (e.g. during a launcher animation or home-screen reset).  Keep the
+            // sphere visible to avoid a brief invisible flash.
+            targetVisibility = 1f;
         }
 
         // Smooth lerp to target
@@ -2193,16 +2420,26 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                              int xPixelOffset, int yPixelOffset) {
         this.currentXOffset = xOffset;
         this.xOffsetStep = xOffsetStep;
+        // Latch offsetsSeen if the launcher reports a real step (same as onOffsetsChanged).
+        if (xOffsetStep > 0f && !offsetsSeen) {
+            offsetsSeen = true;
+        }
     }
 
     @Override
     public void previewStateChange(boolean isPreview) {
         // Track preview mode so tap() knows whether to launch (no command path in preview).
         this.isPreviewMode = isPreview;
-        // In preview mode (wallpaper picker), always render at full visibility
+        // In preview mode (wallpaper picker), always render at full visibility.
+        // Page inference must never run in preview — the sphere is always visible there.
         if (isPreview) {
             pageVisibility = 1f;
         }
+        // Zoom lifecycle hardening: reset stale zoom on both preview transitions.
+        // A lock-screen or recents animation can leave wallpaperZoom at 1.0; resetting
+        // here ensures the direct-tap fallback is not suppressed after the transition.
+        // The launcher will re-send the correct value if it is genuinely zoomed.
+        wallpaperZoom = 0f;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -2213,11 +2450,22 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * Called from MyWallpaperService.AuraOrbitEngine.onOffsetsChanged().
      * This provides the raw WallpaperService.Engine offset values before
      * libGDX's AndroidWallpaperListener processes them.
+     *
+     * Sets {@link #offsetsSeen} to {@code true} the first time a positive
+     * xOffsetStep is received, marking that this launcher reports real page offsets.
+     * Once set, updatePageVisibility() will use the launcher-reported offset path
+     * rather than dead-reckoning from swipe counts.
      */
     public void onOffsetsChanged(float xOffset, float yOffset,
                                  float xOffsetStep, float yOffsetStep) {
         this.currentXOffset = xOffset;
         this.xOffsetStep = xOffsetStep;
+        // Latch offsetsSeen the first time the launcher reports a real step.
+        // volatile write — cross-thread: written on main thread, read on GL thread.
+        if (xOffsetStep > 0f && !offsetsSeen) {
+            offsetsSeen = true;
+            Log.d(TAG, "onOffsetsChanged: launcher reports real offsets (step=" + xOffsetStep + ")");
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -2309,6 +2557,18 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * command therefore prevents the sphere from launching apps when the user
      * taps on drawer UI layered over the wallpaper.
      *
+     * <p><b>Preview mode isolation (One UI bug fix):</b> Samsung One UI's
+     * wallpaper-preview screen sends {@code android.wallpaper.tap} on EVERY
+     * finger-up, including at the end of rotation drags.  More critically, the
+     * WallpaperService creates multiple Engine instances that share this single
+     * SphereEngine application listener — if a preview command were allowed to
+     * set {@link #launcherSendsCommands} to {@code true}, the home engine would
+     * see that flag and suppress the direct-tap fallback, even though One UI's
+     * home launcher never sends these commands.  The fix: ignore this method
+     * entirely when {@link #isPreviewMode} is {@code true}.  Preview launching
+     * is handled exclusively by the GestureDetector tap() path, which correctly
+     * distinguishes taps from drag releases.
+     *
      * <p>The command arrives on the Android main thread; the raycast must run
      * on the libGDX GL thread.  {@code Gdx.app.postRunnable} performs that
      * marshal safely.
@@ -2322,12 +2582,23 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * @param y  Surface-relative Y coordinate in pixels (top-left origin)
      */
     public void onWallpaperTapCommand(int x, int y) {
+        // ─── Preview isolation: ignore commands from the preview engine ───
+        // One UI fires android.wallpaper.tap on every finger-up in preview,
+        // including releases of rotation drags.  More critically, allowing a
+        // preview command to set launcherSendsCommands=true would permanently
+        // suppress the direct-tap fallback on the home screen, where One UI
+        // home NEVER sends these commands (see class-level javadoc).
+        if (isPreviewMode) {
+            Log.d(TAG, "onWallpaperTapCommand: ignored in preview mode (One UI fires on every finger-up)");
+            return;
+        }
+
         // ─── Proof of command support: mark this launcher as command-capable ──
-        // The very first command proves this launcher sends android.wallpaper.tap.
-        // Flip the flag now (on the main thread, before posting) so that if the
-        // GestureDetector tap() fires on the GL thread before the runnable runs,
-        // it sees launcherSendsCommands == true and suppresses itself.
-        // volatile write — visible to GL thread immediately.
+        // The very first home-screen command proves this launcher sends
+        // android.wallpaper.tap.  Flip the flag now (on the main thread, before
+        // posting) so that if the GestureDetector tap() fires on the GL thread
+        // before the runnable runs, it sees launcherSendsCommands == true and
+        // suppresses itself.  volatile write — visible to GL thread immediately.
         launcherSendsCommands = true;
 
         // Marshal from main thread to GL thread for raycast safety.
@@ -2369,6 +2640,12 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * receive a touchCancelled or pinchStop on some devices (the events are
      * swallowed by the system).  Clearing here prevents pinchActive from
      * getting stuck true across a visibility change.
+     *
+     * Zoom lifecycle hardening: wallpaperZoom is reset to 0 when the wallpaper
+     * becomes visible again.  On One UI, lock-screen/recents transitions leave
+     * wallpaperZoom at 1.0; without this reset the direct-tap fallback would be
+     * suppressed indefinitely (wallpaperZoom > 0.4f) until the launcher happens
+     * to send another onZoomChanged(0) call, which it may never do on resume.
      */
     public void setVisible(boolean visible) {
         this.isVisible = visible;
@@ -2376,6 +2653,11 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // Gesture state must not survive across visibility edges (Fix 1c).
             pinchActive = false;
             userInteracting = false;
+        } else {
+            // Zoom lifecycle hardening: reset stale zoom from lock/recents transitions.
+            // The launcher will re-send the correct value if still zoomed; until then
+            // assume home-screen view (zoom = 0) so direct-tap works immediately.
+            wallpaperZoom = 0f;
         }
     }
 
