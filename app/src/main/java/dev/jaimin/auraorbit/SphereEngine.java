@@ -603,6 +603,84 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      */
     private volatile float wallpaperZoom = 0f;
 
+    // ─── Launcher-claimed gesture revert (fixes issue #14) ──────────────
+    //
+    // On AOSP/Pixel launchers an upward swipe opens the app drawer AND spins
+    // the sphere simultaneously — a double action that feels broken.  The launcher
+    // can't be blocked (OS design), but the sphere can gracefully DECLINE gestures
+    // the launcher claims.
+    //
+    // Signal: onZoomChanged streams continuously while the drawer opens
+    // (wallpaperZoom rises from 0 → ~0.33+ within tens of ms).  We treat
+    // wallpaperZoom > ZOOM_CLAIM_THRESHOLD as "launcher owns this gesture".
+    //
+    // Mechanism: when the zoom claim is detected during or shortly after a
+    // one-finger gesture, we slerp sphereRotation back to the pre-gesture
+    // snapshot — "the drawer opens, the sphere politely un-spins".
+
+    /**
+     * Snapshot of sphereRotation captured at the start of each one-finger gesture
+     * (pointer == 0 touchDown).  Used as the target for revert animation when the
+     * launcher claims the gesture via wallpaperZoom rising above ZOOM_CLAIM_THRESHOLD.
+     * Initialized to identity; only valid when gestureSnapshotValid is true.
+     */
+    private final Quaternion gestureStartRotation = new Quaternion();
+
+    /**
+     * True when gestureStartRotation holds a valid snapshot for the current gesture.
+     * Set true on pointer-0 touchDown; cleared when the revert animation finishes or
+     * when a new gesture starts with low zoom (user wins).
+     * Invalidated when pinchActive becomes true (two-finger gestures never trigger revert).
+     */
+    private boolean gestureSnapshotValid = false;
+
+    /**
+     * True while the sphere is animating back to gestureStartRotation because the
+     * launcher claimed the gesture (wallpaperZoom exceeded ZOOM_CLAIM_THRESHOLD).
+     * While active: pan() rotation is suppressed; fling momentum is zeroed.
+     * Cleared when the slerp converges (dot product > 0.99995) or when a new
+     * genuine gesture starts with wallpaperZoom < 0.05.
+     */
+    private boolean revertActive = false;
+
+    /**
+     * Time elapsed since the revert animation started, in seconds.
+     * Advanced by delta each frame while revertActive is true.
+     * Reset to 0f when a new revert begins.
+     */
+    private float revertTimer = 0f;
+
+    /**
+     * Nanosecond timestamp (System.nanoTime()) of when the last one-finger gesture
+     * ended (panStop or fling).  Initialized to Long.MIN_VALUE/2 so the initial age
+     * is safely huge (no gesture has ended yet).
+     * Used to extend the revert-trigger window for CLAIM_WINDOW_NS after gesture end,
+     * since the zoom signal can arrive tens of ms after the finger lifts.
+     */
+    private long lastGestureEndNanos = Long.MIN_VALUE / 2;
+
+    /**
+     * wallpaperZoom threshold above which the engine treats the gesture as
+     * claimed by the launcher (drawer opening).  0.15 is reliably above the
+     * idle home-screen noise (0) and well below the steady-state drawer zoom
+     * (~0.33+ on Pixel Launcher).
+     */
+    private static final float ZOOM_CLAIM_THRESHOLD = 0.15f;
+
+    /**
+     * Duration of the revert slerp animation in seconds.  0.25 s feels snappy
+     * but not jarring — the sphere un-spins just as the drawer slides open.
+     */
+    private static final float REVERT_DURATION = 0.25f;
+
+    /**
+     * Time window after a gesture ends (in nanoseconds) during which a rising
+     * wallpaperZoom can still trigger the revert.  400 ms covers the typical
+     * delay between finger-lift and the first onZoomChanged callback from the
+     * Pixel Launcher drawer animation.
+     */
+    private static final long CLAIM_WINDOW_NS = 400_000_000L; // 400 ms
+
     // ─── Reusable math objects (avoid GC pressure) ──────────────────────
     private final Vector3 tmpVec = new Vector3();
     private final Vector3 tmpVec2 = new Vector3();
@@ -934,6 +1012,14 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         returnScaleFactor = 1f;
         returnAlphaFactor = 1f;
         returnAnimPending = false;
+
+        // ─── Reset gesture-revert state on rebuild ────────────────────────
+        // A rebuild disposes all decals; any in-flight revert animation can be
+        // safely cancelled — the sphere is effectively re-created from scratch.
+        revertActive = false;
+        revertTimer = 0f;
+        gestureSnapshotValid = false;
+        lastGestureEndNanos = Long.MIN_VALUE / 2;
 
         // ─── Re-fetch apps, redistribute, recreate decals and backdrops ──
         appNodes = AppFetcher.fetchSelectedApps(context);
@@ -1738,6 +1824,30 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 totalDx += deltaX;
                 totalDy += deltaY;
 
+                // ─── Launcher-claim guard: suppress rotation while zoomed ─────
+                // wallpaperZoom > ZOOM_CLAIM_THRESHOLD means the launcher has claimed
+                // this gesture (drawer opening).  The sphere yields — let the drawer
+                // slide in cleanly without also spinning the sphere.  Page-inference
+                // accumulation continues above so the dead-reckoning counter is not
+                // disrupted; only the actual sphere rotation is suppressed here.
+                // (Page inference already filters zoom >= 0.2f in commitPageSwipe,
+                // so the thresholds are compatible and non-conflicting.)
+                if (wallpaperZoom > ZOOM_CLAIM_THRESHOLD) {
+                    // Launcher owns this gesture — sphere does not rotate.
+                    // Also zero fling momentum so a release cannot spin the sphere.
+                    angularVelocity.setZero();
+                    return true;
+                }
+
+                // ─── While revert is active: ignore pan rotation ─────────────
+                // The revert animation is un-spinning the sphere back to its
+                // pre-gesture orientation.  Applying new pan rotation would fight
+                // the slerp.  Return true (consume event) but do not rotate.
+                if (revertActive) {
+                    angularVelocity.setZero();
+                    return true;
+                }
+
                 // Convert screen-space drag to rotation angles
                 // deltaX → rotate around Y axis (horizontal drag = horizontal spin)
                 // deltaY → rotate around X axis (vertical drag = vertical spin)
@@ -1772,6 +1882,11 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             public boolean fling(float velocityX, float velocityY, int button) {
                 userInteracting = false;
 
+                // Record gesture-end time for the launcher-claim revert window.
+                // wallpaperZoom can rise tens of ms AFTER the finger lifts, so we
+                // allow the revert to be triggered up to CLAIM_WINDOW_NS after here.
+                lastGestureEndNanos = System.nanoTime();
+
                 // Page inference: try to commit a page swipe on gesture end.
                 // Pass velocityX/Y so commitPageSwipe() can use the fling-velocity
                 // path (path B) to match One UI's fling-commit semantics for fast
@@ -1783,6 +1898,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 }
                 // Reset gesture tracking for next gesture.
                 panInProgress = false;
+
+                // If a revert is already active, suppress the fling momentum —
+                // letting fling momentum fight the revert slerp would look chaotic.
+                if (revertActive) {
+                    angularVelocity.setZero();
+                    return true;
+                }
 
                 // Map screen-space fling velocity to angular velocity, scaled
                 // by the user's rotation speed preference.
@@ -1804,6 +1926,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             @Override
             public boolean panStop(float x, float y, int pointer, int button) {
                 userInteracting = false;
+
+                // Record gesture-end time for the launcher-claim revert window.
+                lastGestureEndNanos = System.nanoTime();
+
                 // Page inference: try to commit a page swipe on gesture end.
                 // No fling velocity available here (slow-drag stop), so pass 0,0.
                 // gestureCounted guard prevents double-counting if fling follows.
@@ -1850,6 +1976,11 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                     pinchActive = true;
                     lastPinchMidX = midX;
                     lastPinchMidY = midY;
+                    // Invalidate the one-finger snapshot: two-finger gestures are never
+                    // claimed by the launcher, so the revert mechanism must not fire during
+                    // or after a pinch.  gestureSnapshotValid = false ensures the revert
+                    // trigger check in updatePhysics() is a no-op while pinching.
+                    gestureSnapshotValid = false;
                     return true;
                 }
 
@@ -1921,6 +2052,23 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                     gestureCounted = false;
                     totalDx = 0f;
                     totalDy = 0f;
+
+                    // ── Gesture rotation snapshot for launcher-claim revert ──────
+                    // Capture the sphere's current orientation so we can slerp back
+                    // to it if the launcher claims this gesture (wallpaperZoom rises).
+                    // If wallpaperZoom is already low, this is a genuine new gesture —
+                    // cancel any in-progress revert and take a fresh snapshot (user wins).
+                    gestureStartRotation.set(sphereRotation);
+                    gestureSnapshotValid = true;
+                    if (wallpaperZoom < 0.05f) {
+                        // User explicitly starting a gesture on the home screen:
+                        // cancel any leftover revert from the previous gesture.
+                        revertActive = false;
+                        revertTimer = 0f;
+                    }
+                    // Note: if wallpaperZoom >= 0.05f already (launcher is animating),
+                    // we still update the snapshot but do not cancel an active revert —
+                    // the revert was already triggered and should run to completion.
                 }
                 return super.touchDown(screenX, screenY, pointer, button);
             }
@@ -2196,6 +2344,60 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * @param delta Frame time in seconds (1/120 at 120 FPS)
      */
     private void updatePhysics(float delta) {
+        // ─── 0. Launcher-claimed gesture revert (issue #14) ──────────────
+        //
+        // Check whether we should ARM a new revert, then advance any active revert.
+        //
+        // ARM condition: the snapshot is valid (one-finger gesture was started),
+        // no revert is running yet, wallpaperZoom has exceeded ZOOM_CLAIM_THRESHOLD
+        // (launcher claimed the gesture), AND the gesture is either still in
+        // progress OR ended within the CLAIM_WINDOW_NS window (zoom can arrive
+        // after finger-lift).
+        if (gestureSnapshotValid && !revertActive && wallpaperZoom > ZOOM_CLAIM_THRESHOLD) {
+            boolean gestureInProgress = panInProgress;
+            boolean withinWindow = (System.nanoTime() - lastGestureEndNanos) < CLAIM_WINDOW_NS;
+            if (gestureInProgress || withinWindow) {
+                // Launcher claimed the gesture — arm the revert.
+                revertActive = true;
+                revertTimer = 0f;
+                // Zero fling momentum: the sphere should un-spin, not coast.
+                angularVelocity.setZero();
+                // Reset idle so it ramps in cleanly after the revert.
+                idleTimer = 0f;
+                idleBlend = 0f;
+                Log.d(TAG, "Gesture revert armed: wallpaperZoom=" + wallpaperZoom
+                        + " inProgress=" + gestureInProgress);
+            }
+        }
+
+        // ─── REVERT ANIMATION: slerp back to pre-gesture orientation ─────
+        if (revertActive) {
+            revertTimer += delta;
+            // Exponential slerp: each frame we move 12× delta fraction toward the
+            // target, clamped to 1.  This gives a fast initial convergence that
+            // naturally slows as the angle shrinks — no per-frame allocations.
+            float alpha = Math.min(1f, delta * 12f);
+            // Quaternion.slerp(target, alpha) mutates THIS quaternion toward target
+            // by alpha.  No allocation — gestureStartRotation is a field.
+            sphereRotation.slerp(gestureStartRotation, alpha);
+            sphereRotation.nor();
+
+            // Convergence check: dot product of two unit quaternions equals cos(half-angle).
+            // When > 0.99995 the remaining angle is < ~0.6° — visually complete.
+            float dot = sphereRotation.dot(gestureStartRotation);
+            boolean converged = Math.abs(dot) > 0.99995f || revertTimer >= REVERT_DURATION * 2f;
+            if (converged) {
+                // Snap to exact target to eliminate any residual float drift.
+                sphereRotation.set(gestureStartRotation);
+                sphereRotation.nor();
+                revertActive = false;
+                gestureSnapshotValid = false;
+                Log.d(TAG, "Gesture revert complete (timer=" + revertTimer + "s)");
+            }
+            // While reverting: skip fling and idle spin to avoid fighting the slerp.
+            return;
+        }
+
         // ─── 1. Fling momentum (with friction) ──────────────────────────
         float speed = angularVelocity.len();
         if (speed > VELOCITY_EPSILON) {
@@ -3176,6 +3378,11 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // Gesture state must not survive across visibility edges (Fix 1c).
             pinchActive = false;
             userInteracting = false;
+            // Revert state must not survive visibility edges — if the wallpaper
+            // goes invisible mid-revert (e.g. lock screen), cancel cleanly.
+            revertActive = false;
+            revertTimer = 0f;
+            gestureSnapshotValid = false;
 
             // ─── Abort any in-flight launch animation (QA finding) ─────────
             // If the wallpaper loses visibility mid-launch-animation, render()
