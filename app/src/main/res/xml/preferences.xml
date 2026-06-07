@@ -48,6 +48,10 @@
             android:summary="@string/pref_rotation_speed_summary"
             android:defaultValue="100" android:max="300"
             app:min="10" app:showSeekBarValue="true" />
+        <Preference
+            android:key="pref_gesture_tips"
+            android:title="@string/pref_gesture_tips_title"
+            android:summary="@string/pref_gesture_tips_summary" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/pref_category_performance">
