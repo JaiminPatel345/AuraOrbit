@@ -1,6 +1,7 @@
 package dev.jaimin.auraorbit;
 
 import android.app.WallpaperManager;
+import android.accessibilityservice.AccessibilityServiceInfo;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -12,6 +13,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
 import android.view.View;
+import android.view.accessibility.AccessibilityManager;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -302,6 +304,18 @@ public class LiveWallpaperSettings extends AppCompatActivity {
                 });
             }
 
+            // ─── pref_exact_page_detection → Accessibility Settings ──────
+            // Sends the user to the system Accessibility Settings screen where
+            // they can enable or disable the LauncherStateService. Title and
+            // summary are refreshed in onResume() to reflect current state.
+            Preference exactPage = findPreference("pref_exact_page_detection");
+            if (exactPage != null) {
+                exactPage.setOnPreferenceClickListener(pref -> {
+                    handleExactPageDetectionClick();
+                    return true;
+                });
+            }
+
         }
 
         @Override
@@ -451,6 +465,61 @@ public class LiveWallpaperSettings extends AppCompatActivity {
             }
         }
 
+        // ─────────────────────────────────────────────────────────────────
+        //  Exact page detection (accessibility service)
+        // ─────────────────────────────────────────────────────────────────
+
+        /**
+         * Returns {@code true} when {@link LauncherStateService} is currently
+         * enabled in the system's Accessibility Settings.
+         *
+         * Implementation: query {@link AccessibilityManager} for the list of
+         * enabled accessibility services and look for our component name.
+         * This works on API 14+ and is the standard approach — it avoids
+         * reading Settings.Secure directly (which requires special permissions
+         * on some API levels).
+         */
+        private boolean isA11yServiceEnabled() {
+            AccessibilityManager am = (AccessibilityManager)
+                    requireContext().getSystemService(android.content.Context.ACCESSIBILITY_SERVICE);
+            if (am == null) return false;
+
+            ComponentName ourComponent = new ComponentName(
+                    requireContext(), LauncherStateService.class);
+
+            java.util.List<AccessibilityServiceInfo> enabled =
+                    am.getEnabledAccessibilityServiceList(
+                            AccessibilityServiceInfo.FEEDBACK_ALL_MASK);
+            if (enabled == null) return false;
+
+            for (AccessibilityServiceInfo info : enabled) {
+                if (ourComponent.flattenToString().equals(
+                        info.getId())) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Handles taps on the exact-page-detection preference row.
+         *
+         * Opens the system Accessibility Settings screen. The user enables or
+         * disables the service there; on return to this Activity, onResume()
+         * calls updateSummaries() to reflect the new state.
+         */
+        private void handleExactPageDetectionClick() {
+            try {
+                startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+            } catch (ActivityNotFoundException e) {
+                Toast.makeText(
+                        requireContext(),
+                        "Could not open Accessibility Settings — please enable it manually.",
+                        Toast.LENGTH_LONG
+                ).show();
+            }
+        }
+
         /**
          * Launches the system photo picker restricted to images only.
          */
@@ -556,6 +625,20 @@ public class LiveWallpaperSettings extends AppCompatActivity {
                 sysWallpaper.setSummary(granted
                         ? R.string.pref_system_wallpaper_summary_granted
                         : R.string.pref_system_wallpaper_summary_denied);
+            }
+
+            // ─── Exact page detection summary ─────────────────────────────
+            // Refreshed on every resume so the user sees up-to-date state
+            // when returning from the Accessibility Settings screen.
+            Preference exactPage = findPreference("pref_exact_page_detection");
+            if (exactPage != null) {
+                boolean a11yEnabled = isA11yServiceEnabled();
+                exactPage.setTitle(a11yEnabled
+                        ? R.string.pref_exact_page_detection_title_enabled
+                        : R.string.pref_exact_page_detection_title_disabled);
+                exactPage.setSummary(a11yEnabled
+                        ? R.string.pref_exact_page_detection_summary_enabled
+                        : R.string.pref_exact_page_detection_summary_disabled);
             }
 
         }

@@ -50,6 +50,16 @@
             app:min="10" app:showSeekBarValue="true" />
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="@string/pref_category_sphere_detection">
+        <!-- Exact page detection via accessibility service (opt-in, One UI only).
+             Title and summary are set dynamically in MainSettingsFragment.updateSummaries()
+             to reflect whether the service is currently enabled. -->
+        <Preference
+            android:key="pref_exact_page_detection"
+            android:title="@string/pref_exact_page_detection_title_disabled"
+            android:summary="@string/pref_exact_page_detection_summary_disabled" />
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/pref_category_performance">
         <ListPreference
             android:key="pref_target_fps"

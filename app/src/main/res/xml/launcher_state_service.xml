@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    AccessibilityService configuration for LauncherStateService.
+
+    Scope: One UI launcher (com.sec.android.app.launcher) only.
+
+    Events:
+      - typeWindowContentChanged: page-indicator text updates as the user swipes.
+      - typeWindowStateChanged:   app drawer open/close transitions.
+      - typeViewScrolled:         in-drawer page swipes.
+
+    canRetrieveWindowContent=true is required to walk the node tree and read
+    the page indicator's contentDescription text.
+
+    notificationTimeout=80 ms: coalesces rapid scroll events so we do not scan
+    the node tree on every single scroll step. Matches the 80 ms throttle used
+    inside LauncherStateService.onAccessibilityEvent.
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowContentChanged|typeWindowStateChanged|typeViewScrolled"
+    android:packageNames="com.sec.android.app.launcher"
+    android:canRetrieveWindowContent="true"
+    android:notificationTimeout="80"
+    android:description="@string/a11y_service_description" />

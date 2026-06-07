@@ -1672,11 +1672,18 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 if (!isPreviewMode && launcherSendsCommands) return false;
 
                 // ─── Direct-tap fallback (Samsung One UI or preview) ──────
-                // Drawer guard: One UI zooms the wallpaper when leaving the
-                // plain home view (drawer, recents, edit mode). Suppress
-                // launching while zoomed to avoid firing through overlay UI.
-                // This guard applies only when NOT in preview mode (preview
-                // has no launcher zoom).
+                // Drawer guard #1 (accessibility service): On One UI, taps on
+                // the blurred sphere behind the open app drawer still reach the
+                // wallpaper because One UI never sends android.wallpaper.tap
+                // commands — the zoom-based guard below is the only native
+                // signal, but the service gives a more reliable drawer flag.
+                // Suppress launching when the drawer is freshly detected open.
+                if (!isPreviewMode && isA11yDrawerOpenFresh()) return false;
+
+                // ─── Drawer guard #2 (zoom fallback) ─────────────────────
+                // One UI zooms the wallpaper when leaving the plain home view
+                // (drawer, recents, edit mode). Suppress launching while zoomed
+                // as a fallback when the accessibility service is not enabled.
                 if (!isPreviewMode && wallpaperZoom > 0.4f) return false;
 
                 return raycastAndLaunch(x, y);
@@ -2019,6 +2026,12 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 && (System.nanoTime() - lastOffsetTimeNanos) < 10_000_000_000L;
         if (offsetsLive) return;
 
+        // ─── Drawer guard (accessibility service): drawer page swipes must not
+        // advance the home-screen dead-reckoning counter. On One UI, the user
+        // can swipe between pages inside the app drawer — those swipes reach
+        // the wallpaper and would otherwise move inferredPage incorrectly.
+        if (isA11yDrawerOpenFresh()) return;
+
         // Zoom filter: drawer/recents/edit-mode swipes should not change page.
         if (wallpaperZoom >= 0.2f) return;
 
@@ -2281,6 +2294,30 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // this guard keeps it locked at 1f every subsequent frame.
         if (isPreviewMode) {
             targetVisibility = 1f;
+            pageVisibility = MathUtils.lerp(pageVisibility, targetVisibility, delta * 8f);
+            return;
+        }
+
+        // ─── Highest-priority source: accessibility service (opt-in, One UI) ──
+        // When LauncherStateService is connected AND its last update is fresh
+        // (within 5 seconds), use the exact page reported by the page indicator
+        // instead of dead-reckoning or offsets.  Falls through when stale or
+        // when the service is not enabled by the user.
+        //
+        // LauncherState.page is 0-based (converted from the 1-based indicator).
+        // activePage is 0-based.  The same falloff formula used by the offset
+        // and dead-reckoning paths keeps behaviour identical.
+        //
+        // Statics are volatile — reads on the GL thread see writes from the
+        // service's main thread without explicit synchronization.
+        final long A11Y_FRESHNESS_NS = 5_000_000_000L; // 5 s
+        boolean a11yFresh = LauncherStateService.LauncherState.serviceConnected
+                && (System.nanoTime() - LauncherStateService.LauncherState.updatedNanos)
+                   < A11Y_FRESHNESS_NS;
+        if (a11yFresh) {
+            float pageDistance = Math.abs(LauncherStateService.LauncherState.page - activePage);
+            targetVisibility = MathUtils.clamp(1f - (pageDistance - 0.3f) * 1.5f, 0f, 1f);
+            // Smooth lerp to target
             pageVisibility = MathUtils.lerp(pageVisibility, targetVisibility, delta * 8f);
             return;
         }
@@ -2848,6 +2885,39 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     }
 
     // ═══════════════════════════════════════════════════════════════════════
+    //  Accessibility service helpers — LauncherStateService integration
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Returns {@code true} when the accessibility service is connected, its
+     * last update is fresh (within 5 seconds), AND it reports the app drawer
+     * as open.
+     *
+     * <p>Used in three places:
+     * <ol>
+     *   <li>{@link #tap} direct-tap fallback — suppresses launches when the
+     *       drawer is open over the wallpaper (fixes issue #10).</li>
+     *   <li>{@link #onWallpaperTapCommand} — belt-and-suspenders guard for the
+     *       command path (One UI's drawer can be open even when a command fires
+     *       if the zoom signal was missed).</li>
+     *   <li>{@link #commitPageSwipe} — prevents drawer page swipes from
+     *       incrementing the home-screen dead-reckoning counter.</li>
+     * </ol>
+     *
+     * <p>All reads are on the GL thread (GestureDetector callbacks, Gdx.app
+     * postRunnable).  {@link LauncherStateService.LauncherState} fields are
+     * {@code volatile} so no explicit synchronization is needed.
+     *
+     * @return true if a fresh a11y report says the drawer is open.
+     */
+    private boolean isA11yDrawerOpenFresh() {
+        if (!LauncherStateService.LauncherState.serviceConnected) return false;
+        long ageNs = System.nanoTime() - LauncherStateService.LauncherState.updatedNanos;
+        if (ageNs > 5_000_000_000L) return false; // stale → fall through
+        return LauncherStateService.LauncherState.drawerOpen;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
     //  Launch Logic — shared by command path and preview tap path
     // ═══════════════════════════════════════════════════════════════════════
 
@@ -2988,9 +3058,20 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         launcherSendsCommands = true;
 
         // Marshal from main thread to GL thread for raycast safety.
+        // Also pass a snapshot of the a11y drawer-open flag so the GL thread
+        // can apply the same guard even for command-path launchers (belt-and-
+        // suspenders: on One UI the drawer can be open when this fires).
         final float fx = x;
         final float fy = y;
-        Gdx.app.postRunnable(() -> raycastAndLaunch(fx, fy));
+        Gdx.app.postRunnable(() -> {
+            // Safety guard: if the accessibility service says the drawer is
+            // open (fresh), suppress this tap to avoid launching through overlay.
+            if (isA11yDrawerOpenFresh()) {
+                Log.d(TAG, "onWallpaperTapCommand: suppressed — a11y reports drawer open");
+                return;
+            }
+            raycastAndLaunch(fx, fy);
+        });
     }
 
     /**
