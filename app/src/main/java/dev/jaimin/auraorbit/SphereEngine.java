@@ -206,6 +206,21 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      */
     private boolean showBackground;
 
+    // ─── Icon size slider range constants ────────────────────────────────
+    /**
+     * Minimum icon size in world units, corresponding to slider value 0 (pref 0–100).
+     * Shared between readConfig() and distributeNodesOnSphere() so the packing-density
+     * formula always uses the same bounds as the slider mapping.
+     */
+    private static final float ICON_SIZE_MIN = 0.6f;
+
+    /**
+     * Maximum icon size in world units, corresponding to slider value 100 (pref 0–100).
+     * Shared between readConfig() and distributeNodesOnSphere() so the packing-density
+     * formula always uses the same bounds as the slider mapping.
+     */
+    private static final float ICON_SIZE_MAX = 2.0f;
+
     // ─── Sphere State ───────────────────────────────────────────────────
     private float sphereRadius;            // Slider-defined maximum sphere radius (world units)
     private float iconSize;                // Configurable icon dimensions
@@ -225,21 +240,27 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private float effectiveRadius;
 
     /**
-     * Spacing-preserving icon size — computed after effectiveRadius is clamped.
-     * When the screen-width cap binds (ideal radius 0.52·iconSize·√N exceeds
-     * sphereRadius), the sphere cannot grow to accommodate the user's icon size,
-     * so the spacing-to-icon ratio collapses and icons crowd at dense rotations.
-     * effectiveIconSize shrinks icons instead so the lattice spacing-to-icon
-     * ratio stays constant (~1.92×) regardless of the cap regime.
+     * Packing-density icon size — computed after effectiveRadius is clamped.
      *
-     * Identity case: when the cap does NOT bind (uncapped or floor regime),
-     * effectiveIconSize == iconSize — no visual change for small N or generous
-     * slider settings.
+     * The Icon Size slider maps to a "pack fraction" [0.55 .. 0.95] of the Fibonacci
+     * lattice spacing.  effectiveIconSize = min(iconSize, packFraction × spacing),
+     * where spacing = 3.545 × effectiveRadius / √N.
+     *
+     * Uncapped regime: spacing = 1.843 × iconSize, so packFraction × spacing ≥
+     * 1.013 × iconSize ≥ iconSize for the entire [0.55..0.95] range — min() always
+     * returns iconSize, preserving identity (the slider is also live here via iconSize).
+     *
+     * Capped regime (screen-width cap binds, e.g. Galaxy S25 Ultra with ~60 apps):
+     * spacing is fixed (effectiveRadius cannot grow), so packFraction directly controls
+     * effectiveIconSize across a broad, visible range.  Previously the bound was the
+     * CONSTANT 1/(0.52 × √N) × effectiveRadius ≈ 0.543 × spacing, making the slider's
+     * upper range completely dead.  The pack-fraction approach keeps the slider live.
+     *
+     * 0.95 spacing is the upper bound so icons never overlap (5% clearance to neighbor).
      *
      * Used everywhere icon size drives visual output: decal dimensions, hit
      * radius, group cloth pad. NOT used in computeCameraDistance (camera stays
-     * slider-referenced) and NOT in the effectiveRadius formula itself (radius
-     * prefers to grow first; shrink only handles the already-capped regime).
+     * slider-referenced) and NOT in the effectiveRadius formula itself.
      */
     private float effectiveIconSize;
 
@@ -669,9 +690,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         int radiusPref = prefs.getInt("pref_sphere_radius", 50);
         sphereRadius = MathUtils.lerp(3.0f, 8.0f, radiusPref / 100f);
 
-        // Icon size: pref value 20–100 mapped to world units 0.6–2.0
+        // Icon size: pref value 0–100 mapped to world units ICON_SIZE_MIN–ICON_SIZE_MAX
         int iconPref = prefs.getInt("pref_icon_size", 50);
-        iconSize = MathUtils.lerp(0.6f, 2.0f, iconPref / 100f);
+        iconSize = MathUtils.lerp(ICON_SIZE_MIN, ICON_SIZE_MAX, iconPref / 100f);
 
         // Rotation speed: pref value 10–300, divide by 100 to get factor, clamp to [0.1, 3.0]
         rotationSpeedFactor = MathUtils.clamp(prefs.getInt("pref_rotation_speed", 100) / 100f, 0.1f, 3.0f);
@@ -933,17 +954,36 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 1.6f * iconSize,
                 sphereRadius);
 
-        // ─── Spacing guarantee: auto-shrink icons when the cap binds ─────
-        // When the screen-width cap (sphereRadius) stops the sphere from growing
-        // to fit N icons at the user's chosen size, shrink icons instead so the
-        // lattice spacing-to-icon ratio stays constant (~1.92×) and icons never
-        // crowd. Formula: effIcon = effR / (0.52 × √N).
-        // Identity cases:
-        //   • Uncapped (ideal < sphereRadius): effR/(0.52·√N) = iconSize exactly.
-        //   • Floor regime (1.6·iconSize binds for small N): effR/(0.52·√N) > iconSize
-        //     so min() keeps the user's size — no shrink for sparse sets.
-        effectiveIconSize = Math.min(iconSize,
-                effectiveRadius / (0.52f * (float) Math.sqrt(Math.max(1, N))));
+        // ─── Packing-density icon size: slider live in both cap regimes ─────
+        //
+        // Lattice spacing between neighboring Fibonacci nodes at this radius/count.
+        //   spacing = 3.545 × effectiveRadius / √N
+        // (Derivation: the Fibonacci sphere surface area per node is 4πR²/N; the
+        //  inter-node distance on a sphere is ~√(4πR²/N) ≈ 3.545·R/√N.)
+        float spacing = 3.545f * effectiveRadius / (float) Math.sqrt(Math.max(1, N));
+
+        // The Icon Size slider controls PACKING DENSITY across both cap regimes.
+        // Map iconSize ∈ [ICON_SIZE_MIN .. ICON_SIZE_MAX] to a pack fraction ∈ [0.55 .. 0.95].
+        // effectiveIconSize = min(iconSize, packFraction × spacing).
+        //
+        // Uncapped regime (effectiveRadius = 0.52·iconSize·√N):
+        //   spacing = 3.545·0.52·iconSize = 1.843·iconSize
+        //   At slider min (fraction=0.55): bound = 0.55·1.843·iconSize = 1.013·iconSize ≥ iconSize ✓
+        //   At slider max (fraction=0.95): bound = 0.95·1.843·iconSize = 1.751·iconSize ≥ iconSize ✓
+        //   → min() always returns iconSize (user's exact chosen size) — slider is live and identity holds.
+        //
+        // Capped regime (S25 Ultra, ~60 apps, effectiveRadius capped at ~5.65):
+        //   spacing = 3.545·5.65/√60 ≈ 2.585  (fixed — radius cannot grow)
+        //   Old fixed bound: 5.65/(0.52·√60) ≈ 1.40  (constant! slider dead)
+        //   New at slider min (fraction=0.55): bound = 0.55·2.585 ≈ 1.42  (small, airy)
+        //   New at slider max (fraction=0.95): bound = 0.95·2.585 ≈ 2.46  (large, dense)
+        //   → slider controls visible icon size across the full range.  Fixes #5.
+        //
+        // 0.95 spacing guarantees icons span at most 95% of the gap to their neighbor,
+        // so they never overlap regardless of cap regime or app count.
+        float packFraction = MathUtils.lerp(0.55f, 0.95f,
+                (iconSize - ICON_SIZE_MIN) / (ICON_SIZE_MAX - ICON_SIZE_MIN));
+        effectiveIconSize = Math.min(iconSize, packFraction * spacing);
 
         Log.d(TAG, "distributeNodesOnSphere: N=" + N + " effectiveRadius=" + effectiveRadius
                 + " effectiveIconSize=" + effectiveIconSize);
