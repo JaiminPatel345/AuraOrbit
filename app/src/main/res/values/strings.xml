@@ -93,6 +93,9 @@
     <string name="group_member_count">%1$d apps</string>
     <string name="wallpaper_hint_no_apps">Open AuraOrbit settings\nto pick your apps</string>
 
+    <!-- Sphere Mode activity -->
+    <string name="sphere_mode_open_settings">Open settings</string>
+
     <!-- Permission onboarding dialog -->
     <string name="onboarding_title">Let AuraOrbit work fully</string>
     <string name="onboarding_item_a11y">• Exact page detection — reads only your launcher\'s page indicator so the sphere knows which home screen you\'re on.</string>
