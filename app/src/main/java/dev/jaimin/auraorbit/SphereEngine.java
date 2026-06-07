@@ -2315,11 +2315,24 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 && (System.nanoTime() - LauncherStateService.LauncherState.updatedNanos)
                    < A11Y_FRESHNESS_NS;
         if (a11yFresh) {
-            float pageDistance = Math.abs(LauncherStateService.LauncherState.page - activePage);
-            targetVisibility = MathUtils.clamp(1f - (pageDistance - 0.3f) * 1.5f, 0f, 1f);
-            // Smooth lerp to target
-            pageVisibility = MathUtils.lerp(pageVisibility, targetVisibility, delta * 8f);
-            return;
+            int a11yPage = LauncherStateService.LauncherState.page;
+            // One UI home page indicator only exists mid-swipe (the dots fade out at
+            // rest, removing/blanking the node).  Before the first swipe, the service
+            // reports page=0 which means "no data yet", NOT "first page".  Treat
+            // page < 1 as no data and fall through to the next source so the sphere
+            // is visible instead of collapsing immediately after the wallpaper applies.
+            if (a11yPage >= 1) {
+                // Sync dead-reckoning so it takes over seamlessly if the service dies
+                // or data goes stale between swipes.
+                inferredPage = a11yPage - 1; // convert back to 0-based
+                float pageDistance = Math.abs(a11yPage - 1 - activePage);
+                targetVisibility = MathUtils.clamp(1f - (pageDistance - 0.3f) * 1.5f, 0f, 1f);
+                // Smooth lerp to target
+                pageVisibility = MathUtils.lerp(pageVisibility, targetVisibility, delta * 8f);
+                return;
+            }
+            // a11yPage == 0: service is connected and fresh but has never parsed a
+            // page indicator — fall through to offsets / dead-reckoning below.
         }
 
         // ─── Determine whether launcher offsets are currently live ────────────

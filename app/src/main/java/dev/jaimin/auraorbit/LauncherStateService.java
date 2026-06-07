@@ -24,10 +24,11 @@ import java.util.regex.Pattern;
  *      launch apps.
  *
  * #11: One UI never sends page-offset events to live wallpapers.  This service
- *      reads the launcher's page indicator (content-desc "Page N of M. ") and
- *      publishes the exact 0-based page into {@link LauncherState#page}.
- *      SphereEngine uses this as the highest-priority page source, replacing the
- *      dead-reckoning swipe counter that can drift.
+ *      reads the launcher's page indicator (content-desc "Page N of M. " or
+ *      "Home screen N of M") and publishes the 1-based page into
+ *      {@link LauncherState#page} (0 = no data yet).  SphereEngine uses this as
+ *      the highest-priority page source, replacing the dead-reckoning swipe
+ *      counter that can drift.
  *
  * ─── Scope and privacy ────────────────────────────────────────────────────────
  *
@@ -66,14 +67,20 @@ public class LauncherStateService extends AccessibilityService {
     private static final String TAG = "AuraOrbit.A11y";
 
     /**
-     * Pattern matching One UI page-indicator content descriptions.
+     * Pattern matching One UI home-screen page-indicator content descriptions.
      *
-     * Observed format:  "Page 1 of 4. "  (note trailing ". ")
+     * Observed formats (Samsung wording varies slightly by One UI version):
+     *   Standard:     "Page 1 of 4. "       (note trailing ". ")
+     *   Alternate:    "Home screen 1 of 4"  (older/regional Samsung builds)
+     *
      * The pattern is tolerant of any whitespace between words and of the
-     * trailing dot-space, matching both "Page 1 of 4." and "Page 1 of 4. ".
+     * trailing dot-space, matching both "Page 1 of 4." and "Page 1 of 4. "
+     * as well as "Home screen 1 of 4" (with or without trailing punctuation).
      */
     private static final Pattern PAGE_PATTERN =
-            Pattern.compile("(?i)page\\s+(\\d+)\\s+of\\s+(\\d+)");
+            Pattern.compile(
+                    "(?i)(?:page\\s+(\\d+)\\s+of\\s+(\\d+)"
+                    + "|home\\s*screen\\s+(\\d+)\\s+of\\s+(\\d+))");
 
     /**
      * Minimum nanoseconds between full node-tree scans.
@@ -90,6 +97,10 @@ public class LauncherStateService extends AccessibilityService {
     private int eventCountSinceLog = 0;
     /** Emit a log line every N events to confirm the service is alive. */
     private static final int LOG_EVERY_N = 50;
+    /** Nanosecond timestamp of the last "home page parsed" log line. */
+    private long lastHomePageLogNanos = 0L;
+    /** Minimum interval between "home page" log lines (1 second). */
+    private static final long HOME_PAGE_LOG_THROTTLE_NS = 1_000_000_000L;
 
     // ═══════════════════════════════════════════════════════════════════════════
     //  Shared launcher state — visible process-wide via static fields
@@ -105,9 +116,17 @@ public class LauncherStateService extends AccessibilityService {
      */
     public static final class LauncherState {
         /**
-         * Current 0-based home-screen page (1-based from the indicator minus 1).
-         * Default 0 (first page). Only meaningful when {@link #serviceConnected} is
-         * true AND {@link #updatedNanos} is within the freshness window.
+         * Current 1-based home-screen page as parsed directly from the indicator
+         * (e.g. "Page 2 of 4" → page=2).  The default value 0 is the "no data yet"
+         * sentinel written at service start; it means the indicator has never been
+         * parsed (One UI hides the dots when at rest, only showing them mid-swipe).
+         *
+         * <p>SphereEngine treats page &lt; 1 as "no data" and falls through to the
+         * next page source (offsets or dead-reckoning) so the sphere does not
+         * collapse immediately after being applied before the first swipe.
+         *
+         * <p>Only meaningful when {@link #serviceConnected} is true AND
+         * {@link #updatedNanos} is within the freshness window.
          */
         public static volatile int page = 0;
 
@@ -219,8 +238,8 @@ public class LauncherStateService extends AccessibilityService {
      *   - drawerOpen = true when a drawer-classified indicator is present
      *     and visible, OR when the incoming event's class name hints at the
      *     apps-view container.
-     *   - page/pageCount come from the home-classified indicator (preferred)
-     *     or the drawer indicator if no home indicator was found.
+     *   - page/pageCount come from the home-classified indicator only (STICKY:
+     *     when no home indicator is found, the last known values are preserved).
      *
      * @param root  Root node of the active window (caller must recycle).
      * @param event The triggering event (used for class-name hint).
@@ -253,14 +272,29 @@ public class LauncherStateService extends AccessibilityService {
         // ─── Publish results ──────────────────────────────────────────────────
         boolean drawerOpen = foundDrawerIndicator || classHintDrawer;
 
-        int newPage      = (foundHomePage >= 0)  ? foundHomePage      : LauncherState.page;
-        int newPageCount = (foundHomeCount >= 0)  ? foundHomeCount     : LauncherState.pageCount;
-        // If no home indicator was found but a drawer indicator was, keep the
-        // last known home page (drawerOpen is true, sphere is suppressed anyway).
+        // STICKY page cache: the home page indicator only appears while the user
+        // is swiping (One UI fades out the dots when at rest).  When no indicator
+        // was found in this scan, keep the last known value — pages can only change
+        // via swipes, and swipes produce events when the indicator is visible.
+        // page=0 is the "no data yet" sentinel written at service start; it will
+        // be replaced the first time a swipe exposes the indicator.
+        // DRAWER indicators must NEVER write into the home page fields.
+        if (foundHomePage >= 0) {
+            // Successfully parsed a home page indicator — update the sticky cache.
+            LauncherState.page      = foundHomePage;
+            LauncherState.pageCount = foundHomeCount;
+            // Throttled log so activity is visible in logcat without spam.
+            long nowNs = System.nanoTime();
+            if (nowNs - lastHomePageLogNanos > HOME_PAGE_LOG_THROTTLE_NS) {
+                lastHomePageLogNanos = nowNs;
+                Log.d(TAG, "home page=" + foundHomePage + " of " + foundHomeCount);
+            }
+        }
+        // else: no home indicator in this scan — keep LauncherState.page/pageCount
+        // unchanged (sticky cache).  This covers both "at rest between swipes" and
+        // "drawer is open" — in neither case should we discard the last known page.
 
         LauncherState.drawerOpen   = drawerOpen;
-        LauncherState.page         = newPage;
-        LauncherState.pageCount    = newPageCount;
         LauncherState.updatedNanos = System.nanoTime();
     }
 
@@ -301,8 +335,12 @@ public class LauncherStateService extends AccessibilityService {
             Matcher m = PAGE_PATTERN.matcher(desc);
             if (m.find()) {
                 // This node is a page indicator. Parse page and count.
-                int indicatorPage  = parseIntSafe(m.group(1), 1);
-                int indicatorCount = parseIntSafe(m.group(2), 1);
+                // Pattern has two alternatives (groups 1+2 for "page N of M",
+                // groups 3+4 for "home screen N of M"): use whichever matched.
+                String pageGroup  = m.group(1) != null ? m.group(1) : m.group(3);
+                String countGroup = m.group(2) != null ? m.group(2) : m.group(4);
+                int indicatorPage  = parseIntSafe(pageGroup,  1);
+                int indicatorCount = parseIntSafe(countGroup, 1);
 
                 // Classify surface: is this a drawer indicator?
                 boolean isDrawerIndicator = isDrawerNode(node);
@@ -315,8 +353,10 @@ public class LauncherStateService extends AccessibilityService {
                 } else {
                     // Home-screen indicator: update page (only when visible).
                     if (node.isVisibleToUser() && result.homePage < 0) {
-                        // Convert 1-based indicator to 0-based internal page.
-                        result.homePage      = Math.max(0, indicatorPage - 1);
+                        // Store 1-based so LauncherState.page=0 unambiguously means
+                        // "no data yet" (the indicator has not been seen since start).
+                        // SphereEngine checks page >= 1 before trusting this value.
+                        result.homePage      = Math.max(1, indicatorPage);
                         result.homePageCount = indicatorCount;
                     }
                 }
