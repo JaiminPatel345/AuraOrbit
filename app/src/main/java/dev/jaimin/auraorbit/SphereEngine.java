@@ -611,6 +611,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
     // ─── Interaction tracking ───────────────────────────────────────────
     private boolean userInteracting = false;
+    /** Throttle for the owner-requested live visibility debug dump (1 Hz). */
+    private float visDebugTimer = 0f;
+
     private float idleTimer = 0f;
     private static final float IDLE_DELAY = 3f; // Seconds before auto-spin resumes
 
@@ -2285,6 +2288,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private void updatePageVisibility(float delta) {
         float targetVisibility;
 
+        // ─── Live-debug state dump (throttled to 1 Hz) ───────────────────────
+        // Owner-requested instrumentation: logs every input to the visibility
+        // decision so on-device fades can be diagnosed from logcat in real time.
+        visDebugTimer += delta;
+        final boolean dbg = visDebugTimer >= 1f;
+        if (dbg) visDebugTimer = 0f;
+
         // ─── Preview hard guard ───────────────────────────────────────────────
         // In the wallpaper-picker preview there are no pages and no offsets.
         // The dead-reckoning branch would immediately compute pageDistance ≥ 1
@@ -2295,6 +2305,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         if (isPreviewMode) {
             targetVisibility = 1f;
             pageVisibility = MathUtils.lerp(pageVisibility, targetVisibility, delta * 8f);
+            if (dbg) logVisDebug("PREVIEW", targetVisibility);
             return;
         }
 
@@ -2329,6 +2340,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 targetVisibility = MathUtils.clamp(1f - (pageDistance - 0.3f) * 1.5f, 0f, 1f);
                 // Smooth lerp to target
                 pageVisibility = MathUtils.lerp(pageVisibility, targetVisibility, delta * 8f);
+                if (dbg) logVisDebug("A11Y", targetVisibility);
                 return;
             }
             // a11yPage == 0: service is connected and fresh but has never parsed a
@@ -2390,6 +2402,37 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
         // Smooth lerp to target
         pageVisibility = MathUtils.lerp(pageVisibility, targetVisibility, delta * 8f);
+
+        if (dbg) {
+            logVisDebug(xOffsetStep > 0f && offsetsLive ? "OFFSETS"
+                    : (!offsetsLive ? "DEAD-RECKONING" : "TRANSIENT"), targetVisibility);
+        }
+    }
+
+    /**
+     * Owner-requested live-debug dump of every input feeding the page-visibility
+     * decision. Called at most once per second from updatePageVisibility (GL thread).
+     * String building only happens when actually logging.
+     */
+    private void logVisDebug(String branch, float target) {
+        Log.d(TAG, "VIS branch=" + branch
+                + " target=" + target
+                + " pv=" + pageVisibility
+                + " | a11y[conn=" + LauncherStateService.LauncherState.serviceConnected
+                + " page=" + LauncherStateService.LauncherState.page
+                + " of=" + LauncherStateService.LauncherState.pageCount
+                + " drawer=" + LauncherStateService.LauncherState.drawerOpen
+                + " ageMs=" + ((System.nanoTime() - LauncherStateService.LauncherState.updatedNanos) / 1_000_000L)
+                + "] | inferredPage=" + inferredPage
+                + " activePage=" + activePage
+                + " offsetsEver=" + offsetEverSeen
+                + " xStep=" + xOffsetStep
+                + " xOff=" + currentXOffset
+                + " | preview=" + isPreviewMode
+                + " visible=" + isVisible
+                + " zoom=" + wallpaperZoom
+                + " returnAnim=" + returnAnim
+                + " launchIdx=" + launchingNodeIdx);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
