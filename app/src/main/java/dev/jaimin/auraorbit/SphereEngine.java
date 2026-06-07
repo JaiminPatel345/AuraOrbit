@@ -125,18 +125,32 @@ import java.util.TreeSet;
  *   launcher's swipe-up / swipe-left one-finger gesture claims.
  * - 3D ray picking via Camera.getPickRay() + Intersector for app selection
  *
- * ─── Command-Gated Launching ─────────────────────────────────────────────────
+ * ─── Command-Gated Launching vs Direct-Tap Fallback ─────────────────────────
  *
- * On the real home screen, apps launch ONLY via {@link #onWallpaperTapCommand},
- * which is called by {@code AuraOrbitEngine.onCommand} when the launcher sends an
- * {@code android.wallpaper.tap} command.  Launchers send this command exclusively
- * for taps on empty workspace — taps consumed by the app drawer, icon grid, widgets,
- * or search bar never produce a wallpaper tap command.  This prevents the sphere from
- * launching apps when the user taps on drawer UI layered over the wallpaper.
+ * AOSP-style launchers (Pixel Launcher, etc.) send an {@code android.wallpaper.tap}
+ * command for every tap on empty workspace.  Apps launch ONLY via
+ * {@link #onWallpaperTapCommand} on those launchers — the GestureDetector tap()
+ * path is silenced on the home screen.  This is the safest path because the command
+ * is emitted exclusively for taps on empty workspace; taps consumed by the app
+ * drawer, icon grid, widgets, or search bar never produce it.
  *
- * In the wallpaper-picker preview there is no launcher, so no commands arrive.
- * The GestureDetector tap() path is therefore active only in preview mode, allowing
- * tap-to-launch to be tested without going to the real home screen.
+ * Samsung One UI's launcher NEVER sends {@code android.wallpaper.tap} commands.
+ * The field {@link #launcherSendsCommands} starts {@code false}; the first command
+ * received in {@link #onWallpaperTapCommand} flips it {@code true} permanently for
+ * the session.  When the flag stays {@code false} (no command ever arrived), the
+ * GestureDetector tap() path activates as a direct-tap fallback so that Samsung
+ * users can actually launch apps.
+ *
+ * On One UI, the launcher signals "leaving the plain home screen" (drawer/recents/
+ * edit mode) by zooming the wallpaper out via {@code onZoomChanged} (API 30).  The
+ * {@link #wallpaperZoom} field tracks this zoom level; the direct-tap path suppresses
+ * launching when {@code wallpaperZoom > 0.4f} to guard against accidental launches
+ * while the app drawer or recents overlay is open.
+ *
+ * In the wallpaper-picker preview there is no launcher, so no commands arrive and
+ * {@link #launcherSendsCommands} stays {@code false}.  The GestureDetector path
+ * therefore also fires in preview mode ({@link #isPreviewMode}), which is exactly
+ * the right behavior for testing tap-to-launch without going to the home screen.
  */
 public class SphereEngine implements ApplicationListener, AndroidWallpaperListener {
 
@@ -346,6 +360,48 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * the GestureDetector tap() fire for the same physical tap (e.g. in preview).
      */
     private static final long LAUNCH_DEBOUNCE_MS = 500L;
+
+    /**
+     * Whether the current launcher has ever sent an {@code android.wallpaper.tap}
+     * command to this session.  Starts {@code false} (unknown / Samsung-assumed).
+     *
+     * <p>OEM split: AOSP launchers (Pixel Launcher, AOSP Launcher3, etc.) send the
+     * {@code android.wallpaper.tap} command for every tap on empty workspace.
+     * Samsung One UI's launcher NEVER sends this command — raw touch events reach
+     * the wallpaper but the command protocol is absent.
+     *
+     * <p>Set {@code true} permanently in {@link #onWallpaperTapCommand} the moment
+     * the first command arrives (proving this launcher supports the protocol).
+     * Once {@code true} it stays {@code true} for the session — the launcher
+     * identity does not change at runtime.
+     *
+     * <p>When {@code false} (no command ever received), {@link #tap} uses a
+     * direct-tap fallback to launch apps, guarded by {@link #wallpaperZoom}.
+     *
+     * <p>Declared {@code volatile} because it is written on the main thread
+     * (in {@link #onWallpaperTapCommand}, which is called from
+     * {@code AuraOrbitEngine.onCommand}) and read on the GL thread (in {@link #tap}).
+     */
+    private volatile boolean launcherSendsCommands = false;
+
+    /**
+     * Current wallpaper zoom level as reported by
+     * {@code WallpaperService.Engine.onZoomChanged} (API 30).
+     * 0 = home screen (fully zoomed in, sphere fully visible);
+     * 1 = fully zoomed out (drawer / recents / edit mode).
+     *
+     * <p>Used exclusively as a drawer guard in the {@link #tap} direct-tap
+     * fallback path: launching is suppressed when {@code wallpaperZoom > 0.4f}
+     * because One UI zooms the wallpaper whenever the user leaves the plain
+     * home screen view (opening the app drawer, recents, or widget edit mode).
+     * This gives us a reliable "not home" signal even though One UI never
+     * sends {@code android.wallpaper.tap} commands.
+     *
+     * <p>Clamped to [0, 1] by the setter.  Declared {@code volatile} because it
+     * is written on the main thread (forwarded from
+     * {@code AuraOrbitEngine.onZoomChanged}) and read on the GL thread (in tap()).
+     */
+    private volatile float wallpaperZoom = 0f;
 
     // ─── Reusable math objects (avoid GC pressure) ──────────────────────
     private final Vector3 tmpVec = new Vector3();
@@ -1337,29 +1393,45 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         GestureDetector gestureDetector = new GestureDetector(new GestureDetector.GestureAdapter() {
 
             /**
-             * ─── TAP → App Launch (preview mode only) ───────────────────
+             * ─── TAP → App Launch ────────────────────────────────────────
              *
-             * On the real home screen, launching is gated on the
-             * {@code android.wallpaper.tap} command (see
-             * {@link #onWallpaperTapCommand}).  Launchers send that command
-             * only for taps on empty workspace — taps consumed by the app
-             * drawer, icon grid, widgets, or search bar never produce a
-             * wallpaper tap command.  Allowing GestureDetector tap() to
-             * launch on the home screen would let drawer-UI taps
-             * accidentally reach sphere apps underneath.
+             * Two launch paths exist depending on whether the launcher sends
+             * {@code android.wallpaper.tap} commands:
              *
-             * In the wallpaper-picker preview there is no launcher and no
-             * commands arrive, so the GestureDetector path is the only
-             * way to exercise tap-to-launch there.
+             * <p><b>Command path (AOSP launchers, Pixel Launcher):</b>
+             * {@link #launcherSendsCommands} is {@code true}.  This GestureDetector
+             * tap() is a no-op on the home screen — launching happens exclusively in
+             * {@link #onWallpaperTapCommand}, which is called only for taps on empty
+             * workspace (not drawer, icon grid, widgets, or search bar).
+             *
+             * <p><b>Direct-tap fallback (Samsung One UI, preview mode):</b>
+             * {@link #launcherSendsCommands} is {@code false} (no command ever
+             * received this session) OR {@link #isPreviewMode} is {@code true}.
+             * The raycast+launch runs directly from GestureDetector.  The
+             * {@link #wallpaperZoom} guard suppresses launching when the zoom
+             * exceeds 0.4 — One UI zooms the wallpaper when the user opens the
+             * app drawer or recents, so this acts as a drawer signal.
+             *
+             * <p>The 500 ms debounce in {@link #raycastAndLaunch} prevents
+             * double-fires on AOSP launchers during the first-ever tap, when a
+             * command and a direct tap could theoretically both fire before
+             * {@link #launcherSendsCommands} is set.
              */
             @Override
             public boolean tap(float x, float y, int count, int button) {
-                // ─── Home screen: command path only ────────────────────
-                // On the real home screen the launcher sends wallpaper tap
-                // commands; GestureDetector tap() must not launch here.
-                if (!isPreviewMode) return false;
+                // ─── Command path: launcher handles launch gating ──────────
+                // If the launcher sends commands, only onWallpaperTapCommand
+                // should launch apps (drawer-safe gating). Stay silent here.
+                if (!isPreviewMode && launcherSendsCommands) return false;
 
-                // ─── Preview: run the raycast+launch directly ───────────
+                // ─── Direct-tap fallback (Samsung One UI or preview) ──────
+                // Drawer guard: One UI zooms the wallpaper when leaving the
+                // plain home view (drawer, recents, edit mode). Suppress
+                // launching while zoomed to avoid firing through overlay UI.
+                // This guard applies only when NOT in preview mode (preview
+                // has no launcher zoom).
+                if (!isPreviewMode && wallpaperZoom > 0.4f) return false;
+
                 return raycastAndLaunch(x, y);
             }
 
@@ -2250,10 +2322,42 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * @param y  Surface-relative Y coordinate in pixels (top-left origin)
      */
     public void onWallpaperTapCommand(int x, int y) {
+        // ─── Proof of command support: mark this launcher as command-capable ──
+        // The very first command proves this launcher sends android.wallpaper.tap.
+        // Flip the flag now (on the main thread, before posting) so that if the
+        // GestureDetector tap() fires on the GL thread before the runnable runs,
+        // it sees launcherSendsCommands == true and suppresses itself.
+        // volatile write — visible to GL thread immediately.
+        launcherSendsCommands = true;
+
         // Marshal from main thread to GL thread for raycast safety.
         final float fx = x;
         final float fy = y;
         Gdx.app.postRunnable(() -> raycastAndLaunch(fx, fy));
+    }
+
+    /**
+     * Called from {@code MyWallpaperService.AuraOrbitEngine.onZoomChanged} when
+     * the launcher zooms the wallpaper surface.
+     *
+     * <p>On Samsung One UI, the launcher zooms the wallpaper out ({@code zoom → 1})
+     * whenever the user leaves the plain home screen view — opening the app drawer,
+     * recents, or widget edit mode.  This is the only reliable "not home" signal
+     * available on One UI because it never sends {@code android.wallpaper.tap}
+     * commands.
+     *
+     * <p>The value is clamped to [0, 1].  0 = home screen (fully visible);
+     * 1 = fully zoomed out (drawer or other overlay is open).
+     *
+     * <p>Reads occur on the GL thread (in tap()); writes occur on the main
+     * thread (forwarded from {@code AuraOrbitEngine.onZoomChanged}).
+     * The field is {@code volatile} for safe cross-thread visibility.
+     *
+     * @param zoom Raw zoom value from {@code WallpaperService.Engine.onZoomChanged}
+     */
+    public void onWallpaperZoom(float zoom) {
+        // Clamp to [0, 1] in case a launcher sends out-of-range values.
+        wallpaperZoom = Math.max(0f, Math.min(1f, zoom));
     }
 
     /**

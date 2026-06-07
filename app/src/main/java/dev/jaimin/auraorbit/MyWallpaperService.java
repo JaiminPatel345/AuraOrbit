@@ -268,6 +268,8 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
         @Override
         public Bundle onCommand(String action, int x, int y, int z,
                                 Bundle extras, boolean resultRequested) {
+            // Diagnostic: launcher command behavior varies by OEM (One UI vs Pixel).
+            Log.d(TAG, "onCommand: " + action + " @(" + x + "," + y + ")");
             if ("android.wallpaper.tap".equals(action) && sphereEngine != null) {
                 sphereEngine.onWallpaperTapCommand(x, y);
             }
@@ -351,8 +353,45 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
             super.onOffsetsChanged(xOffset, yOffset, xOffsetStep, yOffsetStep,
                     xPixelOffset, yPixelOffset);
 
+            // Diagnostic: OEM launchers differ wildly here — Pixel reports real
+            // page offsets, Samsung One UI historically reports none/fixed values.
+            Log.d(TAG, "onOffsetsChanged: x=" + xOffset + " step=" + xOffsetStep);
+
             if (sphereEngine != null) {
                 sphereEngine.onOffsetsChanged(xOffset, yOffset, xOffsetStep, yOffsetStep);
+            }
+        }
+
+        /**
+         * ─────────────────────────────────────────────────────────────
+         * Wallpaper Zoom Handler — One UI drawer/recents signal
+         * ─────────────────────────────────────────────────────────────
+         *
+         * Called by the Android system (API 30+) when the launcher
+         * zooms the wallpaper surface in or out.  On Samsung One UI,
+         * zoom increases toward 1.0 when the user opens the app drawer,
+         * recents, or widget edit mode — and returns to 0.0 when back
+         * on the plain home screen.
+         *
+         * Because One UI never sends {@code android.wallpaper.tap}
+         * commands, this zoom callback is our only reliable signal that
+         * the user has left the home screen view.  We forward the value
+         * to {@link SphereEngine#onWallpaperZoom} so the direct-tap
+         * fallback can suppress app launches while the drawer is open.
+         *
+         * The override is harmless below API 30 — the system will never
+         * call it on older devices.  {@code minSdk = 30} means this
+         * override is always reachable.
+         *
+         * @param zoom 0 = home screen (fully zoomed in),
+         *             1 = fully zoomed out (drawer / recents / edit mode)
+         */
+        @Override
+        public void onZoomChanged(float zoom) {
+            // Diagnostic: log zoom values so owner can confirm One UI behavior on S25.
+            Log.d(TAG, "onZoomChanged: " + zoom);
+            if (sphereEngine != null) {
+                sphereEngine.onWallpaperZoom(zoom);
             }
         }
 
