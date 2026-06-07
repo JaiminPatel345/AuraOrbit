@@ -1,6 +1,5 @@
 package dev.jaimin.auraorbit;
 
-import android.app.WallpaperInfo;
 import android.app.WallpaperManager;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
@@ -67,8 +66,8 @@ public class LiveWallpaperSettings extends AppCompatActivity {
     //  Activity fields
     // ─────────────────────────────────────────────────────────────────────────
 
-    /** Toolbar Apply button — shown only when sphere is not the active wallpaper
-     *  AND the user is on the root settings screen (back stack empty). */
+    /** Toolbar Apply button — always visible on the root settings screen
+     *  (hidden only on child screens so their toolbar actions aren't crowded). */
     private MaterialButton btnApplyWallpaper;
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -162,31 +161,20 @@ public class LiveWallpaperSettings extends AppCompatActivity {
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * Shows the Apply button in the toolbar only when both conditions are true:
-     * <ol>
-     *   <li>AuraOrbit is NOT the currently active live wallpaper.</li>
-     *   <li>The user is on the root settings screen (back stack is empty).</li>
-     * </ol>
-     * Otherwise the button is GONE. Called from {@link #onResume} and from the
-     * back-stack change listener so the state is always current.
+     * Shows the Apply button in the toolbar on the root settings screen.
+     *
+     * <p>The button is ALWAYS visible there — even when AuraOrbit is already the
+     * active wallpaper (owner request: a hidden button reads as "removed").
+     * Tapping it while active simply re-opens the live-wallpaper preview, which
+     * is harmless and doubles as a quick way to reach the system preview.
+     * It is hidden only on child screens (app picker / groups) where the
+     * toolbar belongs to that screen's own actions.</p>
      */
     private void refreshApplyButtonVisibility() {
         if (btnApplyWallpaper == null) return;
 
         boolean isRoot = getSupportFragmentManager().getBackStackEntryCount() == 0;
-        boolean isActive = isAuraOrbitActiveWallpaper();
-
-        // Visible only when on root screen AND sphere is not yet the wallpaper.
-        btnApplyWallpaper.setVisibility(
-                (isRoot && !isActive) ? View.VISIBLE : View.GONE);
-    }
-
-    /**
-     * Returns {@code true} if AuraOrbit is currently the active live wallpaper.
-     */
-    private boolean isAuraOrbitActiveWallpaper() {
-        WallpaperInfo info = WallpaperManager.getInstance(this).getWallpaperInfo();
-        return info != null && info.getPackageName().equals(getPackageName());
+        btnApplyWallpaper.setVisibility(isRoot ? View.VISIBLE : View.GONE);
     }
 
     /**
