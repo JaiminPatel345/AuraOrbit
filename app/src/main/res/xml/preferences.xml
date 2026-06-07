@@ -59,11 +59,9 @@
             android:entries="@array/target_fps_entries"
             android:entryValues="@array/target_fps_values"
             android:defaultValue="120" />
-        <SeekBarPreference
+        <Preference
             android:key="pref_active_page"
             android:title="@string/pref_active_page_title"
-            android:summary="@string/pref_active_page_summary"
-            android:defaultValue="1" android:max="9"
-            app:min="1" app:showSeekBarValue="true" />
+            android:summary="@string/pref_active_page_summary" />
     </PreferenceCategory>
 </PreferenceScreen>

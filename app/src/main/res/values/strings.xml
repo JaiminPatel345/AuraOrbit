@@ -6,10 +6,10 @@
 
     <!-- Apply Wallpaper -->
     <string name="pref_category_apply_wallpaper">Wallpaper</string>
-    <string name="pref_apply_wallpaper_title_active">AuraOrbit is your wallpaper</string>
-    <string name="pref_apply_wallpaper_summary_active">The sphere is live on your home screen ✓</string>
-    <string name="pref_apply_wallpaper_title_inactive">Apply sphere wallpaper</string>
-    <string name="pref_apply_wallpaper_summary_inactive">Your wallpaper was changed — tap to bring the sphere back</string>
+    <string name="pref_apply_wallpaper_title_active">Applied ✓</string>
+    <string name="pref_apply_wallpaper_summary_active">AuraOrbit is your wallpaper</string>
+    <string name="pref_apply_wallpaper_title_inactive">Apply</string>
+    <string name="pref_apply_wallpaper_summary_inactive">Set the sphere as your wallpaper</string>
     <string name="toast_apply_wallpaper_unavailable">Open system wallpaper settings to re-apply the sphere.</string>
 
     <!-- App Selection -->
@@ -45,6 +45,8 @@
     <string name="pref_target_fps_summary">Higher values are smoother but use more battery</string>
 
     <!-- Dialogs -->
+    <string name="dialog_page_number_title">Sphere page</string>
+    <string name="pref_active_page_summary_current">Currently: page %1$d</string>
     <string name="dialog_group_name_hint">Group name (e.g., Social)</string>
     <string name="dialog_delete_confirm">Delete group &#8220;%1$s&#8221;?</string>
     <string name="dialog_delete_confirm_msg">The apps in this group will become ungrouped.</string>
