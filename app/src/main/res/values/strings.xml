@@ -38,6 +38,8 @@
     <string name="pref_icon_size_summary">Adjust the size of app icons on the sphere</string>
     <string name="pref_rotation_speed_title">Rotation speed</string>
     <string name="pref_rotation_speed_summary">Idle spin and fling momentum multiplier (100 = 1×)</string>
+    <string name="pref_gesture_tips_title">Gesture tips</string>
+    <string name="pref_gesture_tips_summary">Spin the sphere without fighting the launcher</string>
 
     <!-- Performance -->
     <string name="pref_category_performance">Performance</string>
@@ -49,6 +51,9 @@
     <string name="stepper_increment">Increase page number</string>
 
     <!-- Dialogs -->
+    <string name="dialog_gesture_tips_title">Spinning the sphere</string>
+    <string name="dialog_gesture_tips_message">Two-finger drag — use two fingers to spin the sphere. The launcher ignores multi-finger touches, so this is the conflict-free way to rotate.\n\nOne-finger drag — Android gives the launcher first claim on single-finger swipes, so the launcher always reacts too (page switching, app drawer, notification panel). No app can override this.\n\nLast home page trick — place the sphere on your last home screen page. Swiping right-to-left there has no further page to switch to, so the sphere gets the gesture.\n\nOne UI tip — go to Home screen settings and turn off \"Swipe down for notification panel\" to stop the panel appearing while you spin. For deeper control, Good Lock → Home Up lets you remap home screen gestures.</string>
+    <string name="dialog_gesture_tips_ok">Got it</string>
     <string name="dialog_group_name_hint">Group name (e.g., Social)</string>
     <string name="dialog_delete_confirm">Delete group &#8220;%1$s&#8221;?</string>
     <string name="dialog_delete_confirm_msg">The apps in this group will become ungrouped.</string>
