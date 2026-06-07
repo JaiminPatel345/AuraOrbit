@@ -34,6 +34,7 @@ import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Quaternion;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
 import com.badlogic.gdx.graphics.g3d.decals.CameraGroupStrategy;
@@ -44,6 +45,9 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.IntArray;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -67,12 +71,12 @@ import java.util.TreeSet;
  *    falls back to a procedural vertical gradient texture otherwise.
  *
  * 2. **Group Backdrop Layer** (ModelBatch, 3D)
- *    Renders translucent colored spherical cap meshes behind each app
- *    group cluster. These caps are oriented so their +Y axis points toward
- *    the group's slot direction on the sphere, and they rotate rigidly with
- *    the sphere. IntAttribute.CullFace=GL_NONE makes caps visible from both
- *    the front and back of the sphere, so users can see where a group is
- *    even when it is on the far side.
+ *    Renders translucent colored convex-hull polygon patches behind each app
+ *    group cluster. These patches are built as padded spherical polygons that
+ *    precisely cover the group's icons, and they rotate rigidly with the sphere.
+ *    IntAttribute.CullFace=GL_NONE makes patches visible from both the front
+ *    and back of the sphere, so users can see where a group is even when it is
+ *    on the far side.
  *
  * 3. **App Icon Layer** (DecalBatch, 3D billboarded)
  *    Renders app icons as 2D textured decals positioned in 3D space on
@@ -87,10 +91,20 @@ import java.util.TreeSet;
  * ─── Physics ────────────────────────────────────────────────────────────────
  *
  * - Rotation uses Quaternions exclusively (no Euler angles → no Gimbal Lock)
- * - Angular velocity with exponential friction for smooth spin deceleration
+ * - User flings apply angular velocity with exponential friction (decays naturally)
+ * - Idle spin uses a SEPARATE friction-free constant rotation (no pulse/stop cycle):
+ *   idleBlend ramps from 0→1 over 1.5s after IDLE_DELAY seconds without interaction.
+ *   Both idle rotation and decaying fling momentum can coexist in the same frame.
  * - All math is delta-time dependent for frame-rate independence
  * - Drag and physics rotations use pre-multiplication (mulLeft) so they always
  *   operate in world space regardless of accumulated sphere orientation.
+ *
+ * ─── Layout ─────────────────────────────────────────────────────────────────
+ *
+ * ALL N apps are placed on a single plain Fibonacci sphere for perfectly uniform
+ * spacing. Every icon has the same inter-icon distance — grouped or not. Groups
+ * stay spatially contiguous by ASSIGNING which Fibonacci lattice point each app
+ * gets (a permutation), never by distorting the lattice.
  *
  * ─── Live Settings ──────────────────────────────────────────────────────────
  *
@@ -147,11 +161,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
     /**
      * Adaptive layout radius — computed after apps are loaded in buildScene.
-     * Grows with app count (0.48 × iconSize × √N) so sparse sets still look
+     * Grows with app count (0.52 × iconSize × √N) so sparse sets still look
      * like a sphere, never exceeds the user's sphereRadius slider value, and
-     * never falls below 1.6 × iconSize. When groups exist, an additional
-     * group-spread formula may push the floor higher. Used for ALL node
-     * placement and depth-normalisation math.
+     * never falls below 1.6 × iconSize. Used for ALL node placement and
+     * depth-normalisation math.
      *
      * computeCameraDistance() continues to use sphereRadius (the slider) so
      * the camera is a fixed reference: a small effective sphere appears
@@ -168,7 +181,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * be paired with the wrong node position in renderDecals().
      */
     private IntArray decalNodeIndex;       // decal i → nodePositions[decalNodeIndex.get(i)]
-    private Vector3[] nodePositions;       // Cluster-layout positions on effectiveRadius sphere
+    private Vector3[] nodePositions;       // Uniform-Fibonacci positions on effectiveRadius sphere
 
     /**
      * The master rotation quaternion for the entire sphere.
@@ -179,10 +192,15 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private Quaternion sphereRotation;
 
     /**
-     * Angular velocity vector. Each component represents rotation speed
-     * (radians/sec) around that world axis. Applied to sphereRotation
-     * each frame via quaternion pre-multiplication (mulLeft), which keeps
-     * the rotation in world space regardless of accumulated orientation.
+     * Angular velocity vector for USER FLINGS ONLY. Each component represents
+     * rotation speed (radians/sec) around that world axis. Applied to
+     * sphereRotation each frame via quaternion pre-multiplication (mulLeft),
+     * which keeps the rotation in world space regardless of accumulated
+     * sphere orientation. Decays to zero via exponential friction after a fling.
+     *
+     * NOTE: idle auto-spin is NOT implemented through this vector. It uses a
+     * separate idleBlend field and direct per-frame rotation to avoid the
+     * pulse/stop/pulse artifact that impulse + friction creates.
      */
     private Vector3 angularVelocity;
 
@@ -190,12 +208,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * Friction coefficient — multiplied against angularVelocity each frame.
      * 0.97 gives a smooth ~1 second glide stop at 120 FPS.
      * (0.97^120 ≈ 0.026, so velocity drops to 2.6% after 1 second)
+     * Only applied to fling momentum; idle spin bypasses friction entirely.
      */
     private static final float FRICTION = 0.97f;
 
     /**
-     * Below this velocity magnitude, snap to zero to prevent eternal
-     * micro-spinning that wastes GPU cycles.
+     * Below this velocity magnitude, snap fling momentum to zero to prevent
+     * eternal micro-spinning that wastes GPU cycles.
      */
     private static final float VELOCITY_EPSILON = 0.001f;
 
@@ -213,23 +232,24 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private static final float FLING_SENSITIVITY = 0.002f;
 
     /**
-     * Default auto-rotation speed when user isn't interacting.
-     * A gentle Y-axis spin to keep the wallpaper alive. Scaled by
-     * rotationSpeedFactor when applied.
+     * Idle auto-rotation speed in radians/sec (world Y axis).
+     * Applied as a friction-free constant rotation (separate from fling physics)
+     * so the sphere spins continuously without any pulse/stop cycle.
+     * Scaled by rotationSpeedFactor when applied.
      */
     private static final float IDLE_SPIN_SPEED = 0.15f;
+
+    /**
+     * Smooth blend factor for idle spin ramp-in (0..1).
+     * Ramps from 0 to 1 over 1.5 seconds after IDLE_DELAY expires.
+     * Prevents a visible jump when idle spin first engages after a fling stops.
+     * Reset to 0 immediately on user touch so the ramp restarts cleanly.
+     */
+    private float idleBlend = 0f;
 
     // ─── Group Backdrop Meshes ──────────────────────────────────────────
     private Array<ModelInstance> groupBackdrops;
     private Array<Model> groupModels;  // Must be disposed
-
-    /**
-     * Base orientation matrix for each group cap mesh (rotation that takes +Y
-     * to the slot's unit-direction vector). Applied each frame combined with
-     * the live sphereRotation so the cap stays glued under its icons.
-     * Replaces the old groupCentroids (centroid-translation) approach.
-     */
-    private Array<Matrix4> groupCapOrientations;
 
     // ─── Empty-state hint rendering ──────────────────────────────────────
     /**
@@ -339,7 +359,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
         // ─── Initialize physics state ───────────────────────────────────
         sphereRotation = new Quaternion().idt(); // Identity = no rotation
-        angularVelocity = new Vector3(0f, IDLE_SPIN_SPEED, 0f); // Gentle initial spin
+        // angularVelocity is for fling momentum only; idle spin uses idleBlend
+        angularVelocity = new Vector3(0f, 0f, 0f);
 
         // ─── Build the gradient fallback background ──────────────────────
         // Always built so there is always something behind the sphere even
@@ -460,7 +481,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * - All app icon textures (disposed then re-fetched from PackageManager)
      * - Group backdrop 3D models (disposed then rebuilt from new GroupStore data)
      * - Background texture (disposed then reloaded from BackgroundStore)
-     * - Slot-clustered node distribution (recalculated with new effectiveRadius)
+     * - Uniform Fibonacci node distribution (recalculated with new effectiveRadius)
      * - Decals (recreated with new iconSize)
      * - Camera position (repositioned via computeCameraDistance using sphereRadius)
      *
@@ -573,45 +594,57 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  Slot-Clustered Sphere Distribution
+    //  Uniform Fibonacci Sphere Distribution with Contiguous Group Assignment
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
-     * Distributes app nodes on the sphere using a two-level slot layout that
-     * keeps grouped apps spatially together and adapts the layout radius to
-     * the actual app count.
+     * Distributes all N app nodes uniformly on the sphere using a single plain
+     * Fibonacci sphere lattice, then assigns positions to nodes so that group
+     * members occupy a contiguous patch of the lattice.
+     *
+     * ─── Why Plain Fibonacci (not slot+sunflower)? ────────────────────────
+     *
+     * The old slot+sunflower layout squeezed group members into spherical caps
+     * whose radius was bounded by the slot-separation angle — causing members
+     * to collide with neighboring slots' icons when groups were large. More
+     * fundamentally, the sunflower sub-layout used different inter-icon spacing
+     * inside a group than the global Fibonacci spacing, so apps had unequal
+     * distances to their neighbors depending on whether they were grouped.
+     *
+     * The new approach: ALL N icons live on the SAME Fibonacci lattice, so
+     * every icon has the same minimum angular separation to its nearest neighbor,
+     * grouped or not.
+     *
+     * ─── Contiguous Group Assignment ─────────────────────────────────────
+     *
+     * We permute which lattice point each app gets (never moving the points):
+     *
+     *   1. Compute N Fibonacci unit directions as candidate positions.
+     *   2. Sort groups in descending member-count order so large groups get
+     *      first pick of the best-separated seed points.
+     *   3. For each group: pick a seed = the unassigned lattice point with the
+     *      maximum min-angular-distance to ALL already-assigned points (i.e.,
+     *      the point that is farthest from everything assigned so far). For
+     *      the very first group (nothing assigned yet) any point works — use
+     *      index 0. Then greedily assign the (M−1) nearest unassigned points
+     *      to the seed direction (by dot-product to seed). This yields a
+     *      spatially contiguous patch of pristine lattice points.
+     *   4. Ungrouped apps fill remaining lattice points in original index order.
+     *   5. nodePositions[i] holds the position for appNodes.get(i)
+     *      — the appNodes list order is never changed.
+     *
+     * O(N²·G) brute-force complexity is fine for N ≤ a few hundred.
      *
      * ─── Adaptive Radius ─────────────────────────────────────────────────
      *
-     * With very few apps on a large slider radius the icons would float as
-     * sparse dots with no sense of a sphere. effectiveRadius is computed so
-     * icons are naturally dense:
+     *   effectiveRadius = clamp(0.52 × iconSize × √N, 1.6×iconSize, sphereRadius)
      *
-     *   rIcons  = 0.48 × iconSize × √N          (density-based baseline)
-     *   rGroups = 0.345 × iconSize × √(maxGroupSize × S)  (group-spread floor, if G>0)
-     *   effectiveRadius = clamp(max(rIcons, rGroups), 1.6×iconSize, sphereRadius)
-     *
+     * 0.52 gives more breathing room than the old 0.48 so icons are comfortably
+     * spaced. The group-spread floor term is gone — no caps or sub-layouts any more.
      * computeCameraDistance() still uses sphereRadius (the slider) as its
-     * reference, so the camera is a fixed envelope — a small effective sphere
-     * appears proportionally small/dense.
+     * reference, so the camera envelope is fixed.
      *
-     * ─── Slot Layout ─────────────────────────────────────────────────────
-     *
-     * A "slot" is the unit of sphere surface area occupied by one group (all
-     * M members together) or one ungrouped app. The S slot centers are placed
-     * via the Fibonacci sphere at effectiveRadius, giving even spacing.
-     *
-     * ─── Sunflower Sub-layout Inside Group Slots ─────────────────────────
-     *
-     * Members within a group slot are arranged in a Fermat (sunflower) spiral
-     * inside a spherical cap around the slot direction. Each member is
-     * projected back onto the sphere surface at effectiveRadius.
-     *
-     * ─── Why Golden Angle? ───────────────────────────────────────────────
-     *
-     * The golden angle (≈137.5° or ≈2.3999… rad) ensures successive points
-     * are rotated by the most irrational angle possible, preventing alignment
-     * patterns that would leave visible gaps or clusters.
+     * @param delta Frame time in seconds (1/120 at 120 FPS)
      */
     private void distributeNodesOnSphere() {
         int N = appNodes.size();
@@ -619,39 +652,15 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
         if (N == 0) return;
 
-        // ─── Build slot list (ordered by first appearance of each groupId) ──
-        // Each slot holds the appNodes indices of its members.
-        // LinkedHashMap preserves first-encounter order of group IDs.
-        LinkedHashMap<String, List<Integer>> slots = new LinkedHashMap<>();
-        for (int i = 0; i < N; i++) {
-            AppFetcher.AppNode node = appNodes.get(i);
-            // Ungrouped apps get their own single-member slot keyed by index.
-            String key = (node.groupId != null) ? node.groupId : ("__single__" + i);
-            slots.computeIfAbsent(key, k -> new ArrayList<>()).add(i);
-        }
-
-        int S = slots.size(); // Total slot count
-        int G = 0;            // Group-slot count (M >= 2)
-        int maxGroupSize = 0;
-        for (List<Integer> members : slots.values()) {
-            if (members.size() >= 2) {
-                G++;
-                maxGroupSize = Math.max(maxGroupSize, members.size());
-            }
-        }
-
-        // ─── Compute effectiveRadius ─────────────────────────────────────
-        float rIcons  = 0.48f * iconSize * (float) Math.sqrt(N);
-        float rGroups = (G > 0)
-                ? 0.345f * iconSize * (float) Math.sqrt((float) maxGroupSize * S)
-                : 0f;
+        // ─── Compute effectiveRadius ──────────────────────────────────────
+        // 0.52 (vs old 0.48) gives more breathing room per icon.
+        // No group-spread floor — all icons are on the same lattice now.
         effectiveRadius = MathUtils.clamp(
-                Math.max(rIcons, rGroups),
+                0.52f * iconSize * (float) Math.sqrt(N),
                 1.6f * iconSize,
                 sphereRadius);
 
-        Log.d(TAG, "distributeNodesOnSphere: N=" + N + " S=" + S + " G=" + G
-                + " effectiveRadius=" + effectiveRadius);
+        Log.d(TAG, "distributeNodesOnSphere: N=" + N + " effectiveRadius=" + effectiveRadius);
 
         if (N == 1) {
             // Edge case: single app → place at sphere front facing the camera.
@@ -659,95 +668,137 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             return;
         }
 
-        // ─── Place slot centers via Fibonacci sphere at effectiveRadius ──
-        // The golden angle gives the irrational longitude step.
+        // ─── Build the N Fibonacci unit directions ─────────────────────────
+        // The golden angle (≈137.5°) ensures successive points are rotated by
+        // the most irrational angle possible, preventing alignment patterns.
         float phi = (float) (Math.PI * (3f - Math.sqrt(5f)));
-
-        // Pre-compute slot center directions (unit vectors).
-        List<Vector3> slotDirs = new ArrayList<>(S);
-        {
-            int si = 0;
-            for (List<Integer> ignored : slots.values()) {
-                float y = (S == 1) ? 0f : (1f - (si / (float) (S - 1)) * 2f);
-                float radiusAtY = (float) Math.sqrt(Math.max(0f, 1f - y * y));
-                float theta = phi * si;
-                slotDirs.add(new Vector3(
-                        (float) Math.cos(theta) * radiusAtY,
-                        y,
-                        (float) Math.sin(theta) * radiusAtY
-                )); // This is already a unit vector (radius=1) from Fibonacci
-                si++;
-            }
+        Vector3[] fibDirs = new Vector3[N];
+        for (int i = 0; i < N; i++) {
+            float y = (N == 1) ? 0f : (1f - (i / (float) (N - 1)) * 2f);
+            float radiusAtY = (float) Math.sqrt(Math.max(0f, 1f - y * y));
+            float theta = phi * i;
+            fibDirs[i] = new Vector3(
+                    (float) Math.cos(theta) * radiusAtY,
+                    y,
+                    (float) Math.sin(theta) * radiusAtY
+            );
         }
 
-        // ─── Approximate half-angular-separation between slot centers ───
-        // slotAngle ≈ 2/√S radians — the half-opening angle between Fibonacci
-        // neighbours at this density. Used to bound the cap arc radius.
-        float slotAngle = (S > 1) ? (2f / (float) Math.sqrt(S)) : MathUtils.PI;
+        // ─── Collect group memberships (descending by size for seed priority) ─
+        // groupEntries: list of (groupId, [nodeIndices]) sorted largest first.
+        LinkedHashMap<String, List<Integer>> groupMap = new LinkedHashMap<>();
+        for (int i = 0; i < N; i++) {
+            AppFetcher.AppNode node = appNodes.get(i);
+            if (node.groupId != null) {
+                groupMap.computeIfAbsent(node.groupId, k -> new ArrayList<>()).add(i);
+            }
+        }
+        // Filter to groups with M >= 2 (singletons behave like ungrouped apps).
+        List<Map.Entry<String, List<Integer>>> groupEntries = new ArrayList<>();
+        for (Map.Entry<String, List<Integer>> e : groupMap.entrySet()) {
+            if (e.getValue().size() >= 2) groupEntries.add(e);
+        }
+        // Descending size so large groups get first pick of best-separated seeds.
+        groupEntries.sort((a, b) -> b.getValue().size() - a.getValue().size());
 
-        // ─── Assign positions for each slot ─────────────────────────────
-        int slotIndex = 0;
-        for (List<Integer> members : slots.values()) {
-            Vector3 slotDir = slotDirs.get(slotIndex);
+        // ─── Permutation: assign a lattice index to each node index ──────────
+        // positionFor[nodeIndex] = fibDirs index to use.
+        int[] positionFor = new int[N];
+        Arrays.fill(positionFor, -1);  // -1 = unassigned
+
+        // Parallel: is lattice point i already claimed?
+        boolean[] latticeClaimed = new boolean[N];
+
+        // ─── Assign groups contiguously ───────────────────────────────────
+        int totalAssigned = 0;
+        for (Map.Entry<String, List<Integer>> entry : groupEntries) {
+            List<Integer> members = entry.getValue();
             int M = members.size();
 
-            if (M == 1) {
-                // ── Single-app slot: place node directly at the slot center ─
-                int ni = members.get(0);
-                nodePositions[ni] = new Vector3(slotDir).scl(effectiveRadius);
+            // ── Choose seed: unassigned lattice point farthest from assigned ──
+            // "Farthest" = maximizes min-dot-product distance to all assigned pts.
+            // For the very first group (totalAssigned==0) no assigned pts exist;
+            // use lattice index 0 as the seed (any choice is valid).
+            int seedLattice;
+            if (totalAssigned == 0) {
+                seedLattice = 0;
             } else {
-                // ── Group slot: Fermat spiral inside a spherical cap ─────────
-                //
-                // capArc: world-unit arc radius on the sphere surface.
-                //   • 0.62 × iconSize × √M gives enough room for M icons.
-                //   • Capped by 0.9 × effectiveRadius × slotAngle (half the
-                //     angular gap between slots) to prevent neighbor overlap.
-                float capArc = Math.min(
-                        0.62f * iconSize * (float) Math.sqrt(M),
-                        0.9f * effectiveRadius * slotAngle);
-
-                // ── Build two tangent basis vectors orthogonal to slotDir ─────
-                // Avoid the degenerate case when slotDir is nearly parallel to Y.
-                Vector3 n   = new Vector3(slotDir);    // already unit length from Fibonacci
-                Vector3 t1  = new Vector3();
-                Vector3 t2  = new Vector3();
-
-                if (Math.abs(n.y) < 0.9f) {
-                    // Cross with world-Y to get first tangent
-                    t1.set(Vector3.Y).crs(n).nor();
-                } else {
-                    // n ≈ ±Y — cross with world-X instead
-                    t1.set(Vector3.X).crs(n).nor();
+                // For each unassigned lattice point, compute its minimum dot
+                // product to ALL already-assigned lattice directions. Choose the
+                // unassigned point with the SMALLEST such dot product (maximum
+                // angular separation from existing assignments = best isolation).
+                seedLattice = -1;
+                float bestMinDot = Float.MAX_VALUE; // smallest dot = most distant
+                for (int li = 0; li < N; li++) {
+                    if (latticeClaimed[li]) continue;
+                    float minDot = Float.MAX_VALUE;
+                    for (int lj = 0; lj < N; lj++) {
+                        if (!latticeClaimed[lj]) continue;
+                        float d = fibDirs[li].dot(fibDirs[lj]);
+                        if (d < minDot) minDot = d;
+                    }
+                    // We want the unassigned point with the smallest minDot
+                    // (smallest dot = largest angular distance from assigned set).
+                    if (minDot < bestMinDot) {
+                        bestMinDot = minDot;
+                        seedLattice = li;
+                    }
                 }
-                t2.set(n).crs(t1).nor();
-
-                for (int k = 0; k < M; k++) {
-                    int ni = members.get(k);
-
-                    // Fermat spiral: radial distance grows with √(k+0.5)/M
-                    float rk    = capArc * (float) Math.sqrt((k + 0.5f) / M);
-                    float theta = k * 2.39996f; // golden angle in radians
-
-                    float cosT = MathUtils.cos(theta);
-                    float sinT = MathUtils.sin(theta);
-
-                    // Offset = slot-center-point + tangent-plane displacement
-                    // then renormalize to sphere surface.
-                    tmpVec.set(n)
-                          .scl(effectiveRadius)
-                          .add(t1.x * rk * cosT + t2.x * rk * sinT,
-                               t1.y * rk * cosT + t2.y * rk * sinT,
-                               t1.z * rk * cosT + t2.z * rk * sinT);
-                    tmpVec.nor().scl(effectiveRadius);
-
-                    nodePositions[ni] = new Vector3(tmpVec);
-                }
+                if (seedLattice < 0) seedLattice = 0; // fallback (shouldn't happen)
             }
 
-            slotIndex++;
+            // ── Assign M nearest unassigned lattice points to the seed ────────
+            // Sort all unassigned points by dot product to seed (largest = nearest).
+            Vector3 seedDir = fibDirs[seedLattice];
+            // Build a sorted list of (dot, latticeIndex) for all unassigned points.
+            List<int[]> candidates = new ArrayList<>(N - totalAssigned);
+            for (int li = 0; li < N; li++) {
+                if (!latticeClaimed[li]) {
+                    // Store as int[2]: [latticeIndex, Float.floatToIntBits(dot)]
+                    // Use negative dot for ascending sort (largest dot first).
+                    candidates.add(new int[]{li, Float.floatToIntBits(fibDirs[li].dot(seedDir))});
+                }
+            }
+            // Sort descending by dot (nearest to seed first).
+            candidates.sort((a, b) -> {
+                float da = Float.intBitsToFloat(a[1]);
+                float db = Float.intBitsToFloat(b[1]);
+                return Float.compare(db, da);
+            });
+
+            // Assign first M candidates to this group's members.
+            for (int k = 0; k < M && k < candidates.size(); k++) {
+                int li = candidates.get(k)[0];
+                int nodeIdx = members.get(k);
+                positionFor[nodeIdx] = li;
+                latticeClaimed[li] = true;
+                totalAssigned++;
+            }
         }
 
-        Log.d(TAG, "Distributed " + N + " nodes in " + S + " slots via Fibonacci+sunflower");
+        // ─── Assign ungrouped apps to remaining lattice points ───────────────
+        // Walk lattice indices in order; assign to ungrouped nodes in node order.
+        int nextLattice = 0;
+        for (int i = 0; i < N; i++) {
+            if (positionFor[i] >= 0) continue; // already assigned by a group
+            // Advance to next unclaimed lattice point.
+            while (nextLattice < N && latticeClaimed[nextLattice]) nextLattice++;
+            if (nextLattice < N) {
+                positionFor[i] = nextLattice;
+                latticeClaimed[nextLattice] = true;
+                nextLattice++;
+            }
+        }
+
+        // ─── Build nodePositions from the assignment ──────────────────────────
+        for (int i = 0; i < N; i++) {
+            int li = positionFor[i];
+            if (li < 0) li = 0; // safety fallback
+            nodePositions[i] = new Vector3(fibDirs[li]).scl(effectiveRadius);
+        }
+
+        Log.d(TAG, "Distributed " + N + " nodes uniformly (Fibonacci+contiguous group assignment),"
+                + " groups=" + groupEntries.size());
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -779,7 +830,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // hasTransparency=true enables alpha blending for round icons
             Decal decal = Decal.newDecal(iconSize, iconSize, node.iconRegion, true);
 
-            // Position at the cluster-distributed point on the sphere
+            // Position at the uniform-Fibonacci point on the sphere
             decal.setPosition(nodePositions[i].x, nodePositions[i].y, nodePositions[i].z);
 
             decals.add(decal);
@@ -790,48 +841,58 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  Group Cloth-Cap Mesh Generation
+    //  Group Convex-Hull Polygon Mesh Generation
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
-     * Builds translucent colored spherical-cap "cloth" meshes behind each app group.
+     * Builds translucent colored convex-hull polygon patches behind each app group.
      *
      * ─── Visual Design ───────────────────────────────────────────────────
      *
-     * Each group gets a semi-transparent spherical cap positioned at radius
-     * 0.88 × effectiveRadius — slightly inside the icon sphere so caps appear
-     * as colored cloth draped under the group's icons. The cap's angular radius
-     * is 25%-padded beyond the sunflower sub-layout.
+     * Each group gets a semi-transparent polygon positioned at radius
+     * 0.90 × effectiveRadius — slightly inside the icon sphere so patches appear
+     * as colored cloth draped under the group's icons. The polygon precisely
+     * covers the group (padded by 0.75×iconSize beyond the outermost icons).
      *
-     * IntAttribute.CullFace=GL_NONE disables back-face culling so caps are
+     * IntAttribute.CullFace=GL_NONE disables back-face culling so patches are
      * visible from both sides of the sphere — users can see where a group is
      * even when it is on the far side and can rotate toward it.
      *
-     * ─── Orientation Strategy ────────────────────────────────────────────
+     * ─── Why Gnomonic Projection? ─────────────────────────────────────────
      *
-     * The libGDX sphere-sweep overload builds a cap around +Y; we store the
-     * base orientation (a rotation that takes +Y to the slot direction) as a
-     * Matrix4 and apply it combined with sphereRotation every frame, so the
-     * cap stays glued under its icons and rotates rigidly with the sphere.
+     * The convex hull of the group's icons must be computed in a flat 2D space.
+     * Gnomonic projection maps geodesics (great-circle arcs on the sphere) to
+     * straight lines in the plane, so the 2D convex hull of the projected
+     * points IS the spherical convex hull of the original directions. For the
+     * small angular extents of typical groups (≪ hemisphere), gnomonic
+     * coordinates are nearly identical to simple tangent-plane projection,
+     * and d·c > 0 always holds.
      *
-     * ─── Why not the old centroid-blob approach? ──────────────────────────
+     * ─── Algorithm ───────────────────────────────────────────────────────
      *
-     * Fibonacci consecutive indices are NOT spatially adjacent (the golden
-     * angle jumps 137.5° in longitude each step), so group members assigned to
-     * consecutive indices scatter around the sphere. The centroid of scattered
-     * members collapses toward the sphere center, and a sphere blob placed
-     * there becomes a huge washed-out circle that covers unrelated apps. The
-     * slot layout above pre-clusters members before Fibonacci placement, so
-     * the cap center is always accurate.
+     *   1. Centroid direction c = normalized sum of member unit directions.
+     *   2. Build tangent basis (t1, t2) at c.
+     *   3. Gnomonic project each member d → (u, v): s = 1/(d·c), u=s(d·t1), v=s(d·t2).
+     *   4. Andrew's monotone chain 2D convex hull on (u,v) points.
+     *   5. Pad hull outward by pad = 0.75×iconSize/effectiveRadius.
+     *   6. Subdivide each hull edge so no segment spans > 0.15 gnomonic units.
+     *   7. Inverse-project boundary vertices back to sphere at 0.90R.
+     *   8. Fan-triangulate from centroid vertex; add mid-ring for sphere-curvature.
+     *   9. Material: group color at 32% alpha, GL_NONE cull face.
+     *
+     * ─── Geometry in sphere-local space ──────────────────────────────────
+     *
+     * All positions are in sphere-local coordinates (actual 3D positions), so
+     * the per-frame transform is simply sphereRotation + pageVisibility scale
+     * (identity base — no per-cap orientation matrix needed).
      */
     private void buildGroupBackdrops() {
-        groupBackdrops      = new Array<>();
-        groupModels         = new Array<>();
-        groupCapOrientations = new Array<>();
+        groupBackdrops = new Array<>();
+        groupModels    = new Array<>();
 
         if (appNodes == null || appNodes.isEmpty()) return;
 
-        // ─── Identify group slots from appNodes (preserve first-appearance order) ──
+        // ─── Collect groups (M >= 2 only) ─────────────────────────────────
         LinkedHashMap<String, List<Integer>> groupSlots = new LinkedHashMap<>();
         Map<String, String> groupColorMap = new HashMap<>();
 
@@ -845,126 +906,265 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             }
         }
 
-        int S = countTotalSlots(); // Total slot count (groups + singles) for slotAngle
-
-        // slotAngle ≈ half angular separation between Fibonacci slot centres.
-        float slotAngle = (S > 1) ? (2f / (float) Math.sqrt(S)) : MathUtils.PI;
-
         ModelBuilder modelBuilder = new ModelBuilder();
 
         for (Map.Entry<String, List<Integer>> entry : groupSlots.entrySet()) {
-            String groupId  = entry.getKey();
+            String groupId        = entry.getKey();
             List<Integer> indices = entry.getValue();
-            String colorHex = groupColorMap.getOrDefault(groupId, "#FFFFFF");
-
-            if (indices.size() < 2) continue; // Skip singleton groups
-
             int M = indices.size();
+            if (M < 2) continue;
 
-            // ─── Find the slot direction for this group ───────────────────
-            // The slot direction is the unit-vector average (centroid on unit sphere)
-            // of the member positions at effectiveRadius. Because all members were
-            // projected back onto the sphere by distributeNodesOnSphere(), averaging
-            // their unit-vectors and renormalizing gives the correct slot center
-            // direction without re-running the Fibonacci layout.
-            Vector3 slotDir = new Vector3();
+            String colorHex = groupColorMap.getOrDefault(groupId, "#FFFFFF");
+            Color gdxColor  = parseHexColor(colorHex, 0.32f);
+
+            // ── 1. Centroid direction c ────────────────────────────────────
+            Vector3 c = new Vector3();
             for (int idx : indices) {
-                slotDir.add(nodePositions[idx]);
+                c.add(nodePositions[idx]);
             }
-            slotDir.nor(); // renormalize → unit direction of slot center
+            c.nor(); // unit direction toward group centroid on sphere
 
-            // ─── Compute cap angular radius ───────────────────────────────
-            // Mirror the capArc from distributeNodesOnSphere with 25% padding,
-            // clamped to 1.2 radians so no cap wraps around more than ~70°.
-            float capArc = Math.min(
-                    0.62f * iconSize * (float) Math.sqrt(M),
-                    0.9f * effectiveRadius * slotAngle);
-            float alpha = Math.min(capArc / effectiveRadius * 1.25f, 1.2f); // radians
-            float alphaDeg = (float) Math.toDegrees(alpha);
+            // ── 2. Tangent basis (t1, t2) at c ────────────────────────────
+            // Degenerate-safe: cross with Y unless c ≈ ±Y.
+            Vector3 t1 = new Vector3();
+            Vector3 t2 = new Vector3();
+            if (Math.abs(c.y) < 0.9f) {
+                t1.set(Vector3.Y).crs(c).nor();
+            } else {
+                t1.set(Vector3.X).crs(c).nor();
+            }
+            t2.set(c).crs(t1).nor();
 
-            // ─── Parse the group color at 30% opacity ────────────────────
-            Color gdxColor = parseHexColor(colorHex, 0.30f);
+            // ── 3. Gnomonic projection: member directions → (u, v) ──────────
+            // For direction d: scale s = 1/(d·c); u = s*(d·t1); v = s*(d·t2).
+            // Guard d·c < 0.1 to avoid near-zero division (should never trigger
+            // for compact groups, but be defensive).
+            float[] us = new float[M];
+            float[] vs = new float[M];
+            for (int k = 0; k < M; k++) {
+                Vector3 d = new Vector3(nodePositions[indices.get(k)]).nor();
+                float dot = d.dot(c);
+                if (dot < 0.1f) dot = 0.1f;
+                float s = 1f / dot;
+                us[k] = s * d.dot(t1);
+                vs[k] = s * d.dot(t2);
+            }
 
-            // ─── Create cap material ──────────────────────────────────────
-            // BlendingAttribute: standard SRC_ALPHA / ONE_MINUS_SRC_ALPHA.
-            // DepthTestAttribute(GL_LEQUAL, false): depth TEST on for correct
-            //   sorting, depthMask=false so caps never z-reject icon decals
-            //   at nearly the same depth.
-            // IntAttribute.CullFace=GL_NONE: render both faces so the cap is
-            //   visible from the back of the sphere (owner requirement).
+            // ── 4. 2D convex hull via Andrew's monotone chain ─────────────
+            // Returns indices into us[]/vs[] in CCW order.
+            int[] hullIdx = convexHull2D(us, vs, M);
+
+            // ── 5. Pad hull outward from 2D centroid ──────────────────────
+            // pad in gnomonic units ≈ radians for small angles.
+            float pad = (0.75f * iconSize) / effectiveRadius;
+
+            // Compute 2D hull centroid.
+            float cu2d = 0f, cv2d = 0f;
+            for (int hi : hullIdx) { cu2d += us[hi]; cv2d += vs[hi]; }
+            cu2d /= hullIdx.length;
+            cv2d /= hullIdx.length;
+
+            // Degenerate capsule path: M==2 or collinear (hull has < 3 points).
+            float[] hullU, hullV;
+            if (hullIdx.length < 3) {
+                // Generate stadium/capsule: 8 circle points around each endpoint.
+                int nCap = 8;
+                hullU = new float[nCap * M];
+                hullV = new float[nCap * M];
+                int out = 0;
+                for (int k = 0; k < M; k++) {
+                    for (int a = 0; a < nCap; a++) {
+                        float ang = a * MathUtils.PI2 / nCap;
+                        hullU[out]   = us[k] + pad * MathUtils.cos(ang);
+                        hullV[out++] = vs[k] + pad * MathUtils.sin(ang);
+                    }
+                }
+                // Re-hull the circle points.
+                int[] rehull = convexHull2D(hullU, hullV, out);
+                float[] hu2 = new float[rehull.length];
+                float[] hv2 = new float[rehull.length];
+                for (int k = 0; k < rehull.length; k++) {
+                    hu2[k] = hullU[rehull[k]];
+                    hv2[k] = hullV[rehull[k]];
+                }
+                hullU = hu2; hullV = hv2;
+            } else {
+                // Pad normal hull outward.
+                hullU = new float[hullIdx.length];
+                hullV = new float[hullIdx.length];
+                for (int k = 0; k < hullIdx.length; k++) {
+                    float pu = us[hullIdx[k]] - cu2d;
+                    float pv = vs[hullIdx[k]] - cv2d;
+                    float len = (float) Math.sqrt(pu * pu + pv * pv);
+                    if (len < 1e-6f) { pu = 1f; pv = 0f; len = 1f; }
+                    hullU[k] = us[hullIdx[k]] + pad * pu / len;
+                    hullV[k] = vs[hullIdx[k]] + pad * pv / len;
+                }
+            }
+
+            // ── 6. Subdivide hull edges so no segment > 0.15 gnomonic units ─
+            List<Float> bdryU = new ArrayList<>();
+            List<Float> bdryV = new ArrayList<>();
+            int Hlen = hullU.length;
+            float maxSegment = 0.15f;
+            for (int k = 0; k < Hlen; k++) {
+                float au = hullU[k], av = hullV[k];
+                float bu = hullU[(k + 1) % Hlen], bv = hullV[(k + 1) % Hlen];
+                float segLen = (float) Math.sqrt((bu - au) * (bu - au) + (bv - av) * (bv - av));
+                int segs = Math.max(1, (int) Math.ceil(segLen / maxSegment));
+                for (int s = 0; s < segs; s++) {
+                    float t = s / (float) segs;
+                    bdryU.add(au + t * (bu - au));
+                    bdryV.add(av + t * (bv - av));
+                }
+            }
+            int B = bdryU.size(); // boundary vertex count after subdivision
+
+            // ── 7. Inverse-project boundary + centroid to sphere ──────────
+            // dir = normalize(c + u*t1 + v*t2), placed at 0.90*effectiveRadius.
+            float patchR = 0.90f * effectiveRadius;
+
+            // Boundary ring (outer) at patchR.
+            Vector3[] outerRing = new Vector3[B];
+            for (int k = 0; k < B; k++) {
+                float u = bdryU.get(k), v = bdryV.get(k);
+                outerRing[k] = new Vector3(
+                        c.x + u * t1.x + v * t2.x,
+                        c.y + u * t1.y + v * t2.y,
+                        c.z + u * t1.z + v * t2.z
+                ).nor().scl(patchR);
+            }
+
+            // Mid-ring: half the gnomonic radius of each boundary point,
+            // to follow sphere curvature instead of sagging flat.
+            Vector3[] midRing = new Vector3[B];
+            for (int k = 0; k < B; k++) {
+                float u = bdryU.get(k) * 0.5f, v = bdryV.get(k) * 0.5f;
+                midRing[k] = new Vector3(
+                        c.x + u * t1.x + v * t2.x,
+                        c.y + u * t1.y + v * t2.y,
+                        c.z + u * t1.z + v * t2.z
+                ).nor().scl(patchR);
+            }
+
+            // Centre vertex at patchR along the centroid direction.
+            Vector3 centreVert = new Vector3(c).scl(patchR);
+
+            // ── 8. Build mesh: fan from centre through mid-ring to outer ring ─
+            // Usage.Position | Usage.Normal.
+            int attributes = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal;
+
+            // Total vertices: 1 (centre) + B (mid) + B (outer) = 2B+1
+            // Triangles:
+            //   Inner fan (centre → mid):   B triangles
+            //   Annular band (mid → outer): B*2 triangles (2 per quad)
+            // Total: 3B triangles = 9B indices.
+
             Material material = new Material(
                     ColorAttribute.createDiffuse(gdxColor),
-                    new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.30f),
+                    new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.32f),
                     new DepthTestAttribute(GL20.GL_LEQUAL, false),
                     IntAttribute.createCullFace(GL20.GL_NONE)
             );
 
-            // ─── Build the spherical-cap mesh ─────────────────────────────
-            // MeshPartBuilder.sphere(w,h,d, uDiv, vDiv, uFrom, uTo, vFrom, vTo)
-            //   v angles are latitude: 0° = +Y pole, 180° = −Y pole.
-            //   We build a cap of half-angle alphaDeg degrees around +Y.
-            //   Diameter = 2 × 0.88 × effectiveRadius; cap geometry is centred
-            //   at the mesh origin with the pole at +Y at that radius.
-            float capDiameter = 2f * 0.88f * effectiveRadius;
-
-            int attributes = VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal;
-
             modelBuilder.begin();
-            MeshPartBuilder partBuilder = modelBuilder.part(
-                    "cap_" + groupId,
+            MeshPartBuilder pb = modelBuilder.part(
+                    "hull_" + groupId,
                     GL20.GL_TRIANGLES,
                     attributes,
                     material
             );
-            // Build cap: full 360° longitude sweep, 0° to alphaDeg latitude.
-            // 24 longitude divisions × 8 latitude rings gives smooth edges.
-            partBuilder.sphere(capDiameter, capDiameter, capDiameter,
-                    24, 8,
-                    0f, 360f, 0f, alphaDeg);
+
+            // Helper: normal = radial (outward from sphere centre).
+            // Vertex layout: index 0 = centre; 1..B = mid-ring; B+1..2B = outer ring.
+            short vCentre = addVertex(pb, centreVert);
+
+            short[] vMid   = new short[B];
+            short[] vOuter = new short[B];
+            for (int k = 0; k < B; k++) {
+                vMid[k]   = addVertex(pb, midRing[k]);
+                vOuter[k] = addVertex(pb, outerRing[k]);
+            }
+
+            // Inner fan: centre → mid-ring triangles.
+            for (int k = 0; k < B; k++) {
+                int next = (k + 1) % B;
+                pb.triangle(vCentre, vMid[k], vMid[next]);
+            }
+
+            // Annular band: mid-ring quads (2 triangles each).
+            for (int k = 0; k < B; k++) {
+                int next = (k + 1) % B;
+                pb.triangle(vMid[k],   vOuter[k],    vOuter[next]);
+                pb.triangle(vMid[k],   vOuter[next], vMid[next]);
+            }
 
             Model model = modelBuilder.end();
             groupModels.add(model);
+            groupBackdrops.add(new ModelInstance(model));
 
-            ModelInstance instance = new ModelInstance(model);
-            groupBackdrops.add(instance);
-
-            // ─── Store base orientation: rotation that takes +Y → slotDir ─
-            // setFromCross(a, b) produces the shortest-arc rotation from a to b.
-            // When slotDir is exactly +Y, setFromCross returns identity (correct).
-            // When slotDir is exactly −Y, setFromCross may degenerate — handle
-            // that by using a 180° rotation around X instead.
-            Matrix4 baseOrient = new Matrix4();
-            if (slotDir.dot(Vector3.Y) > -0.9999f) {
-                tmpQuat.setFromCross(Vector3.Y, slotDir);
-                baseOrient.set(tmpQuat);
-            } else {
-                // slotDir ≈ −Y: 180° flip around X axis
-                baseOrient.setToRotation(Vector3.X, 180f);
-            }
-            groupCapOrientations.add(baseOrient);
-
-            Log.d(TAG, "Group '" + groupId + "': " + M + " apps, slotDir=" + slotDir
-                    + " alphaDeg=" + alphaDeg);
+            Log.d(TAG, "Group '" + groupId + "': " + M + " apps, hull boundary=" + B
+                    + " verts, centroid=" + c);
         }
     }
 
     /**
-     * Counts total slot count S (groups with M>=2 count as 1 slot each; each
-     * ungrouped app is 1 slot). Used for the slotAngle calculation in
-     * buildGroupBackdrops, mirroring the logic in distributeNodesOnSphere.
+     * Adds a single vertex to a MeshPartBuilder at the given 3D position,
+     * with a sphere-radial (outward-from-origin) normal and zero UV.
+     * Returns the short vertex index for use in triangle() calls.
      */
-    private int countTotalSlots() {
-        if (appNodes == null || appNodes.isEmpty()) return 0;
-        Set<String> seenGroups = new java.util.HashSet<>();
-        int count = 0;
-        for (AppFetcher.AppNode node : appNodes) {
-            if (node.groupId != null) {
-                if (seenGroups.add(node.groupId)) count++;
-            } else {
-                count++;
-            }
+    private static short addVertex(MeshPartBuilder pb, Vector3 pos) {
+        Vector3 nor = new Vector3(pos).nor();
+        return pb.vertex(pos, nor, null, null);
+    }
+
+    /**
+     * Andrew's Monotone Chain — 2D convex hull algorithm.
+     *
+     * Computes the convex hull of M 2D points given as parallel float arrays
+     * (xs, ys). Returns an array of indices into xs/ys in CCW order.
+     *
+     * Handles degenerate cases (M==1 → [0], M==2 → [0,1], all-collinear →
+     * returns the two extremes). The algorithm is O(M log M).
+     *
+     * @param xs  X-coordinates (length >= M)
+     * @param ys  Y-coordinates (length >= M)
+     * @param M   Number of active points
+     * @return    Array of indices in CCW convex hull order
+     */
+    private static int[] convexHull2D(float[] xs, float[] ys, int M) {
+        if (M == 0) return new int[0];
+        if (M == 1) return new int[]{0};
+        if (M == 2) return new int[]{0, 1};
+
+        // Build index array sorted by (x asc, y asc).
+        Integer[] idx = new Integer[M];
+        for (int i = 0; i < M; i++) idx[i] = i;
+        Arrays.sort(idx, (a, b) -> {
+            int c = Float.compare(xs[a], xs[b]);
+            return c != 0 ? c : Float.compare(ys[a], ys[b]);
+        });
+
+        int[] hull = new int[2 * M];
+        int k = 0;
+
+        // Lower hull.
+        for (int i = 0; i < M; i++) {
+            while (k >= 2 && cross2D(xs, ys, hull[k-2], hull[k-1], idx[i]) <= 0) k--;
+            hull[k++] = idx[i];
         }
-        return count;
+        // Upper hull.
+        for (int i = M - 2, t = k + 1; i >= 0; i--) {
+            while (k >= t && cross2D(xs, ys, hull[k-2], hull[k-1], idx[i]) <= 0) k--;
+            hull[k++] = idx[i];
+        }
+
+        return Arrays.copyOf(hull, k - 1);
+    }
+
+    /** Cross product of vectors (O→A) and (O→B) in 2D (using index arrays). */
+    private static float cross2D(float[] xs, float[] ys, int o, int a, int b) {
+        return (xs[a] - xs[o]) * (ys[b] - ys[o]) - (ys[a] - ys[o]) * (xs[b] - xs[o]);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -1065,7 +1265,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             @Override
             public boolean pan(float x, float y, float deltaX, float deltaY) {
                 userInteracting = true;
+                // Reset idle spin completely — ramp restarts from zero on next release.
                 idleTimer = 0f;
+                idleBlend = 0f;
 
                 // Convert screen-space drag to rotation angles
                 // deltaX → rotate around Y axis (horizontal drag = horizontal spin)
@@ -1081,7 +1283,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 tmpQuat.setFromAxis(Vector3.X, (float) Math.toDegrees(angleX));
                 sphereRotation.mulLeft(tmpQuat);
 
-                // Kill any existing momentum while dragging
+                // Kill any existing fling momentum while dragging
                 angularVelocity.setZero();
 
                 return true;
@@ -1094,6 +1296,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
              * angular momentum. The friction system in render() will
              * smoothly decelerate the spin. Fling angular velocity is scaled
              * by rotationSpeedFactor so the user's speed preference applies.
+             * Idle spin will ramp back in (idleBlend → 1) after IDLE_DELAY
+             * once the fling decays.
              */
             @Override
             public boolean fling(float velocityX, float velocityY, int button) {
@@ -1175,67 +1379,91 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  Physics Update — Quaternion rotation with friction
+    //  Physics Update — Fling friction + friction-free idle spin
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
      * Updates the sphere's rotation state each frame.
      *
-     * ─── Rotation Pipeline ───────────────────────────────────────────────
+     * ─── Two independent rotation contributions ────────────────────────────
      *
-     * 1. If user isn't interacting and idle timer expired, apply gentle auto-spin
-     * 2. Apply angular velocity to the rotation quaternion
-     * 3. Apply friction to decelerate angular velocity
-     * 4. Normalize the quaternion to prevent drift accumulation
+     * 1. FLING MOMENTUM (angularVelocity):
+     *    Angular velocity set by user flings; decays via exponential friction
+     *    (FRICTION^(delta*120)) and snaps to zero below VELOCITY_EPSILON.
+     *    Applied via pre-multiplication (world space) each frame.
      *
-     * ─── Why mulLeft (pre-multiply)? ─────────────────────────────────────
+     * 2. IDLE SPIN (idleBlend):
+     *    Completely friction-free constant Y-axis rotation that engages after
+     *    IDLE_DELAY seconds of no user interaction. idleBlend ramps from 0→1
+     *    over 1.5 seconds (smooth ramp-in, no visible jump) and is reset to 0
+     *    immediately when the user touches the screen.
+     *    Applied via a direct per-frame angle = IDLE_SPIN_SPEED * rotationSpeedFactor
+     *    * idleBlend * delta (radians).
      *
-     * The angular velocity vector is defined in world space. Pre-multiplying
-     * ensures the rotation always acts on world axes, consistent with the pan
-     * handler. Post-multiplying would rotate in the sphere's local space,
-     * causing the auto-spin axis to drift as orientation accumulates.
+     * Both contributions are applied the same frame — fling decays away naturally
+     * while idle ramps in, so the transitions are smooth and continuous.
+     *
+     * ─── Why not implement idle via angularVelocity + impulse? ────────────
+     *
+     * Setting angularVelocity.y = IDLE_SPIN_SPEED in the impulse-rearming
+     * pattern triggers an immediate impulse that the per-frame friction then
+     * decays within ~0.7 s, causing a visible pulse/stop/pulse cycle. Separating
+     * idle spin from fling physics entirely eliminates that artifact.
+     *
+     * ─── Why mulLeft (pre-multiply)? ──────────────────────────────────────
+     *
+     * The angular velocity vector and idle axis are defined in world space.
+     * Pre-multiplying ensures the rotation always acts on world axes, consistent
+     * with the pan handler. Post-multiplying would rotate in the sphere's local
+     * space, causing the auto-spin axis to drift as orientation accumulates.
      *
      * @param delta Frame time in seconds (1/120 at 120 FPS)
      */
     private void updatePhysics(float delta) {
-        // ─── Idle auto-spin ─────────────────────────────────────────────
-        if (!userInteracting) {
-            idleTimer += delta;
-            if (idleTimer > IDLE_DELAY && angularVelocity.len2() < VELOCITY_EPSILON * VELOCITY_EPSILON) {
-                // Resume gentle auto-rotation around world Y axis, scaled by speed preference
-                angularVelocity.y = IDLE_SPIN_SPEED * rotationSpeedFactor;
-            }
-        }
-
-        // ─── Apply angular velocity to rotation quaternion ──────────────
+        // ─── 1. Fling momentum (with friction) ──────────────────────────
         float speed = angularVelocity.len();
         if (speed > VELOCITY_EPSILON) {
-            // Create a delta rotation quaternion:
-            // angle = speed * delta (radians this frame)
-            // axis = normalized angular velocity direction
+            // Apply fling rotation: angle = speed * delta radians this frame.
             float angle = speed * delta;
-
             tmpVec.set(angularVelocity).nor();
             tmpQuat.setFromAxis(tmpVec, (float) Math.toDegrees(angle));
 
-            // Pre-multiply: apply rotation in WORLD space so the auto-spin
-            // axis remains the world Y axis regardless of accumulated orientation.
+            // Pre-multiply: apply in WORLD space.
             sphereRotation.mulLeft(tmpQuat);
 
-            // Normalize to prevent floating-point drift
-            // After many multiplications, quaternion magnitude can drift from 1.0
+            // Normalize to prevent floating-point drift.
             sphereRotation.nor();
 
-            // ─── Apply friction ─────────────────────────────────────────
-            // Exponential decay: v *= friction^(delta * 120)
-            // The exponent normalizes friction to feel consistent regardless
-            // of frame rate. At 120 FPS, friction is applied 120 times/sec.
+            // Exponential friction: v *= friction^(delta * 120).
+            // The exponent normalizes friction to feel consistent at any frame rate.
             float frictionThisFrame = (float) Math.pow(FRICTION, delta * 120.0);
             angularVelocity.scl(frictionThisFrame);
 
-            // ─── Snap to zero below epsilon ─────────────────────────────
+            // Snap to zero below epsilon to avoid eternal micro-spinning.
             if (angularVelocity.len2() < VELOCITY_EPSILON * VELOCITY_EPSILON) {
                 angularVelocity.setZero();
+            }
+        }
+
+        // ─── 2. Idle spin (friction-free, separate from fling physics) ──
+        // Only runs when user is not touching the screen.
+        if (!userInteracting) {
+            idleTimer += delta;
+
+            if (idleTimer > IDLE_DELAY) {
+                // Smooth ramp-in over 1.5 s so there is no visible jump when
+                // idle spin first engages (e.g. just after a fling decays).
+                idleBlend = Math.min(1f, idleBlend + delta / 1.5f);
+
+                if (idleBlend > 0f) {
+                    // Constant Y-axis rotation, scaled by user speed preference.
+                    // angle in radians = IDLE_SPIN_SPEED * speedFactor * blend * delta.
+                    float idleAngleRad = IDLE_SPIN_SPEED * rotationSpeedFactor * idleBlend * delta;
+                    tmpQuat.setFromAxis(Vector3.Y, (float) Math.toDegrees(idleAngleRad));
+                    // Pre-multiply: world-space Y so it never drifts.
+                    sphereRotation.mulLeft(tmpQuat);
+                    sphereRotation.nor();
+                }
             }
         }
     }
@@ -1331,39 +1559,30 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  Render Layer 2 — Group Cloth-Cap Meshes
+    //  Render Layer 2 — Group Convex-Hull Polygon Patches
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
-     * Renders the translucent colored cloth-cap meshes behind grouped app clusters.
+     * Renders the translucent colored convex-hull polygon patches behind grouped
+     * app clusters.
      *
-     * Each cap's transform is:
-     *   sphereRotationMatrix × baseOrientationMatrix (then scaled by pageVisibility)
-     *
-     * - baseOrientationMatrix: rotation taking +Y to the slot direction (built once
-     *   in buildGroupBackdrops, stored in groupCapOrientations).
-     * - sphereRotationMatrix: the live sphere rotation quaternion converted to Matrix4.
-     *
-     * This makes caps rotate rigidly with the sphere. No translation is needed —
-     * the cap geometry is already centred at the mesh origin with its pole at
-     * radius 0.88 × effectiveRadius from origin (from the sphere sweep).
+     * Each patch's transform is the sphere rotation matrix scaled by pageVisibility.
+     * No per-patch base-orientation matrix is needed because the patch geometry is
+     * built in sphere-local coordinates (actual 3D positions) — the rotation
+     * matrix alone is sufficient to rotate them with the sphere.
      */
     private void renderGroupBackdrops() {
-        // Build the sphere-rotation matrix once per frame (avoids per-cap alloc).
+        // Build the sphere-rotation matrix once per frame (avoids per-patch alloc).
         tmpMat.set(sphereRotation);
 
         modelBatch.begin(camera);
 
         for (int i = 0; i < groupBackdrops.size; i++) {
             ModelInstance instance = groupBackdrops.get(i);
-            Matrix4 baseOrient    = groupCapOrientations.get(i);
 
-            // Compose: sphereRotation × baseOrientation
-            instance.transform.set(tmpMat).mul(baseOrient);
-
-            // Scale by pageVisibility for the page-fade shrink/grow animation.
-            // Scaling uniformly toward origin keeps the cap centred on the sphere.
-            instance.transform.scl(pageVisibility);
+            // Compose: sphereRotation, then scale for page visibility.
+            // Identity base — geometry is already in sphere-local coordinates.
+            instance.transform.set(tmpMat).scl(pageVisibility);
 
             modelBatch.render(instance);
         }
