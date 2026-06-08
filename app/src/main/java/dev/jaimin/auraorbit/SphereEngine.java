@@ -763,7 +763,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             "pref_sphere_radius",
             "pref_icon_size",
             "pref_rotation_speed",
-            "pref_active_page"
+            "pref_active_page",
+            "pref_target_fps"
     );
 
     /**
@@ -919,6 +920,14 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // Rotation speed: pref value 10–300, divide by 100 to get factor, clamp to [0.1, 3.0]
         rotationSpeedFactor = MathUtils.clamp(prefs.getInt("pref_rotation_speed", 100) / 100f, 0.1f, 3.0f);
 
+        // Target FPS
+        try {
+            int targetFps = Integer.parseInt(prefs.getString("pref_target_fps", "120"));
+            Gdx.graphics.setForegroundFPS(targetFps);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to parse target fps", e);
+        }
+
         Log.i(TAG, "Config — radius: " + sphereRadius + ", iconSize: " + iconSize
                 + ", showBackground: " + showBackground + ", activePage: " + activePage
                 + ", rotationSpeedFactor: " + rotationSpeedFactor);
@@ -953,6 +962,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         sb.append(prefs.getInt("pref_icon_size", 50)).append('|');
         sb.append(prefs.getInt("pref_rotation_speed", 100)).append('|');
         sb.append(prefs.getInt("pref_active_page", 1)).append('|'); // raw 1-based value (UI default)
+        sb.append(prefs.getString("pref_target_fps", "120")).append('|');
 
         // System-wallpaper mirror: changing the system wallpaper or granting
         // MANAGE_EXTERNAL_STORAGE must both trigger a background rebuild on next
