@@ -177,7 +177,7 @@ public class GroupEditFragment extends Fragment {
         LinearLayout      colorRow    = root.findViewById(R.id.color_row);
         TextInputEditText memberSearch = root.findViewById(R.id.member_search_input);
         RecyclerView      memberList  = root.findViewById(R.id.member_list);
-        MaterialButton    btnDelete   = root.findViewById(R.id.btn_delete);
+        MaterialButton    btnCancel   = root.findViewById(R.id.btn_cancel);
         MaterialButton    btnSave     = root.findViewById(R.id.btn_save);
 
         memberList.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -208,12 +208,8 @@ public class GroupEditFragment extends Fragment {
         // ─── Color circles ────────────────────────────────────────────────
         buildColorRow(colorRow);
 
-        // ─── Delete button (edit mode only) ──────────────────────────────
-        if (existingGroup != null) {
-            btnDelete.setVisibility(View.VISIBLE);
-            btnDelete.setOnClickListener(v -> confirmDelete(prefs, groups));
-        }
-        // In create mode, btnDelete remains GONE as per the XML default.
+        // ─── Cancel button ────────────────────────────────────────────────
+        btnCancel.setOnClickListener(v -> getParentFragmentManager().popBackStack());
 
         // ─── Save button ──────────────────────────────────────────────────
         btnSave.setOnClickListener(v -> onSaveClicked(nameInput, prefs));
@@ -532,38 +528,7 @@ public class GroupEditFragment extends Fragment {
         getParentFragmentManager().popBackStack();
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    //  Delete handler
-    // ─────────────────────────────────────────────────────────────────────
 
-    /**
-     * Shows a confirmation dialog before deleting the group.
-     *
-     * @param prefs   SharedPreferences instance.
-     * @param groups  Current in-memory group list (will be mutated on confirm).
-     */
-    private void confirmDelete(@NonNull SharedPreferences prefs,
-                               @NonNull List<GroupStore.Group> groups) {
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle(getString(R.string.dialog_delete_confirm, originalGroupName))
-                .setMessage(R.string.dialog_delete_confirm_msg)
-                .setPositiveButton(R.string.btn_delete_group, (dialog, which) -> {
-                    // Re-load to get the freshest state before deleting.
-                    List<GroupStore.Group> freshGroups = GroupStore.load(prefs);
-                    GroupStore.delete(freshGroups, originalGroupName);
-                    GroupStore.save(prefs, freshGroups);
-
-                    Toast.makeText(requireContext(),
-                            R.string.toast_group_deleted,
-                            Toast.LENGTH_SHORT).show();
-
-                    getParentFragmentManager().popBackStack();
-                })
-                .setNegativeButton(R.string.btn_cancel, null)
-                .show();
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
     //  Utility
     // ─────────────────────────────────────────────────────────────────────
 

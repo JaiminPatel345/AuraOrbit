@@ -74,13 +74,11 @@
         android:gravity="end">
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_delete"
+            android:id="@+id/btn_cancel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             style="@style/Widget.Material3.Button.TextButton"
-            android:text="@string/btn_delete_group"
-            android:textColor="#D85A30"
-            android:visibility="gone" />
+            android:text="@string/btn_cancel" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_save"

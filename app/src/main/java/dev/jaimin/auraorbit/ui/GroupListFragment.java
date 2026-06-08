@@ -138,6 +138,29 @@ public class GroupListFragment extends Fragment {
                 .commit();
     }
 
+    /**
+     * Shows a confirmation dialog before deleting the group.
+     */
+    private void confirmDelete(@NonNull String groupName) {
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle(getString(R.string.dialog_delete_confirm, groupName))
+                .setMessage(R.string.dialog_delete_confirm_msg)
+                .setPositiveButton(R.string.btn_delete_group, (dialog, which) -> {
+                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+                    List<GroupStore.Group> freshGroups = GroupStore.load(prefs);
+                    GroupStore.delete(freshGroups, groupName);
+                    GroupStore.save(prefs, freshGroups);
+
+                    android.widget.Toast.makeText(requireContext(),
+                            R.string.toast_group_deleted,
+                            android.widget.Toast.LENGTH_SHORT).show();
+
+                    reloadGroups();
+                })
+                .setNegativeButton(R.string.btn_cancel, null)
+                .show();
+    }
+
     // ═════════════════════════════════════════════════════════════════════
     //  RecyclerView Adapter
     // ═════════════════════════════════════════════════════════════════════
@@ -189,6 +212,9 @@ public class GroupListFragment extends Fragment {
 
             // Row tap → edit this group
             holder.itemView.setOnClickListener(v -> navigateToEdit(group.name));
+
+            // Delete button tap
+            holder.btnDelete.setOnClickListener(v -> confirmDelete(group.name));
         }
 
         @Override
@@ -202,12 +228,14 @@ public class GroupListFragment extends Fragment {
             final View     colorDot;
             final TextView name;
             final TextView count;
+            final android.widget.ImageView btnDelete;
 
             VH(@NonNull View itemView) {
                 super(itemView);
-                colorDot = itemView.findViewById(R.id.group_color_dot);
-                name     = itemView.findViewById(R.id.group_name);
-                count    = itemView.findViewById(R.id.group_count);
+                colorDot  = itemView.findViewById(R.id.group_color_dot);
+                name      = itemView.findViewById(R.id.group_name);
+                count     = itemView.findViewById(R.id.group_count);
+                btnDelete = itemView.findViewById(R.id.btn_delete_group);
             }
         }
     }
