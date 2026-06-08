@@ -6,8 +6,9 @@
     android:background="@android:color/transparent">
 
     <ImageView
-        android:layout_width="254dp"
-        android:layout_height="264dp"
+        android:id="@+id/widget_icon"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_gravity="center"
         android:background="@drawable/rounded_bg"
         android:contentDescription="AuraOrbit Widget"

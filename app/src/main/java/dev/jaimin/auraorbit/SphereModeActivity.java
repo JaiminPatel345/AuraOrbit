@@ -116,11 +116,31 @@ public class SphereModeActivity extends AndroidApplication {
     }
 
 
-
     /**
      * Re-apply immersive mode when the activity window focus returns
      * (e.g. after returning from Settings or a launched app).
      */
+    @Override
+    protected void onResume() {
+        super.onResume();
+        
+        Intent hideIntent = new Intent(this, SphereWidgetProvider.class);
+        hideIntent.setAction("dev.jaimin.auraorbit.WIDGET_HIDE");
+        sendBroadcast(hideIntent);
+
+        // Always hide system bars on resume to ensure the activity stays immersive
+        // if the user pulled down the notification shade.
+        hideSystemBars();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Intent showIntent = new Intent(this, SphereWidgetProvider.class);
+        showIntent.setAction("dev.jaimin.auraorbit.WIDGET_SHOW");
+        sendBroadcast(showIntent);
+    }
+
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
