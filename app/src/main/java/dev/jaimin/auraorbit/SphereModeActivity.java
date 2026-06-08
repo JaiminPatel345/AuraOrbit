@@ -106,6 +106,26 @@ public class SphereModeActivity extends AndroidApplication {
         // Must be called AFTER super.onCreate / initialize so the window is
         // fully decorated and the insets controller is available.
         hideSystemBars();
+
+        // ─── Empty state popup ────────────────────────────────────────────
+        android.content.SharedPreferences prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
+        java.util.Set<String> selectedApps = prefs.getStringSet(AppFetcher.PREF_SELECTED_APPS, new java.util.HashSet<>());
+        if (selectedApps.isEmpty()) {
+            new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle("No Apps Selected")
+                .setMessage("You need to select at least one app to see it in the AuraOrbit sphere.")
+                .setPositiveButton("Go to Apps", (dialog, which) -> {
+                    Intent intent = new Intent(this, LiveWallpaperSettings.class);
+                    intent.putExtra("open_fragment", "apps");
+                    startActivity(intent);
+                    finish();
+                })
+                .setNegativeButton("Close", (dialog, which) -> {
+                    finish();
+                })
+                .setCancelable(false)
+                .show();
+        }
     }
 
     /**

@@ -177,7 +177,7 @@ public class GroupEditFragment extends Fragment {
         LinearLayout      colorRow    = root.findViewById(R.id.color_row);
         TextInputEditText memberSearch = root.findViewById(R.id.member_search_input);
         RecyclerView      memberList  = root.findViewById(R.id.member_list);
-        MaterialButton    btnDelete   = root.findViewById(R.id.btn_delete);
+        MaterialButton    btnCancel   = root.findViewById(R.id.btn_cancel);
         MaterialButton    btnSave     = root.findViewById(R.id.btn_save);
 
         memberList.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -193,14 +193,6 @@ public class GroupEditFragment extends Fragment {
         // Seed the working members set.
         if (existingGroup != null) {
             workingMembers.addAll(existingGroup.packages);
-
-            // "What you see is what you save": retain only packages that are
-            // currently selected (visible in the member list). A package that
-            // was deselected in the App Picker would otherwise stay invisibly
-            // in the working set and get re-saved on the next Save tap.
-            Set<String> selectedSet = prefs.getStringSet(
-                    AppFetcher.PREF_SELECTED_APPS, new HashSet<>());
-            workingMembers.retainAll(selectedSet);
         }
 
         // Prefill name.
@@ -216,12 +208,8 @@ public class GroupEditFragment extends Fragment {
         // ─── Color circles ────────────────────────────────────────────────
         buildColorRow(colorRow);
 
-        // ─── Delete button (edit mode only) ──────────────────────────────
-        if (existingGroup != null) {
-            btnDelete.setVisibility(View.VISIBLE);
-            btnDelete.setOnClickListener(v -> confirmDelete(prefs, groups));
-        }
-        // In create mode, btnDelete remains GONE as per the XML default.
+        // ─── Cancel button ────────────────────────────────────────────────
+        btnCancel.setOnClickListener(v -> getParentFragmentManager().popBackStack());
 
         // ─── Save button ──────────────────────────────────────────────────
         btnSave.setOnClickListener(v -> onSaveClicked(nameInput, prefs));
@@ -276,9 +264,16 @@ public class GroupEditFragment extends Fragment {
         int circleSizePx = dpToPx(40);
         int marginEndPx  = dpToPx(8);
 
+        boolean isCustomSelected = true;
+        for (String hex : colorHexValues) {
+            if (hex.equalsIgnoreCase(selectedColor)) {
+                isCustomSelected = false;
+                break;
+            }
+        }
+
         for (int i = 0; i < colorHexValues.length; i++) {
             final String hex = colorHexValues[i];
-            final int    idx = i;
 
             View circle = new View(requireContext());
             LinearLayout.LayoutParams lp =
@@ -290,21 +285,104 @@ public class GroupEditFragment extends Fragment {
             colorCircles.add(circle);
             colorRow.addView(circle);
 
-            // Draw the circle (and initial stroke if selected).
             applyCircleDrawable(circle, hex, hex.equalsIgnoreCase(selectedColor));
 
             circle.setOnClickListener(v -> {
                 selectedColor = hex;
-                // Redraw all circles: only the new selection gets a stroke.
-                for (int j = 0; j < colorCircles.size(); j++) {
-                    applyCircleDrawable(
-                            colorCircles.get(j),
-                            colorHexValues[j],
-                            colorHexValues[j].equalsIgnoreCase(hex)
-                    );
-                }
+                buildColorRow(colorRow);
             });
         }
+
+        // Add Custom Color Circle
+        View customCircle = new View(requireContext());
+        LinearLayout.LayoutParams customLp =
+                new LinearLayout.LayoutParams(circleSizePx, circleSizePx);
+        customCircle.setLayoutParams(customLp);
+        customCircle.setContentDescription("Custom Color");
+
+        if (isCustomSelected) {
+            applyCircleDrawable(customCircle, selectedColor, true);
+        } else {
+            // Draw a rainbow wheel
+            android.graphics.drawable.ShapeDrawable rainbow = new android.graphics.drawable.ShapeDrawable(new android.graphics.drawable.shapes.OvalShape());
+            rainbow.getPaint().setShader(new android.graphics.SweepGradient(
+                    circleSizePx / 2f, circleSizePx / 2f,
+                    new int[]{Color.RED, Color.YELLOW, Color.GREEN, Color.CYAN, Color.BLUE, Color.MAGENTA, Color.RED},
+                    null));
+            customCircle.setBackground(rainbow);
+        }
+
+        customCircle.setOnClickListener(v -> showColorPickerDialog());
+        colorRow.addView(customCircle);
+    }
+
+    private void showColorPickerDialog() {
+        LinearLayout layout = new LinearLayout(requireContext());
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(dpToPx(24), dpToPx(24), dpToPx(24), dpToPx(24));
+
+        View preview = new View(requireContext());
+        LinearLayout.LayoutParams previewLp = new LinearLayout.LayoutParams(dpToPx(100), dpToPx(100));
+        previewLp.gravity = android.view.Gravity.CENTER;
+        previewLp.bottomMargin = dpToPx(24);
+        preview.setLayoutParams(previewLp);
+        GradientDrawable gd = new GradientDrawable();
+        gd.setShape(GradientDrawable.OVAL);
+        preview.setBackground(gd);
+
+        int currentColor;
+        try {
+            currentColor = Color.parseColor(selectedColor);
+        } catch (Exception e) {
+            currentColor = Color.parseColor(colorHexValues[0]);
+        }
+
+        final int[] rgb = { Color.red(currentColor), Color.green(currentColor), Color.blue(currentColor) };
+        gd.setColor(Color.rgb(rgb[0], rgb[1], rgb[2]));
+
+        com.google.android.material.slider.Slider sliderR = new com.google.android.material.slider.Slider(requireContext());
+        sliderR.setValueFrom(0); sliderR.setValueTo(255); sliderR.setValue(rgb[0]);
+        sliderR.setThumbTintList(android.content.res.ColorStateList.valueOf(Color.RED));
+        sliderR.setTrackActiveTintList(android.content.res.ColorStateList.valueOf(Color.RED));
+
+        com.google.android.material.slider.Slider sliderG = new com.google.android.material.slider.Slider(requireContext());
+        sliderG.setValueFrom(0); sliderG.setValueTo(255); sliderG.setValue(rgb[1]);
+        sliderG.setThumbTintList(android.content.res.ColorStateList.valueOf(Color.GREEN));
+        sliderG.setTrackActiveTintList(android.content.res.ColorStateList.valueOf(Color.GREEN));
+
+        com.google.android.material.slider.Slider sliderB = new com.google.android.material.slider.Slider(requireContext());
+        sliderB.setValueFrom(0); sliderB.setValueTo(255); sliderB.setValue(rgb[2]);
+        sliderB.setThumbTintList(android.content.res.ColorStateList.valueOf(Color.BLUE));
+        sliderB.setTrackActiveTintList(android.content.res.ColorStateList.valueOf(Color.BLUE));
+
+        com.google.android.material.slider.Slider.OnChangeListener listener = (slider, value, fromUser) -> {
+            if (slider == sliderR) rgb[0] = (int) value;
+            if (slider == sliderG) rgb[1] = (int) value;
+            if (slider == sliderB) rgb[2] = (int) value;
+            gd.setColor(Color.rgb(rgb[0], rgb[1], rgb[2]));
+        };
+        sliderR.addOnChangeListener(listener);
+        sliderG.addOnChangeListener(listener);
+        sliderB.addOnChangeListener(listener);
+
+        layout.addView(preview);
+        
+        TextView tvR = new TextView(requireContext()); tvR.setText("Red"); layout.addView(tvR); layout.addView(sliderR);
+        TextView tvG = new TextView(requireContext()); tvG.setText("Green"); layout.addView(tvG); layout.addView(sliderG);
+        TextView tvB = new TextView(requireContext()); tvB.setText("Blue"); layout.addView(tvB); layout.addView(sliderB);
+
+        new MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Custom Color")
+            .setView(layout)
+            .setPositiveButton("Select", (dialog, which) -> {
+                selectedColor = String.format("#%02X%02X%02X", rgb[0], rgb[1], rgb[2]);
+                View colorRow = requireView().findViewById(R.id.color_row);
+                if (colorRow instanceof LinearLayout) {
+                    buildColorRow((LinearLayout) colorRow);
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
     }
 
     /**
@@ -348,38 +426,36 @@ public class GroupEditFragment extends Fragment {
         // Build a package→group reverse map to detect conflicting membership.
         Map<String, GroupStore.Group> pkgToGroup = GroupStore.packageToGroup(groups);
 
-        // Read selected apps before going off-thread (prefs access is thread-safe).
-        Set<String> selectedApps = prefs.getStringSet(
-                AppFetcher.PREF_SELECTED_APPS, new HashSet<>());
-
         executor.submit(() -> {
             PackageManager pm = appCtx.getPackageManager();
+            java.util.List<android.content.pm.ResolveInfo> resolvedApps = AppFetcher.getAllLaunchableApps(appCtx);
 
             List<MemberRow> rows = new ArrayList<>();
-            for (String pkg : selectedApps) {
-                try {
-                    android.content.pm.ApplicationInfo info =
-                            pm.getApplicationInfo(pkg, 0);
-                    String label    = pm.getApplicationLabel(info).toString();
-                    Drawable icon   = pm.getApplicationIcon(info);
+            for (android.content.pm.ResolveInfo ri : resolvedApps) {
+                String pkg = ri.activityInfo.packageName;
+                String label = ri.loadLabel(pm).toString();
+                Drawable icon = ri.loadIcon(pm);
 
-                    // Determine if this app already belongs to a DIFFERENT group.
-                    GroupStore.Group owningGroup = pkgToGroup.get(pkg);
-                    String otherGroupName = null;
-                    if (owningGroup != null
-                            && !owningGroup.name.equalsIgnoreCase(
-                                    originalGroupName == null ? "" : originalGroupName)) {
-                        otherGroupName = owningGroup.name;
-                    }
-
-                    rows.add(new MemberRow(pkg, label, icon, otherGroupName));
-                } catch (PackageManager.NameNotFoundException e) {
-                    // App uninstalled since selection — skip silently.
+                // Determine if this app already belongs to a DIFFERENT group.
+                GroupStore.Group owningGroup = pkgToGroup.get(pkg);
+                String otherGroupName = null;
+                if (owningGroup != null
+                        && !owningGroup.name.equalsIgnoreCase(
+                                originalGroupName == null ? "" : originalGroupName)) {
+                    otherGroupName = owningGroup.name;
                 }
+
+                rows.add(new MemberRow(pkg, label, icon, otherGroupName));
             }
 
-            // Sort alphabetically by label for a predictable order.
-            rows.sort((a, b) -> a.label.compareToIgnoreCase(b.label));
+            // Sort: apps which are selected (workingMembers.contains(a.packageName)) first, then alphabetically
+            rows.sort((a, b) -> {
+                boolean aSel = workingMembers.contains(a.packageName);
+                boolean bSel = workingMembers.contains(b.packageName);
+                if (aSel && !bSel) return -1;
+                if (!aSel && bSel) return 1;
+                return a.label.compareToIgnoreCase(b.label);
+            });
 
             mainHandler.post(() -> {
                 if (!isAdded()) return; // Fragment detached while loading
@@ -438,6 +514,12 @@ public class GroupEditFragment extends Fragment {
         // Persist the mutated list.
         GroupStore.save(prefs, groups);
 
+        // Ensure apps added to this group are also visible on the sphere
+        Set<String> selectedApps = new HashSet<>(prefs.getStringSet(AppFetcher.PREF_SELECTED_APPS, new HashSet<>()));
+        if (selectedApps.addAll(workingMembers)) {
+            prefs.edit().putStringSet(AppFetcher.PREF_SELECTED_APPS, selectedApps).apply();
+        }
+
         Toast.makeText(requireContext(),
                 R.string.toast_saved,
                 Toast.LENGTH_SHORT).show();
@@ -446,38 +528,7 @@ public class GroupEditFragment extends Fragment {
         getParentFragmentManager().popBackStack();
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    //  Delete handler
-    // ─────────────────────────────────────────────────────────────────────
 
-    /**
-     * Shows a confirmation dialog before deleting the group.
-     *
-     * @param prefs   SharedPreferences instance.
-     * @param groups  Current in-memory group list (will be mutated on confirm).
-     */
-    private void confirmDelete(@NonNull SharedPreferences prefs,
-                               @NonNull List<GroupStore.Group> groups) {
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle(getString(R.string.dialog_delete_confirm, originalGroupName))
-                .setMessage(R.string.dialog_delete_confirm_msg)
-                .setPositiveButton(R.string.btn_delete_group, (dialog, which) -> {
-                    // Re-load to get the freshest state before deleting.
-                    List<GroupStore.Group> freshGroups = GroupStore.load(prefs);
-                    GroupStore.delete(freshGroups, originalGroupName);
-                    GroupStore.save(prefs, freshGroups);
-
-                    Toast.makeText(requireContext(),
-                            R.string.toast_group_deleted,
-                            Toast.LENGTH_SHORT).show();
-
-                    getParentFragmentManager().popBackStack();
-                })
-                .setNegativeButton(R.string.btn_cancel, null)
-                .show();
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
     //  Utility
     // ─────────────────────────────────────────────────────────────────────
 

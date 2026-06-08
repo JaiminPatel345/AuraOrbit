@@ -26,7 +26,8 @@
             android:id="@+id/member_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
             android:singleLine="true"
             android:ellipsize="end" />
 
@@ -34,7 +35,8 @@
             android:id="@+id/member_subtitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
             android:visibility="gone" />
 
     </LinearLayout>

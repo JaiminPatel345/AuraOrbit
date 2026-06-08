@@ -116,8 +116,16 @@ public class LiveWallpaperSettings extends AppCompatActivity {
         if (savedInstanceState == null) {
             getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.settings_container, new MainSettingsFragment())
+                    .replace(R.id.settings_container, new dev.jaimin.auraorbit.ui.DashboardFragment())
                     .commit();
+
+            if ("apps".equals(getIntent().getStringExtra("open_fragment"))) {
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.settings_container, new dev.jaimin.auraorbit.ui.AppPickerFragment())
+                        .addToBackStack(null)
+                        .commit();
+            }
         }
 
         // Show or hide the action-bar up arrow — AND the Apply button —
@@ -193,29 +201,8 @@ public class LiveWallpaperSettings extends AppCompatActivity {
      * </p>
      */
     private void launchLiveWallpaperPreview() {
-        // Primary: direct preview for our service
-        Intent direct = new Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER);
-        direct.putExtra(
-                WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
-                new ComponentName(this, MyWallpaperService.class));
-        try {
-            startActivity(direct);
-            return;
-        } catch (ActivityNotFoundException ignored) {
-            // Fall through to the generic chooser
-        }
-
-        // Fallback: generic live-wallpaper chooser
-        try {
-            startActivity(new Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER));
-        } catch (ActivityNotFoundException ignored) {
-            // Neither intent resolved — prompt the user to act manually
-            Toast.makeText(
-                    this,
-                    R.string.toast_apply_wallpaper_unavailable,
-                    Toast.LENGTH_LONG
-            ).show();
-        }
+        Intent intent = new Intent(this, SphereModeActivity.class);
+        startActivity(intent);
     }
 
     // ═════════════════════════════════════════════════════════════════════════
