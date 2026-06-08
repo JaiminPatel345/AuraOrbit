@@ -6,6 +6,14 @@ import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
+import android.graphics.PixelFormat;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.Gravity;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.WindowManager;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -66,6 +74,12 @@ public class LauncherStateService extends AccessibilityService {
 
     private static final String TAG = "AuraOrbit.A11y";
 
+    public static LauncherStateService instance;
+    private WindowManager windowManager;
+    private View touchOverlay;
+    private Handler mainHandler = new Handler(Looper.getMainLooper());
+    private boolean isOverlayAdded = false;
+
     /**
      * Pattern matching One UI home-screen page-indicator content descriptions.
      *
@@ -80,7 +94,8 @@ public class LauncherStateService extends AccessibilityService {
     private static final Pattern PAGE_PATTERN =
             Pattern.compile(
                     "(?i)(?:page\\s+(\\d+)\\s+of\\s+(\\d+)"
-                    + "|home\\s*screen\\s+(\\d+)\\s+of\\s+(\\d+))");
+                    + "|home\\s*screen\\s+(\\d+)\\s+of\\s+(\\d+)"
+                    + "|(?:^|\\s)(\\d+)\\s+of\\s+(\\d+)(?:\\.|\\s|$))");
 
     /**
      * Minimum nanoseconds between full node-tree scans.
@@ -157,6 +172,8 @@ public class LauncherStateService extends AccessibilityService {
          * SphereEngine falls back to dead-reckoning the moment the service dies.
          */
         public static volatile boolean serviceConnected = false;
+
+        public static volatile boolean systemUiVisible = false;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -166,19 +183,80 @@ public class LauncherStateService extends AccessibilityService {
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
+        instance = this;
+        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        touchOverlay = new View(this);
+        touchOverlay.setOnTouchListener((v, event) -> {
+            if (dev.jaimin.auraorbit.MyWallpaperService.activeEngine != null) {
+                // Map the touch from overlay-local coordinates to absolute screen coordinates
+                // so libGDX receives the touch at the correct position on its full-screen surface.
+                event.setLocation(event.getRawX(), event.getRawY());
+                dev.jaimin.auraorbit.MyWallpaperService.activeEngine.injectTouch(event);
+                return true; // Consume touch to prevent launcher stealing
+            }
+            return false;
+        });
+
         LauncherState.serviceConnected = true;
         // Reset stale state from any previous session.
         LauncherState.page          = 0;
         LauncherState.pageCount     = 1;
         LauncherState.drawerOpen    = false;
+        LauncherState.systemUiVisible = false;
         LauncherState.updatedNanos  = Long.MIN_VALUE / 2;
         Log.i(TAG, "LauncherStateService connected");
+    }
+
+    public static void updateOverlayState(boolean interactive, int size) {
+        if (instance != null) {
+            instance.mainHandler.post(() -> instance.applyOverlayState(interactive, size));
+        }
+    }
+
+    private void applyOverlayState(boolean interactive, int size) {
+        if (interactive && size > 0) {
+            WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+                    size, size,
+                    WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                    PixelFormat.TRANSLUCENT);
+            params.gravity = Gravity.CENTER;
+
+            if (!isOverlayAdded) {
+                try {
+                    windowManager.addView(touchOverlay, params);
+                    isOverlayAdded = true;
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to add touch overlay", e);
+                }
+            } else {
+                try {
+                    windowManager.updateViewLayout(touchOverlay, params);
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to update touch overlay", e);
+                }
+            }
+        } else {
+            if (isOverlayAdded) {
+                try {
+                    windowManager.removeView(touchOverlay);
+                    isOverlayAdded = false;
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to remove touch overlay", e);
+                }
+            }
+        }
     }
 
     @Override
     public boolean onUnbind(android.content.Intent intent) {
         LauncherState.serviceConnected = false;
         Log.i(TAG, "LauncherStateService unbound");
+        if (isOverlayAdded && touchOverlay != null) {
+            try { windowManager.removeView(touchOverlay); } catch(Exception e) {}
+            isOverlayAdded = false;
+        }
+        instance = null;
         return super.onUnbind(intent);
     }
 
@@ -186,6 +264,11 @@ public class LauncherStateService extends AccessibilityService {
     public void onDestroy() {
         LauncherState.serviceConnected = false;
         Log.i(TAG, "LauncherStateService destroyed");
+        if (isOverlayAdded && touchOverlay != null) {
+            try { windowManager.removeView(touchOverlay); } catch(Exception e) {}
+            isOverlayAdded = false;
+        }
+        instance = null;
         super.onDestroy();
     }
 
@@ -193,8 +276,60 @@ public class LauncherStateService extends AccessibilityService {
     //  Event handling
     // ═══════════════════════════════════════════════════════════════════════════
 
+    private static long lastDebugDumpNanos = 0;
+
+    private void debugDumpTree(AccessibilityNodeInfo root, AccessibilityEvent event) {
+        long now = System.nanoTime();
+        if (now - lastDebugDumpNanos < 5_000_000_000L) return; // Dump once every 5 seconds
+        lastDebugDumpNanos = now;
+        
+        Log.d(TAG, "=== DEBUG DUMP TREE START (Event: " + event.getClassName() + ") ===");
+        dumpNode(root, 0);
+        Log.d(TAG, "=== DEBUG DUMP TREE END ===");
+    }
+
+    private void dumpNode(AccessibilityNodeInfo node, int depth) {
+        if (node == null) return;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < depth; i++) sb.append("  ");
+        sb.append(node.getClassName());
+        if (node.getViewIdResourceName() != null) sb.append(" id=").append(node.getViewIdResourceName());
+        if (node.getText() != null) sb.append(" text='").append(node.getText()).append("'");
+        if (node.getContentDescription() != null) sb.append(" desc='").append(node.getContentDescription()).append("'");
+        if (node.isVisibleToUser()) sb.append(" [visible]");
+        if (node.isSelected()) sb.append(" [selected]");
+        if (node.isChecked()) sb.append(" [checked]");
+        Log.d(TAG, sb.toString());
+        
+        for (int i = 0; i < node.getChildCount(); i++) {
+            AccessibilityNodeInfo child = null;
+            try {
+                child = node.getChild(i);
+                dumpNode(child, depth + 1);
+            } finally {
+                if (child != null) {
+                    try { child.recycle(); } catch (Exception ignored) {}
+                }
+            }
+        }
+    }
+
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
+        // ─── Direct Event Package Inspection ─────────────────────────────────
+        // Catch System UI (notifications) even if the active window root hasn't
+        // updated yet. We do this before the throttle to ensure we never miss it.
+        CharSequence eventPkg = event.getPackageName();
+        if (eventPkg != null) {
+            String pkg = eventPkg.toString().toLowerCase();
+            if (pkg.contains("systemui")) {
+                LauncherState.systemUiVisible = true;
+                LauncherState.updatedNanos = System.nanoTime();
+            } else if (pkg.contains("launcher")) {
+                LauncherState.systemUiVisible = false;
+            }
+        }
+
         // ─── 80 ms throttle ──────────────────────────────────────────────────
         long nowNanos = System.nanoTime();
         if (nowNanos - lastScanNanos < SCAN_THROTTLE_NS) return;
@@ -208,14 +343,26 @@ public class LauncherStateService extends AccessibilityService {
                     + LauncherState.drawerOpen + " page=" + LauncherState.page);
         }
 
-        // ─── Scan the accessibility node tree ────────────────────────────────
         AccessibilityNodeInfo root = getRootInActiveWindow();
         if (root == null) {
             // Window not yet available (e.g. launcher is animating in).
             return;
         }
 
+        // ─── Root Package Check ──────────────────────────────────────────────
+        CharSequence rootPkg = root.getPackageName();
+        if (rootPkg != null) {
+            boolean isSysUi = rootPkg.toString().toLowerCase().contains("systemui");
+            if (isSysUi) {
+                LauncherState.systemUiVisible = true;
+                LauncherState.updatedNanos = System.nanoTime();
+                try { root.recycle(); } catch (Exception ignored) { }
+                return;
+            }
+        }
+
         try {
+            debugDumpTree(root, event);
             scanNodeTree(root, event);
         } finally {
             // Always recycle the root we obtained — required on all API levels
@@ -257,7 +404,8 @@ public class LauncherStateService extends AccessibilityService {
         boolean classHintDrawer = eventClass != null
                 && (containsIgnoreCase(eventClass, "appsview")
                     || containsIgnoreCase(eventClass, "applist")
-                    || containsIgnoreCase(eventClass, "allapps"));
+                    || containsIgnoreCase(eventClass, "allapps")
+                    || containsIgnoreCase(eventClass, "drawer"));
 
         // ─── Recursive node scan ─────────────────────────────────────────────
         // We process nodes breadth-first by recursing into children. Depth is
@@ -329,6 +477,31 @@ public class LauncherStateService extends AccessibilityService {
 
         int childCount = node.getChildCount();
 
+        // ─── Drawer Signature Check ──────────────────────────────────────────
+        // Detect One UI 8.5 app drawers that lack a page indicator.
+        CharSequence nodeText = node.getText();
+        if (nodeText != null) {
+            String textStr = nodeText.toString().toLowerCase();
+            if (textStr.equals("all apps") || textStr.equals("search")) {
+                if (node.isVisibleToUser()) result.drawerIndicatorVisible = true;
+            }
+        }
+        CharSequence nodeDesc = node.getContentDescription();
+        if (nodeDesc != null) {
+            String descStr = nodeDesc.toString().toLowerCase();
+            if (descStr.equals("more options")) {
+                if (node.isVisibleToUser()) result.drawerIndicatorVisible = true;
+            }
+        }
+        
+        CharSequence ownId = node.getViewIdResourceName();
+        if (ownId != null) {
+            String id = ownId.toString().toLowerCase();
+            if (id.contains("applist") || id.contains("allapps") || id.contains("appsview") || id.equals("com.sec.android.app.launcher:id/apps_grid")) {
+                if (node.isVisibleToUser()) result.drawerIndicatorVisible = true;
+            }
+        }
+
         // ─── Check this node's contentDescription ────────────────────────────
         CharSequence desc = node.getContentDescription();
         if (desc != null && desc.length() > 0) {
@@ -351,11 +524,10 @@ public class LauncherStateService extends AccessibilityService {
                         result.drawerIndicatorVisible = true;
                     }
                 } else {
-                    // Home-screen indicator: update page (only when visible).
-                    if (node.isVisibleToUser() && result.homePage < 0) {
-                        // Store 1-based so LauncherState.page=0 unambiguously means
-                        // "no data yet" (the indicator has not been seen since start).
-                        // SphereEngine checks page >= 1 before trusting this value.
+                    // Home-screen indicator: update page.
+                    // One UI 8.5 renders all dots simultaneously (even invisible ones), 
+                    // so we MUST check for isSelected() to pick the active dot.
+                    if (result.homePage < 0 || node.isSelected()) {
                         result.homePage      = Math.max(1, indicatorPage);
                         result.homePageCount = indicatorCount;
                     }
@@ -400,7 +572,7 @@ public class LauncherStateService extends AccessibilityService {
             CharSequence ownId = node.getViewIdResourceName();
             if (ownId != null) {
                 String id = ownId.toString().toLowerCase();
-                if (id.contains("applist") || id.contains("apps")) return true;
+                if (id.contains("applist") || id.contains("apps") || id.contains("drawer") || id.contains("allapps")) return true;
             }
 
             // Walk ancestors.
@@ -410,7 +582,7 @@ public class LauncherStateService extends AccessibilityService {
                 CharSequence resId = current.getViewIdResourceName();
                 if (resId != null) {
                     String id = resId.toString().toLowerCase();
-                    if (id.contains("applist") || id.contains("apps")) {
+                    if (id.contains("applist") || id.contains("apps") || id.contains("drawer") || id.contains("allapps")) {
                         return true;
                     }
                 }

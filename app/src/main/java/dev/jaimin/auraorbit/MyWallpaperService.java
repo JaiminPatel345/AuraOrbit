@@ -72,7 +72,7 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
      * Tracked here so the live FPS listener can reach its currentHolder.
      * libGDX keeps one app context, so one engine is active at a time.
      */
-    private AuraOrbitEngine activeEngine;
+    public static AuraOrbitEngine activeEngine;
 
     /**
      * STRONG reference to the FPS preference listener.
@@ -217,7 +217,7 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
      * 1-120Hz, and setFrameRate is the standard mechanism to request
      * the higher end of that range for a specific surface.
      */
-    private class AuraOrbitEngine extends AndroidLiveWallpaperService.AndroidWallpaperEngine {
+    public class AuraOrbitEngine extends AndroidLiveWallpaperService.AndroidWallpaperEngine {
 
         /**
          * The active SurfaceHolder for this engine, set in onSurfaceCreated
@@ -252,6 +252,10 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
         public void onSurfaceDestroyed(SurfaceHolder holder) {
             currentHolder = null;
             super.onSurfaceDestroyed(holder);
+        }
+
+        public void injectTouch(android.view.MotionEvent event) {
+            super.onTouchEvent(event);
         }
 
         /**

@@ -379,6 +379,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private float xOffsetStep = 0f;        // Fraction per page
     private int activePage = 0;            // User-configured target page
     private float pageVisibility = 1f;     // 0.0 (hidden) → 1.0 (full render)
+    private boolean lastOverlayInteractive = false;
+    private int lastOverlaySize = 0;
 
     /**
      * Whether the launcher has ever reported a valid xOffsetStep > 0 at any
@@ -1793,7 +1795,11 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 // Inside our own activity the sphere owns all input. No launcher
                 // gesture conflict, no command gating, no zoom/drawer guards.
                 if (activityMode) {
-                    return raycastAndLaunch(x, y);
+                    boolean hit = raycastAndLaunch(x, y);
+                    if (!hit && context instanceof android.app.Activity) {
+                        Gdx.app.postRunnable(() -> ((android.app.Activity) context).finish());
+                    }
+                    return true;
                 }
 
                 // ─── Command path: launcher handles launch gating ──────────
@@ -2333,7 +2339,12 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 // Animation complete — fire the deferred launch.
                 final String pkg = pendingLaunchPkg;
                 if (pkg != null) {
-                    Gdx.app.postRunnable(() -> AppFetcher.launchApp(context, pkg));
+                    Gdx.app.postRunnable(() -> {
+                        AppFetcher.launchApp(context, pkg);
+                        if (activityMode && context instanceof android.app.Activity) {
+                            ((android.app.Activity) context).finish();
+                        }
+                    });
                 }
                 pendingLaunchPkg = null;
                 launchingNodeIdx = -1;
@@ -2358,7 +2369,11 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // ─── Clear screen ───────────────────────────────────────────────
         // Fixed deep-navy clear color provides a consistent base for the
         // gradient fallback. Alpha=1 so we always own our pixel.
-        Gdx.gl.glClearColor(0.02f, 0.02f, 0.06f, 1f);
+        if (activityMode) {
+            Gdx.gl.glClearColor(0f, 0f, 0f, 0f);
+        } else {
+            Gdx.gl.glClearColor(0.02f, 0.02f, 0.06f, 1f);
+        }
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
         // ─── Enable depth testing for proper 3D sorting ─────────────────
@@ -2366,7 +2381,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
         // ─── Layer 1: Background ─────────────────────────────────────────
         // Always draws: user photo if available; gradient texture otherwise.
-        renderBackground();
+        if (!activityMode) {
+            renderBackground();
+        }
 
         // ─── Layer 2: Group Backdrop Meshes ─────────────────────────────
         if (groupBackdrops != null && groupBackdrops.size > 0 && pageVisibility > 0.01f) {
@@ -2693,6 +2710,27 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         if (dbg) {
             logVisDebug(xOffsetStep > 0f && offsetsLive ? "OFFSETS"
                     : (!offsetsLive ? "DEAD-RECKONING" : "TRANSIENT"), targetVisibility);
+        }
+
+        // ─── Touch Overlay Update ──────────────────────────────────────────
+        // Only valid if the accessibility service is running
+        if (LauncherStateService.LauncherState.serviceConnected) {
+            boolean isSysUiOpen = LauncherStateService.LauncherState.systemUiVisible 
+                && (System.nanoTime() - LauncherStateService.LauncherState.updatedNanos) < 5_000_000_000L;
+            boolean interactive = (pageVisibility > 0.9f) && (returnAnim > 0.9f) && !isA11yDrawerOpenFresh() && !isPreviewMode && !isSysUiOpen;
+            int size = 0;
+            if (interactive) {
+                float effRadius = sphereRadius + iconSize * 0.75f;
+                tmpVec2.set(effRadius, 0, 0);
+                camera.project(tmpVec2);
+                size = (int) Math.abs(tmpVec2.x - Gdx.graphics.getWidth() / 2f) * 2;
+            }
+
+            if (interactive != lastOverlayInteractive || Math.abs(size - lastOverlaySize) > 5) {
+                lastOverlayInteractive = interactive;
+                lastOverlaySize = size;
+                LauncherStateService.updateOverlayState(interactive, size);
+            }
         }
     }
 
@@ -3460,6 +3498,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     public void setVisible(boolean visible) {
         this.isVisible = visible;
         if (!visible) {
+            // Forcefully hide the touch overlay when wallpaper becomes invisible (e.g. entering an app).
+            // Since render() pauses, it won't update the overlay, leaving a dead zone if we don't clear it here.
+            if (LauncherStateService.LauncherState.serviceConnected) {
+                LauncherStateService.updateOverlayState(false, 0);
+                lastOverlayInteractive = false;
+            }
+
             // Gesture state must not survive across visibility edges (Fix 1c).
             pinchActive = false;
             userInteracting = false;
@@ -3497,9 +3542,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // return to, and hides when you swipe ≥1 page away within that session.
             // On offset-reporting launchers (Pixel Launcher, etc.) this field is
             // unused — the assignment is harmless.
-            inferredPage = activePage;
-            Log.d(TAG, "setVisible: re-anchored inferredPage=" + inferredPage
-                    + " (activePage=" + activePage + ")");
+            if (!LauncherStateService.LauncherState.serviceConnected) {
+                inferredPage = activePage;
+                Log.d(TAG, "setVisible: re-anchored inferredPage=" + inferredPage
+                        + " (activePage=" + activePage + ")");
+            } else {
+                Log.d(TAG, "setVisible: skipped re-anchor, relying on LauncherStateService");
+            }
 
             // ─── Return animation: sphere fades/scales back in after a launch ──
             // If a launch was the reason the wallpaper became invisible, arm the

@@ -160,6 +160,20 @@
                 android:resource="@xml/launcher_state_service" />
         </service>
 
+        <!-- ═══════════════════════════════════════════════════════════════
+             4. WIDGET PROVIDER (Transparent Popup Architecture)
+             ═══════════════════════════════════════════════════════════════ -->
+        <receiver
+            android:name=".SphereWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/sphere_widget_info" />
+        </receiver>
+
     </application>
 
 </manifest>

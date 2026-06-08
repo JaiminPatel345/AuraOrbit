@@ -18,7 +18,7 @@
 -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes="typeWindowContentChanged|typeWindowStateChanged|typeViewScrolled"
-    android:packageNames="com.sec.android.app.launcher"
+    android:packageNames="com.sec.android.app.launcher,com.android.systemui"
     android:canRetrieveWindowContent="true"
     android:notificationTimeout="80"
     android:description="@string/a11y_service_description" />

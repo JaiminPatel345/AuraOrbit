@@ -1,0 +1,1304 @@
+--------- beginning of main
+06-07 23:09:36.363 D/AuraOrbit.A11y(19155): home page=3 of 4
+06-07 23:09:38.110 D/AuraOrbit.A11y(19155): home page=4 of 4
+06-07 23:09:38.111 D/AuraOrbit.A11y(19155): === DEBUG DUMP TREE START (Event: android.view.ViewGroup) ===
+06-07 23:09:38.111 D/AuraOrbit.A11y(19155): android.widget.FrameLayout [visible]
+06-07 23:09:38.111 D/AuraOrbit.A11y(19155):   android.widget.FrameLayout [visible]
+06-07 23:09:38.112 D/AuraOrbit.A11y(19155):     android.view.ViewGroup [visible]
+06-07 23:09:38.112 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Samsung, Folder'
+06-07 23:09:38.113 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Samsung'
+06-07 23:09:38.113 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Google, Folder'
+06-07 23:09:38.114 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Google'
+06-07 23:09:38.114 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Microsoft, Folder'
+06-07 23:09:38.114 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Microsoft'
+06-07 23:09:38.114 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Play Store'
+06-07 23:09:38.115 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Play Store'
+06-07 23:09:38.116 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Gemini'
+06-07 23:09:38.116 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Gemini'
+06-07 23:09:38.116 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Members'
+06-07 23:09:38.116 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Members'
+06-07 23:09:38.117 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Store'
+06-07 23:09:38.117 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Store'
+06-07 23:09:38.117 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Spotify'
+06-07 23:09:38.117 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Spotify'
+06-07 23:09:38.118 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Phone'
+06-07 23:09:38.118 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Phone'
+06-07 23:09:38.119 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Messages'
+06-07 23:09:38.119 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Messages'
+06-07 23:09:38.119 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Camera'
+06-07 23:09:38.119 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Camera'
+06-07 23:09:38.120 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Gallery'
+06-07 23:09:38.120 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Gallery'
+06-07 23:09:38.121 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Clock'
+06-07 23:09:38.121 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Clock'
+06-07 23:09:38.121 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Contacts'
+06-07 23:09:38.121 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Contacts'
+06-07 23:09:38.122 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Settings'
+06-07 23:09:38.122 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Settings'
+06-07 23:09:38.122 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Calendar'
+06-07 23:09:38.122 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Calendar'
+06-07 23:09:38.122 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Calculator'
+06-07 23:09:38.122 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Calculator'
+06-07 23:09:38.123 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Tips'
+06-07 23:09:38.123 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Tips'
+06-07 23:09:38.124 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Notes'
+06-07 23:09:38.124 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Notes'
+06-07 23:09:38.125 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='My Galaxy'
+06-07 23:09:38.125 D/AuraOrbit.A11y(19155):         android.widget.TextView text='My Galaxy'
+06-07 23:09:38.125 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Brave'
+06-07 23:09:38.125 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Brave'
+06-07 23:09:38.126 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='KDE Connect, 1 notification'
+06-07 23:09:38.126 D/AuraOrbit.A11y(19155):         android.widget.TextView text='KDE Connect'
+06-07 23:09:38.126 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Digilocker'
+06-07 23:09:38.126 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Digilocker'
+06-07 23:09:38.127 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='NoScroll'
+06-07 23:09:38.127 D/AuraOrbit.A11y(19155):         android.widget.TextView text='NoScroll'
+06-07 23:09:38.127 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='WhatsApp'
+06-07 23:09:38.127 D/AuraOrbit.A11y(19155):         android.widget.TextView text='WhatsApp'
+06-07 23:09:38.128 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Instagram'
+06-07 23:09:38.128 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Instagram'
+06-07 23:09:38.128 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Telegram'
+06-07 23:09:38.128 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Telegram'
+06-07 23:09:38.129 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Discord'
+06-07 23:09:38.129 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Discord'
+06-07 23:09:38.129 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='GitHub'
+06-07 23:09:38.129 D/AuraOrbit.A11y(19155):         android.widget.TextView text='GitHub'
+06-07 23:09:38.130 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Reddit'
+06-07 23:09:38.130 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Reddit'
+06-07 23:09:38.130 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='My Ration'
+06-07 23:09:38.130 D/AuraOrbit.A11y(19155):         android.widget.TextView text='My Ration'
+06-07 23:09:38.130 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Claude'
+06-07 23:09:38.131 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Claude'
+06-07 23:09:38.131 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Good Lock'
+06-07 23:09:38.131 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Good Lock'
+06-07 23:09:38.131 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Pentastic'
+06-07 23:09:38.132 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Pentastic'
+06-07 23:09:38.132 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Game Booster +'
+06-07 23:09:38.132 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Game Booster +'
+06-07 23:09:38.133 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Theme Park'
+06-07 23:09:38.133 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Theme Park'
+06-07 23:09:38.134 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Creative studio'
+06-07 23:09:38.134 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Creative studio'
+06-07 23:09:38.134 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Wonderland'
+06-07 23:09:38.134 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Wonderland'
+06-07 23:09:38.135 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='NotiStar'
+06-07 23:09:38.135 D/AuraOrbit.A11y(19155):         android.widget.TextView text='NotiStar'
+06-07 23:09:38.136 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Routines +'
+06-07 23:09:38.136 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Routines +'
+06-07 23:09:38.136 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Camera Assistant'
+06-07 23:09:38.136 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Camera Assistant'
+06-07 23:09:38.137 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Modes and Routines'
+06-07 23:09:38.137 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Modes and Routines'
+06-07 23:09:38.137 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Weather'
+06-07 23:09:38.137 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Weather'
+06-07 23:09:38.138 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='GPay'
+06-07 23:09:38.138 D/AuraOrbit.A11y(19155):         android.widget.TextView text='GPay'
+06-07 23:09:38.138 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Paytm'
+06-07 23:09:38.138 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Paytm'
+06-07 23:09:38.138 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Blinkit'
+06-07 23:09:38.138 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Blinkit'
+06-07 23:09:38.139 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Amazon'
+06-07 23:09:38.139 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Amazon'
+06-07 23:09:38.139 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Money Manager'
+06-07 23:09:38.139 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Money Manager'
+06-07 23:09:38.140 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='YONO SBI'
+06-07 23:09:38.140 D/AuraOrbit.A11y(19155):         android.widget.TextView text='YONO SBI'
+06-07 23:09:38.141 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Authenticator'
+06-07 23:09:38.141 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Authenticator'
+06-07 23:09:38.141 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Authenticator'
+06-07 23:09:38.142 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Authenticator'
+06-07 23:09:38.142 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Teams'
+06-07 23:09:38.142 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Teams'
+06-07 23:09:38.142 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Swiggy'
+06-07 23:09:38.143 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Swiggy'
+06-07 23:09:38.143 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='JioHotstar'
+06-07 23:09:38.143 D/AuraOrbit.A11y(19155):         android.widget.TextView text='JioHotstar'
+06-07 23:09:38.144 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Rapido'
+06-07 23:09:38.144 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Rapido'
+06-07 23:09:38.144 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Uber'
+06-07 23:09:38.144 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Uber'
+06-07 23:09:38.144 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Secure Folder'
+06-07 23:09:38.144 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Secure Folder'
+06-07 23:09:38.145 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='CPU-Z'
+06-07 23:09:38.145 D/AuraOrbit.A11y(19155):         android.widget.TextView text='CPU-Z'
+06-07 23:09:38.145 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Keep notes'
+06-07 23:09:38.145 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Keep notes'
+06-07 23:09:38.146 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Translate'
+06-07 23:09:38.146 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Translate'
+06-07 23:09:38.146 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Keys Cafe'
+06-07 23:09:38.146 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Keys Cafe'
+06-07 23:09:38.147 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Call of Duty'
+06-07 23:09:38.147 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Call of Duty'
+06-07 23:09:38.147 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='SSKPSS Vadodara' [visible]
+06-07 23:09:38.147 D/AuraOrbit.A11y(19155):         android.widget.TextView text='SSKPSS Vadodara' [visible]
+06-07 23:09:38.148 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Reminder' [visible]
+06-07 23:09:38.148 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Reminder' [visible]
+06-07 23:09:38.148 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Chill Live Wallpaper' [visible]
+06-07 23:09:38.149 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Chill Live Wallpaper' [visible]
+06-07 23:09:38.149 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Files' [visible]
+06-07 23:09:38.149 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Files' [visible]
+06-07 23:09:38.150 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='AuraOrbit' [visible]
+06-07 23:09:38.150 D/AuraOrbit.A11y(19155):         android.widget.TextView text='AuraOrbit' [visible]
+06-07 23:09:38.150 D/AuraOrbit.A11y(19155):     android.widget.FrameLayout desc='Page 1 of 4. ' [visible]
+06-07 23:09:38.150 D/AuraOrbit.A11y(19155):     android.widget.FrameLayout desc='Page 2 of 4. ' [visible]
+06-07 23:09:38.150 D/AuraOrbit.A11y(19155):     android.widget.FrameLayout desc='Page 3 of 4. ' [visible]
+06-07 23:09:38.150 D/AuraOrbit.A11y(19155):     android.widget.FrameLayout desc='Page 4 of 4. ' [visible] [selected]
+06-07 23:09:38.150 D/AuraOrbit.A11y(19155):     android.widget.ImageView desc='More options' [visible]
+06-07 23:09:38.150 D/AuraOrbit.A11y(19155):     android.widget.LinearLayout [visible]
+06-07 23:09:38.150 D/AuraOrbit.A11y(19155):       android.widget.TextView text='Search' [visible]
+06-07 23:09:38.150 D/AuraOrbit.A11y(19155):     android.widget.ImageView desc='Voice search' [visible]
+06-07 23:09:38.150 D/AuraOrbit.A11y(19155): === DEBUG DUMP TREE END ===
+06-07 23:09:39.695 D/AuraOrbit.A11y(19155): home page=4 of 4
+06-07 23:09:40.700 D/AuraOrbit.A11y(19155): home page=3 of 4
+06-07 23:09:42.626 D/AuraOrbit.A11y(19155): home page=4 of 4
+06-07 23:09:43.234 D/AuraOrbit.A11y(19155): === DEBUG DUMP TREE START (Event: android.view.ViewGroup) ===
+06-07 23:09:43.234 D/AuraOrbit.A11y(19155): android.widget.FrameLayout [visible]
+06-07 23:09:43.234 D/AuraOrbit.A11y(19155):   android.widget.FrameLayout [visible]
+06-07 23:09:43.235 D/AuraOrbit.A11y(19155):     android.view.ViewGroup [visible]
+06-07 23:09:43.235 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Samsung, Folder'
+06-07 23:09:43.236 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Samsung'
+06-07 23:09:43.237 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Google, Folder'
+06-07 23:09:43.237 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Google'
+06-07 23:09:43.238 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Microsoft, Folder'
+06-07 23:09:43.239 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Microsoft'
+06-07 23:09:43.239 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Play Store'
+06-07 23:09:43.240 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Play Store'
+06-07 23:09:43.241 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Gemini'
+06-07 23:09:43.241 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Gemini'
+06-07 23:09:43.243 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Members'
+06-07 23:09:43.243 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Members'
+06-07 23:09:43.244 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Store'
+06-07 23:09:43.245 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Store'
+06-07 23:09:43.246 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Spotify'
+06-07 23:09:43.246 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Spotify'
+06-07 23:09:43.247 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Phone'
+06-07 23:09:43.247 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Phone'
+06-07 23:09:43.248 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Messages'
+06-07 23:09:43.248 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Messages'
+06-07 23:09:43.249 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Camera'
+06-07 23:09:43.249 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Camera'
+06-07 23:09:43.249 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Gallery'
+06-07 23:09:43.249 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Gallery'
+06-07 23:09:43.250 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Clock'
+06-07 23:09:43.250 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Clock'
+06-07 23:09:43.251 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Contacts'
+06-07 23:09:43.251 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Contacts'
+06-07 23:09:43.252 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Settings'
+06-07 23:09:43.252 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Settings'
+06-07 23:09:43.253 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Calendar'
+06-07 23:09:43.253 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Calendar'
+06-07 23:09:43.253 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Calculator'
+06-07 23:09:43.254 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Calculator'
+06-07 23:09:43.254 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Tips'
+06-07 23:09:43.254 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Tips'
+06-07 23:09:43.255 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Notes'
+06-07 23:09:43.255 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Notes'
+06-07 23:09:43.255 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='My Galaxy'
+06-07 23:09:43.256 D/AuraOrbit.A11y(19155):         android.widget.TextView text='My Galaxy'
+06-07 23:09:43.256 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Brave'
+06-07 23:09:43.256 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Brave'
+06-07 23:09:43.257 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='KDE Connect, 1 notification'
+06-07 23:09:43.257 D/AuraOrbit.A11y(19155):         android.widget.TextView text='KDE Connect'
+06-07 23:09:43.258 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Digilocker'
+06-07 23:09:43.258 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Digilocker'
+06-07 23:09:43.258 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='NoScroll'
+06-07 23:09:43.258 D/AuraOrbit.A11y(19155):         android.widget.TextView text='NoScroll'
+06-07 23:09:43.259 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='WhatsApp'
+06-07 23:09:43.259 D/AuraOrbit.A11y(19155):         android.widget.TextView text='WhatsApp'
+06-07 23:09:43.260 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Instagram'
+06-07 23:09:43.260 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Instagram'
+06-07 23:09:43.260 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Telegram'
+06-07 23:09:43.261 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Telegram'
+06-07 23:09:43.261 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Discord'
+06-07 23:09:43.261 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Discord'
+06-07 23:09:43.262 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='GitHub'
+06-07 23:09:43.262 D/AuraOrbit.A11y(19155):         android.widget.TextView text='GitHub'
+06-07 23:09:43.263 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Reddit'
+06-07 23:09:43.263 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Reddit'
+06-07 23:09:43.263 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='My Ration'
+06-07 23:09:43.263 D/AuraOrbit.A11y(19155):         android.widget.TextView text='My Ration'
+06-07 23:09:43.263 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Claude'
+06-07 23:09:43.264 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Claude'
+06-07 23:09:43.264 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Good Lock'
+06-07 23:09:43.264 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Good Lock'
+06-07 23:09:43.265 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Pentastic'
+06-07 23:09:43.265 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Pentastic'
+06-07 23:09:43.265 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Game Booster +'
+06-07 23:09:43.265 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Game Booster +'
+06-07 23:09:43.266 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Theme Park'
+06-07 23:09:43.266 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Theme Park'
+06-07 23:09:43.266 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Creative studio'
+06-07 23:09:43.267 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Creative studio'
+06-07 23:09:43.268 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Wonderland'
+06-07 23:09:43.268 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Wonderland'
+06-07 23:09:43.268 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='NotiStar'
+06-07 23:09:43.268 D/AuraOrbit.A11y(19155):         android.widget.TextView text='NotiStar'
+06-07 23:09:43.269 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Routines +'
+06-07 23:09:43.269 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Routines +'
+06-07 23:09:43.269 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Camera Assistant'
+06-07 23:09:43.270 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Camera Assistant'
+06-07 23:09:43.270 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Modes and Routines'
+06-07 23:09:43.271 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Modes and Routines'
+06-07 23:09:43.271 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Weather'
+06-07 23:09:43.271 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Weather'
+06-07 23:09:43.272 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='GPay' [visible]
+06-07 23:09:43.272 D/AuraOrbit.A11y(19155):         android.widget.TextView text='GPay' [visible]
+06-07 23:09:43.272 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Paytm'
+06-07 23:09:43.272 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Paytm'
+06-07 23:09:43.272 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Blinkit'
+06-07 23:09:43.273 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Blinkit'
+06-07 23:09:43.273 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Amazon'
+06-07 23:09:43.273 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Amazon'
+06-07 23:09:43.273 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Money Manager' [visible]
+06-07 23:09:43.274 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Money Manager' [visible]
+06-07 23:09:43.274 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='YONO SBI'
+06-07 23:09:43.274 D/AuraOrbit.A11y(19155):         android.widget.TextView text='YONO SBI'
+06-07 23:09:43.274 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Authenticator'
+06-07 23:09:43.275 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Authenticator'
+06-07 23:09:43.275 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Authenticator'
+06-07 23:09:43.276 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Authenticator'
+06-07 23:09:43.276 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Teams' [visible]
+06-07 23:09:43.276 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Teams' [visible]
+06-07 23:09:43.277 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Swiggy'
+06-07 23:09:43.277 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Swiggy'
+06-07 23:09:43.278 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='JioHotstar'
+06-07 23:09:43.278 D/AuraOrbit.A11y(19155):         android.widget.TextView text='JioHotstar'
+06-07 23:09:43.278 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Rapido'
+06-07 23:09:43.279 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Rapido'
+06-07 23:09:43.279 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Uber' [visible]
+06-07 23:09:43.279 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Uber' [visible]
+06-07 23:09:43.279 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Secure Folder'
+06-07 23:09:43.279 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Secure Folder'
+06-07 23:09:43.280 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='CPU-Z'
+06-07 23:09:43.280 D/AuraOrbit.A11y(19155):         android.widget.TextView text='CPU-Z'
+06-07 23:09:43.281 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Keep notes'
+06-07 23:09:43.281 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Keep notes'
+06-07 23:09:43.281 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Translate' [visible]
+06-07 23:09:43.281 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Translate' [visible]
+06-07 23:09:43.281 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Keys Cafe'
+06-07 23:09:43.281 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Keys Cafe'
+06-07 23:09:43.282 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Call of Duty'
+06-07 23:09:43.282 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Call of Duty'
+06-07 23:09:43.283 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='SSKPSS Vadodara' [visible]
+06-07 23:09:43.283 D/AuraOrbit.A11y(19155):         android.widget.TextView text='SSKPSS Vadodara' [visible]
+06-07 23:09:43.283 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Reminder' [visible]
+06-07 23:09:43.283 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Reminder' [visible]
+06-07 23:09:43.283 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Chill Live Wallpaper' [visible]
+06-07 23:09:43.284 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Chill Live Wallpaper' [visible]
+06-07 23:09:43.285 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Files' [visible]
+06-07 23:09:43.285 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Files' [visible]
+06-07 23:09:43.285 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='AuraOrbit' [visible]
+06-07 23:09:43.285 D/AuraOrbit.A11y(19155):         android.widget.TextView text='AuraOrbit' [visible]
+06-07 23:09:43.285 D/AuraOrbit.A11y(19155):     android.widget.FrameLayout desc='Page 1 of 4. ' [visible]
+06-07 23:09:43.285 D/AuraOrbit.A11y(19155):     android.widget.FrameLayout desc='Page 2 of 4. ' [visible]
+06-07 23:09:43.285 D/AuraOrbit.A11y(19155):     android.widget.FrameLayout desc='Page 3 of 4. ' [visible]
+06-07 23:09:43.285 D/AuraOrbit.A11y(19155):     android.widget.FrameLayout desc='Page 4 of 4. ' [visible] [selected]
+06-07 23:09:43.285 D/AuraOrbit.A11y(19155):     android.widget.ImageView desc='More options' [visible]
+06-07 23:09:43.285 D/AuraOrbit.A11y(19155):     android.widget.LinearLayout [visible]
+06-07 23:09:43.285 D/AuraOrbit.A11y(19155):       android.widget.TextView text='Search' [visible]
+06-07 23:09:43.285 D/AuraOrbit.A11y(19155):     android.widget.ImageView desc='Voice search' [visible]
+06-07 23:09:43.285 D/AuraOrbit.A11y(19155): === DEBUG DUMP TREE END ===
+06-07 23:09:43.714 D/AuraOrbit.A11y(19155): home page=4 of 4
+06-07 23:09:45.216 D/AuraOrbit.A11y(19155): home page=2 of 4
+06-07 23:09:50.800 D/AuraOrbit.A11y(19155): === DEBUG DUMP TREE START (Event: android.widget.FrameLayout) ===
+06-07 23:09:50.800 D/AuraOrbit.A11y(19155): android.widget.FrameLayout [visible]
+06-07 23:09:50.802 D/AuraOrbit.A11y(19155):   android.widget.FrameLayout [visible]
+06-07 23:09:50.802 D/AuraOrbit.A11y(19155):     android.view.ViewGroup [visible]
+06-07 23:09:50.802 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Samsung, Folder'
+06-07 23:09:50.803 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Samsung'
+06-07 23:09:50.803 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Google, Folder'
+06-07 23:09:50.804 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Google'
+06-07 23:09:50.805 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Microsoft, Folder'
+06-07 23:09:50.805 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Microsoft'
+06-07 23:09:50.806 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Play Store'
+06-07 23:09:50.807 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Play Store'
+06-07 23:09:50.808 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Gemini'
+06-07 23:09:50.809 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Gemini'
+06-07 23:09:50.810 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Members'
+06-07 23:09:50.810 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Members'
+06-07 23:09:50.811 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Store'
+06-07 23:09:50.811 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Store'
+06-07 23:09:50.812 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Spotify'
+06-07 23:09:50.812 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Spotify'
+06-07 23:09:50.813 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Phone'
+06-07 23:09:50.813 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Phone'
+06-07 23:09:50.814 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Messages'
+06-07 23:09:50.814 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Messages'
+06-07 23:09:50.815 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Camera'
+06-07 23:09:50.815 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Camera'
+06-07 23:09:50.816 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Gallery'
+06-07 23:09:50.816 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Gallery'
+06-07 23:09:50.817 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Clock'
+06-07 23:09:50.817 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Clock'
+06-07 23:09:50.818 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Contacts'
+06-07 23:09:50.818 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Contacts'
+06-07 23:09:50.819 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Settings'
+06-07 23:09:50.819 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Settings'
+06-07 23:09:50.819 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Calendar'
+06-07 23:09:50.820 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Calendar'
+06-07 23:09:50.820 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Calculator'
+06-07 23:09:50.821 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Calculator'
+06-07 23:09:50.821 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Tips'
+06-07 23:09:50.821 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Tips'
+06-07 23:09:50.821 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Notes'
+06-07 23:09:50.822 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Notes'
+06-07 23:09:50.822 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='My Galaxy' [visible]
+06-07 23:09:50.822 D/AuraOrbit.A11y(19155):         android.widget.TextView text='My Galaxy' [visible]
+06-07 23:09:50.823 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Brave' [visible]
+06-07 23:09:50.823 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Brave' [visible]
+06-07 23:09:50.823 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='KDE Connect, 1 notification' [visible]
+06-07 23:09:50.823 D/AuraOrbit.A11y(19155):         android.widget.TextView text='KDE Connect' [visible]
+06-07 23:09:50.824 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Digilocker' [visible]
+06-07 23:09:50.824 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Digilocker' [visible]
+06-07 23:09:50.825 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='NoScroll' [visible]
+06-07 23:09:50.825 D/AuraOrbit.A11y(19155):         android.widget.TextView text='NoScroll' [visible]
+06-07 23:09:50.826 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='WhatsApp' [visible]
+06-07 23:09:50.826 D/AuraOrbit.A11y(19155):         android.widget.TextView text='WhatsApp' [visible]
+06-07 23:09:50.827 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Instagram' [visible]
+06-07 23:09:50.827 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Instagram' [visible]
+06-07 23:09:50.828 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Telegram' [visible]
+06-07 23:09:50.828 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Telegram' [visible]
+06-07 23:09:50.829 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Discord' [visible]
+06-07 23:09:50.829 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Discord' [visible]
+06-07 23:09:50.829 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='GitHub' [visible]
+06-07 23:09:50.829 D/AuraOrbit.A11y(19155):         android.widget.TextView text='GitHub' [visible]
+06-07 23:09:50.830 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Reddit' [visible]
+06-07 23:09:50.830 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Reddit' [visible]
+06-07 23:09:50.830 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='My Ration' [visible]
+06-07 23:09:50.830 D/AuraOrbit.A11y(19155):         android.widget.TextView text='My Ration' [visible]
+06-07 23:09:50.831 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Claude' [visible]
+06-07 23:09:50.831 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Claude' [visible]
+06-07 23:09:50.831 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Good Lock' [visible]
+06-07 23:09:50.831 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Good Lock' [visible]
+06-07 23:09:50.832 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Pentastic' [visible]
+06-07 23:09:50.832 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Pentastic' [visible]
+06-07 23:09:50.833 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Game Booster +' [visible]
+06-07 23:09:50.833 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Game Booster +' [visible]
+06-07 23:09:50.833 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Theme Park' [visible]
+06-07 23:09:50.833 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Theme Park' [visible]
+06-07 23:09:50.834 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Creative studio' [visible]
+06-07 23:09:50.834 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Creative studio' [visible]
+06-07 23:09:50.834 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Wonderland' [visible]
+06-07 23:09:50.834 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Wonderland' [visible]
+06-07 23:09:50.835 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='NotiStar' [visible]
+06-07 23:09:50.835 D/AuraOrbit.A11y(19155):         android.widget.TextView text='NotiStar' [visible]
+06-07 23:09:50.835 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Routines +' [visible]
+06-07 23:09:50.835 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Routines +' [visible]
+06-07 23:09:50.836 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Camera Assistant'
+06-07 23:09:50.836 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Camera Assistant'
+06-07 23:09:50.836 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Modes and Routines'
+06-07 23:09:50.836 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Modes and Routines'
+06-07 23:09:50.836 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Weather'
+06-07 23:09:50.837 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Weather'
+06-07 23:09:50.837 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='GPay'
+06-07 23:09:50.837 D/AuraOrbit.A11y(19155):         android.widget.TextView text='GPay'
+06-07 23:09:50.838 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Paytm'
+06-07 23:09:50.838 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Paytm'
+06-07 23:09:50.838 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Blinkit'
+06-07 23:09:50.838 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Blinkit'
+06-07 23:09:50.839 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Amazon'
+06-07 23:09:50.839 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Amazon'
+06-07 23:09:50.839 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Money Manager'
+06-07 23:09:50.839 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Money Manager'
+06-07 23:09:50.840 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='YONO SBI'
+06-07 23:09:50.840 D/AuraOrbit.A11y(19155):         android.widget.TextView text='YONO SBI'
+06-07 23:09:50.840 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Authenticator'
+06-07 23:09:50.840 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Authenticator'
+06-07 23:09:50.841 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Authenticator'
+06-07 23:09:50.841 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Authenticator'
+06-07 23:09:50.841 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Teams'
+06-07 23:09:50.842 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Teams'
+06-07 23:09:50.842 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Swiggy'
+06-07 23:09:50.842 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Swiggy'
+06-07 23:09:50.843 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='JioHotstar'
+06-07 23:09:50.843 D/AuraOrbit.A11y(19155):         android.widget.TextView text='JioHotstar'
+06-07 23:09:50.843 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Rapido'
+06-07 23:09:50.843 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Rapido'
+06-07 23:09:50.844 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Uber'
+06-07 23:09:50.844 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Uber'
+06-07 23:09:50.845 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Secure Folder'
+06-07 23:09:50.845 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Secure Folder'
+06-07 23:09:50.845 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='CPU-Z'
+06-07 23:09:50.845 D/AuraOrbit.A11y(19155):         android.widget.TextView text='CPU-Z'
+06-07 23:09:50.846 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Keep notes'
+06-07 23:09:50.846 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Keep notes'
+06-07 23:09:50.846 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Translate'
+06-07 23:09:50.846 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Translate'
+06-07 23:09:50.846 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Keys Cafe'
+06-07 23:09:50.847 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Keys Cafe'
+06-07 23:09:50.847 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Call of Duty'
+06-07 23:09:50.847 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Call of Duty'
+06-07 23:09:50.847 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='SSKPSS Vadodara'
+06-07 23:09:50.847 D/AuraOrbit.A11y(19155):         android.widget.TextView text='SSKPSS Vadodara'
+06-07 23:09:50.848 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Reminder'
+06-07 23:09:50.848 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Reminder'
+06-07 23:09:50.848 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Chill Live Wallpaper'
+06-07 23:09:50.848 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Chill Live Wallpaper'
+06-07 23:09:50.849 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Files'
+06-07 23:09:50.849 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Files'
+06-07 23:09:50.849 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='AuraOrbit'
+06-07 23:09:50.849 D/AuraOrbit.A11y(19155):         android.widget.TextView text='AuraOrbit'
+06-07 23:09:50.849 D/AuraOrbit.A11y(19155):     android.widget.FrameLayout desc='Page 1 of 4. ' [visible]
+06-07 23:09:50.849 D/AuraOrbit.A11y(19155):     android.widget.FrameLayout desc='Page 2 of 4. ' [visible] [selected]
+06-07 23:09:50.849 D/AuraOrbit.A11y(19155):     android.widget.FrameLayout desc='Page 3 of 4. ' [visible]
+06-07 23:09:50.850 D/AuraOrbit.A11y(19155):     android.widget.FrameLayout desc='Page 4 of 4. ' [visible]
+06-07 23:09:50.850 D/AuraOrbit.A11y(19155):     android.widget.ImageView desc='More options' [visible]
+06-07 23:09:50.850 D/AuraOrbit.A11y(19155):     android.widget.LinearLayout [visible]
+06-07 23:09:50.850 D/AuraOrbit.A11y(19155):       android.widget.TextView text='Search' [visible]
+06-07 23:09:50.850 D/AuraOrbit.A11y(19155):     android.widget.ImageView desc='Voice search' [visible]
+06-07 23:09:50.850 D/AuraOrbit.A11y(19155): === DEBUG DUMP TREE END ===
+06-07 23:09:50.853 D/AuraOrbit.A11y(19155): home page=2 of 4
+06-07 23:09:53.771 D/AuraOrbit.A11y(19155): home page=1 of 4
+06-07 23:09:53.771 D/AuraOrbit.A11y(19155): onAccessibilityEvent: service alive, drawerOpen=false page=1
+06-07 23:10:00.099 D/AuraOrbit.A11y(19155): === DEBUG DUMP TREE START (Event: android.widget.TextView) ===
+06-07 23:10:00.099 D/AuraOrbit.A11y(19155): android.widget.FrameLayout [visible]
+06-07 23:10:00.099 D/AuraOrbit.A11y(19155):   android.widget.FrameLayout [visible]
+06-07 23:10:00.099 D/AuraOrbit.A11y(19155):     android.widget.FrameLayout [visible]
+06-07 23:10:00.100 D/AuraOrbit.A11y(19155):       android.view.ViewGroup [visible]
+06-07 23:10:00.100 D/AuraOrbit.A11y(19155):         android.widget.LinearLayout
+06-07 23:10:00.100 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout [visible]
+06-07 23:10:00.100 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout [visible]
+06-07 23:10:00.100 D/AuraOrbit.A11y(19155):             android.widget.TextView text='32°' desc='Current temperature, 32 degrees' [visible]
+06-07 23:10:00.100 D/AuraOrbit.A11y(19155):             android.widget.TextView text='Tomorrow's high feels like 44°C due to humidity' desc='Tomorrow's high feels like 44°C due to humidity' [visible]
+06-07 23:10:00.100 D/AuraOrbit.A11y(19155):             android.widget.TextView text='TP 13' desc='TP 13' [visible]
+06-07 23:10:00.100 D/AuraOrbit.A11y(19155):             android.widget.ImageView desc='Smoke' [visible]
+06-07 23:10:00.100 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout [visible]
+06-07 23:10:00.100 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout [visible]
+06-07 23:10:00.100 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout desc='Screen time,6 hours 30 minutes Call of Duty 3 hours 11 minutes Instagram 1 hour 21 minutes YouTube 33 minutes' [visible]
+06-07 23:10:00.100 D/AuraOrbit.A11y(19155):               android.widget.TextView text='Call of Duty' [visible]
+06-07 23:10:00.100 D/AuraOrbit.A11y(19155):               android.widget.TextView text='Instagram' [visible]
+06-07 23:10:00.101 D/AuraOrbit.A11y(19155):               android.widget.TextView text='YouTube' [visible]
+06-07 23:10:00.101 D/AuraOrbit.A11y(19155):               android.widget.TextView text='6' [visible]
+06-07 23:10:00.101 D/AuraOrbit.A11y(19155):               android.widget.TextView text=' h ' [visible]
+06-07 23:10:00.101 D/AuraOrbit.A11y(19155):               android.widget.TextView text='30' [visible]
+06-07 23:10:00.101 D/AuraOrbit.A11y(19155):               android.widget.TextView text=' m' [visible]
+06-07 23:10:00.101 D/AuraOrbit.A11y(19155):               android.widget.ProgressBar [visible]
+06-07 23:10:00.101 D/AuraOrbit.A11y(19155):               android.widget.ProgressBar [visible]
+06-07 23:10:00.101 D/AuraOrbit.A11y(19155):               android.widget.ProgressBar [visible]
+06-07 23:10:00.101 D/AuraOrbit.A11y(19155):               android.widget.ProgressBar [visible]
+06-07 23:10:00.101 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout [visible]
+06-07 23:10:00.101 D/AuraOrbit.A11y(19155):                 android.widget.ImageView desc='Refresh' [visible]
+06-07 23:10:00.101 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout [visible]
+06-07 23:10:00.101 D/AuraOrbit.A11y(19155):           android.widget.ImageView desc='Google Search' [visible]
+06-07 23:10:00.101 D/AuraOrbit.A11y(19155):           android.widget.ImageButton desc='Google app' [visible]
+06-07 23:10:00.101 D/AuraOrbit.A11y(19155):           android.widget.ImageButton desc='Voice search' [visible]
+06-07 23:10:00.101 D/AuraOrbit.A11y(19155):           android.widget.ImageButton desc='Camera search' [visible]
+06-07 23:10:00.102 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Gallery' [visible]
+06-07 23:10:00.102 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Gallery' [visible]
+06-07 23:10:00.102 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Play Store' [visible]
+06-07 23:10:00.102 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Play Store' [visible]
+06-07 23:10:00.102 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Settings' [visible]
+06-07 23:10:00.102 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Settings' [visible]
+06-07 23:10:00.102 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Messages' [visible]
+06-07 23:10:00.102 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Messages' [visible]
+06-07 23:10:00.102 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Money Manager' [visible]
+06-07 23:10:00.102 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Money Manager' [visible]
+06-07 23:10:00.102 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Payment, Folder' [visible]
+06-07 23:10:00.102 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Payment' [visible]
+06-07 23:10:00.102 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Food, Folder' [visible]
+06-07 23:10:00.102 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Food' [visible]
+06-07 23:10:00.102 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Authenticator' [visible]
+06-07 23:10:00.103 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Authenticator' [visible]
+06-07 23:10:00.103 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Microsoft, Folder' [visible]
+06-07 23:10:00.103 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Microsoft' [visible]
+06-07 23:10:00.103 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Google, Folder' [visible]
+06-07 23:10:00.103 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Google' [visible]
+06-07 23:10:00.103 D/AuraOrbit.A11y(19155):         android.widget.LinearLayout
+06-07 23:10:00.103 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout
+06-07 23:10:00.103 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout desc='Reminder widget'
+06-07 23:10:00.103 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout
+06-07 23:10:00.103 D/AuraOrbit.A11y(19155):               android.widget.LinearLayout desc='Open Reminder'
+06-07 23:10:00.103 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout
+06-07 23:10:00.103 D/AuraOrbit.A11y(19155):                   android.widget.LinearLayout desc='All Dropdown list'
+06-07 23:10:00.103 D/AuraOrbit.A11y(19155):                     android.widget.TextView text='All'
+06-07 23:10:00.103 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout
+06-07 23:10:00.103 D/AuraOrbit.A11y(19155):               android.widget.LinearLayout desc='Add reminder Button'
+06-07 23:10:00.103 D/AuraOrbit.A11y(19155):             android.widget.ListView
+06-07 23:10:00.103 D/AuraOrbit.A11y(19155):               android.appwidget.AppWidgetHostView
+06-07 23:10:00.103 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout
+06-07 23:10:00.103 D/AuraOrbit.A11y(19155):                   android.widget.LinearLayout desc='DSA'
+06-07 23:10:00.103 D/AuraOrbit.A11y(19155):                     android.widget.FrameLayout
+06-07 23:10:00.104 D/AuraOrbit.A11y(19155):                       android.widget.ImageView desc='Not checked, DSA'
+06-07 23:10:00.104 D/AuraOrbit.A11y(19155):                     android.widget.TextView text='DSA'
+06-07 23:10:00.104 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout
+06-07 23:10:00.104 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout desc='Voice Recorder'
+06-07 23:10:00.104 D/AuraOrbit.A11y(19155):             android.widget.RelativeLayout
+06-07 23:10:00.104 D/AuraOrbit.A11y(19155):               android.widget.Chronometer text='00:00' desc='0 seconds'
+06-07 23:10:00.104 D/AuraOrbit.A11y(19155):               android.widget.LinearLayout desc='Record, Button'
+06-07 23:10:00.104 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='NoScroll'
+06-07 23:10:00.104 D/AuraOrbit.A11y(19155):           android.widget.TextView text='NoScroll'
+06-07 23:10:00.104 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Keep notes'
+06-07 23:10:00.104 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Keep notes'
+06-07 23:10:00.104 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='KDE Connect, 1 notification'
+06-07 23:10:00.104 D/AuraOrbit.A11y(19155):           android.widget.TextView text='KDE Connect'
+06-07 23:10:00.104 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Rapido'
+06-07 23:10:00.105 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Rapido'
+06-07 23:10:00.105 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Bixby'
+06-07 23:10:00.105 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Bixby'
+06-07 23:10:00.105 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout
+06-07 23:10:00.105 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:00.105 D/AuraOrbit.A11y(19155):             android.view.View desc='23:10'
+06-07 23:10:00.105 D/AuraOrbit.A11y(19155):             android.widget.TextView text='Sun,' desc='Sun,'
+06-07 23:10:00.105 D/AuraOrbit.A11y(19155):             android.widget.TextView text='7 Jun' desc='7 Jun'
+06-07 23:10:00.105 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Call of Duty'
+06-07 23:10:00.105 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Call of Duty'
+06-07 23:10:00.105 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Instagram'
+06-07 23:10:00.105 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Instagram'
+06-07 23:10:00.105 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Money Manager'
+06-07 23:10:00.105 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Money Manager'
+06-07 23:10:00.105 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Calculator'
+06-07 23:10:00.105 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Calculator'
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):             android.widget.LinearLayout desc='Type Gemini prompt'
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):               android.widget.TextView text='Ask Gemini'
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):             android.widget.LinearLayout desc='Share video with Gemini Live'
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):               android.widget.TextView text='Video'
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):             android.widget.LinearLayout desc='Talk with Gemini Live'
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):               android.widget.TextView text='Live'
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):             android.widget.ImageButton desc='Copy'
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout desc='Mummy, Direct Dial'
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):           android.widget.TextView
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Mummy'
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout desc='Nency, Direct Dial'
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):           android.widget.TextView
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Nency'
+06-07 23:10:00.106 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout desc='Papa, Direct Dial'
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):           android.widget.TextView
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Papa'
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout desc='No contact'
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):           android.widget.TextView
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):           android.widget.TextView
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):         android.widget.LinearLayout
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout desc='Month'
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):                 android.widget.ImageView desc='Previous month Button'
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):               android.widget.TextView text='JUN' desc='June '
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):                 android.widget.ImageView desc='Next month Button'
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):                 android.widget.ImageView desc='Handwriting Button'
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):                 android.widget.ImageView desc='Add detailed event Button'
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):                 android.widget.TextView text='7' desc='7, Today Button'
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):             android.widget.TextView text='M'
+06-07 23:10:00.107 D/AuraOrbit.A11y(19155):             android.widget.TextView text='T'
+06-07 23:10:00.108 D/AuraOrbit.A11y(19155):             android.widget.TextView text='W'
+06-07 23:10:00.108 D/AuraOrbit.A11y(19155):             android.widget.TextView text='T'
+06-07 23:10:00.108 D/AuraOrbit.A11y(19155):             android.widget.TextView text='F'
+06-07 23:10:00.108 D/AuraOrbit.A11y(19155):             android.widget.TextView text='S'
+06-07 23:10:00.108 D/AuraOrbit.A11y(19155):             android.widget.TextView text='S'
+06-07 23:10:00.108 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout
+06-07 23:10:00.108 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.108 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Monday, 1 June, Add event'
+06-07 23:10:00.108 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.108 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Tuesday, 2 June, Add event'
+06-07 23:10:00.108 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.108 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Wednesday, 3 June, Add event'
+06-07 23:10:00.108 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.109 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Thursday, 4 June, Add event'
+06-07 23:10:00.109 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.109 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Friday, 5 June, Add event'
+06-07 23:10:00.109 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.109 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Saturday, 6 June, Add event'
+06-07 23:10:00.109 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.109 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Today, Sunday, 7 June, 1 event'
+06-07 23:10:00.109 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.109 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Monday, 8 June, Add event'
+06-07 23:10:00.109 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.109 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Tuesday, 9 June, Add event'
+06-07 23:10:00.109 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.109 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Wednesday, 10 June, Add event'
+06-07 23:10:00.109 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.109 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Thursday, 11 June, Add event'
+06-07 23:10:00.109 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.109 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Friday, 12 June, Add event'
+06-07 23:10:00.109 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.109 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Saturday, 13 June, Add event'
+06-07 23:10:00.109 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Sunday, 14 June, Add event'
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Monday, 15 June, Add event'
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Tuesday, 16 June, Add event'
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Wednesday, 17 June, Add event'
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Thursday, 18 June, Add event'
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Friday, 19 June, Add event'
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Saturday, 20 June, Add event'
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Sunday, 21 June, Add event'
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Monday, 22 June, Add event'
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Tuesday, 23 June, Add event'
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Wednesday, 24 June, Add event'
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Thursday, 25 June, Add event'
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Friday, 26 June, 1 event'
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Saturday, 27 June, Add event'
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.110 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Sunday, 28 June, Add event'
+06-07 23:10:00.111 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.112 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Monday, 29 June, Add event'
+06-07 23:10:00.112 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.112 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Tuesday, 30 June, 1 event'
+06-07 23:10:00.112 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.112 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Wednesday, 1 July, Add event'
+06-07 23:10:00.112 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.112 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Thursday, 2 July, Add event'
+06-07 23:10:00.112 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.112 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Friday, 3 July, Add event'
+06-07 23:10:00.112 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.112 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Saturday, 4 July, Add event'
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Sunday, 5 July, 1 event'
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout desc='Device care'
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):                 android.widget.ImageView desc='Optimise now'
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):               android.widget.TextView text='Optimise'
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):               android.widget.ProgressBar
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):               android.widget.TextView
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):               android.widget.TextView text='74.5 GB'
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):               android.widget.TextView
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):               android.widget.TextView text=' / '
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):               android.widget.TextView text='256 GB'
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):               android.widget.TextView
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):               android.widget.ProgressBar
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):               android.widget.TextView text='7.6'
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):               android.widget.TextView text='GB'
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):               android.widget.TextView text=' / '
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):               android.widget.TextView
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):               android.widget.TextView text='12 GB'
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):               android.widget.TextView
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):         android.widget.LinearLayout
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Page 1 of 4, Default page' [visible] [selected]
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Page 2 of 4 ' [visible]
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Page 3 of 4 ' [visible]
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Page 4 of 4 ' [visible]
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):     android.widget.RelativeLayout [visible]
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Phone' [visible]
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Phone' [visible]
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Camera' [visible]
+06-07 23:10:00.113 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Camera' [visible]
+06-07 23:10:00.114 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Brave' [visible]
+06-07 23:10:00.114 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Brave' [visible]
+06-07 23:10:00.114 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='YouTube' [visible]
+06-07 23:10:00.114 D/AuraOrbit.A11y(19155):         android.widget.TextView text='YouTube' [visible]
+06-07 23:10:00.114 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='WhatsApp' [visible]
+06-07 23:10:00.114 D/AuraOrbit.A11y(19155):         android.widget.TextView text='WhatsApp' [visible]
+06-07 23:10:00.114 D/AuraOrbit.A11y(19155): === DEBUG DUMP TREE END ===
+06-07 23:10:00.119 D/AuraOrbit.A11y(19155): home page=1 of 4
+06-07 23:10:40.752 D/AuraOrbit.A11y(19155): === DEBUG DUMP TREE START (Event: android.view.ViewGroup) ===
+06-07 23:10:40.752 D/AuraOrbit.A11y(19155): android.widget.FrameLayout [visible]
+06-07 23:10:40.752 D/AuraOrbit.A11y(19155):   android.widget.FrameLayout [visible]
+06-07 23:10:40.752 D/AuraOrbit.A11y(19155):     android.widget.FrameLayout [visible]
+06-07 23:10:40.754 D/AuraOrbit.A11y(19155):       android.view.ViewGroup [visible]
+06-07 23:10:40.754 D/AuraOrbit.A11y(19155):         android.widget.LinearLayout
+06-07 23:10:40.754 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout
+06-07 23:10:40.761 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:40.769 D/AuraOrbit.A11y(19155):             android.widget.TextView text='32°' desc='Current temperature, 32 degrees'
+06-07 23:10:40.769 D/AuraOrbit.A11y(19155):             android.widget.TextView text='Tomorrow's high feels like 44°C due to humidity' desc='Tomorrow's high feels like 44°C due to humidity'
+06-07 23:10:40.769 D/AuraOrbit.A11y(19155):             android.widget.TextView text='TP 13' desc='TP 13'
+06-07 23:10:40.769 D/AuraOrbit.A11y(19155):             android.widget.ImageView desc='Smoke'
+06-07 23:10:40.769 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout [visible]
+06-07 23:10:40.777 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout [visible]
+06-07 23:10:40.778 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout desc='Screen time,6 hours 30 minutes Call of Duty 3 hours 11 minutes Instagram 1 hour 21 minutes YouTube 33 minutes' [visible]
+06-07 23:10:40.778 D/AuraOrbit.A11y(19155):               android.widget.TextView text='Call of Duty'
+06-07 23:10:40.778 D/AuraOrbit.A11y(19155):               android.widget.TextView text='Instagram'
+06-07 23:10:40.778 D/AuraOrbit.A11y(19155):               android.widget.TextView text='YouTube'
+06-07 23:10:40.778 D/AuraOrbit.A11y(19155):               android.widget.TextView text='6'
+06-07 23:10:40.778 D/AuraOrbit.A11y(19155):               android.widget.TextView text=' h '
+06-07 23:10:40.778 D/AuraOrbit.A11y(19155):               android.widget.TextView text='30'
+06-07 23:10:40.778 D/AuraOrbit.A11y(19155):               android.widget.TextView text=' m'
+06-07 23:10:40.785 D/AuraOrbit.A11y(19155):               android.widget.ProgressBar [visible]
+06-07 23:10:40.793 D/AuraOrbit.A11y(19155):               android.widget.ProgressBar [visible]
+06-07 23:10:40.802 D/AuraOrbit.A11y(19155):               android.widget.ProgressBar [visible]
+06-07 23:10:40.810 D/AuraOrbit.A11y(19155):               android.widget.ProgressBar
+06-07 23:10:40.818 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:40.827 D/AuraOrbit.A11y(19155):                 android.widget.ImageView desc='Refresh'
+06-07 23:10:40.827 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout [visible]
+06-07 23:10:40.836 D/AuraOrbit.A11y(19155):           android.widget.ImageView desc='Google Search'
+06-07 23:10:40.843 D/AuraOrbit.A11y(19155):           android.widget.ImageButton desc='Google app'
+06-07 23:10:40.852 D/AuraOrbit.A11y(19155):           android.widget.ImageButton desc='Voice search'
+06-07 23:10:40.860 D/AuraOrbit.A11y(19155):           android.widget.ImageButton desc='Camera search'
+06-07 23:10:40.860 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Gallery'
+06-07 23:10:40.868 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Gallery'
+06-07 23:10:40.877 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Play Store'
+06-07 23:10:40.885 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Play Store'
+06-07 23:10:40.893 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Settings'
+06-07 23:10:40.901 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Settings'
+06-07 23:10:40.912 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Messages'
+06-07 23:10:40.919 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Messages'
+06-07 23:10:40.928 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Money Manager' [visible]
+06-07 23:10:40.935 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Money Manager'
+06-07 23:10:40.944 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Payment, Folder'
+06-07 23:10:40.952 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Payment'
+06-07 23:10:40.960 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Food, Folder'
+06-07 23:10:40.968 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Food'
+06-07 23:10:40.978 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Authenticator'
+06-07 23:10:40.986 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Authenticator'
+06-07 23:10:40.994 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Microsoft, Folder'
+06-07 23:10:40.995 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Microsoft'
+06-07 23:10:41.002 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Google, Folder'
+06-07 23:10:41.002 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Google'
+06-07 23:10:41.013 D/AuraOrbit.A11y(19155):         android.widget.LinearLayout
+06-07 23:10:41.014 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout [visible]
+06-07 23:10:41.016 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout desc='Reminder widget' [visible]
+06-07 23:10:41.017 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout [visible]
+06-07 23:10:41.017 D/AuraOrbit.A11y(19155):               android.widget.LinearLayout desc='Open Reminder' [visible]
+06-07 23:10:41.017 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout [visible]
+06-07 23:10:41.017 D/AuraOrbit.A11y(19155):                   android.widget.LinearLayout desc='All Dropdown list' [visible]
+06-07 23:10:41.017 D/AuraOrbit.A11y(19155):                     android.widget.TextView text='All' [visible]
+06-07 23:10:41.017 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout [visible]
+06-07 23:10:41.018 D/AuraOrbit.A11y(19155):               android.widget.LinearLayout desc='Add reminder Button' [visible]
+06-07 23:10:41.018 D/AuraOrbit.A11y(19155):             android.widget.ListView [visible]
+06-07 23:10:41.019 D/AuraOrbit.A11y(19155):               android.appwidget.AppWidgetHostView [visible]
+06-07 23:10:41.019 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout [visible]
+06-07 23:10:41.019 D/AuraOrbit.A11y(19155):                   android.widget.LinearLayout desc='DSA' [visible]
+06-07 23:10:41.019 D/AuraOrbit.A11y(19155):                     android.widget.FrameLayout [visible]
+06-07 23:10:41.019 D/AuraOrbit.A11y(19155):                       android.widget.ImageView desc='Not checked, DSA' [visible]
+06-07 23:10:41.019 D/AuraOrbit.A11y(19155):                     android.widget.TextView text='DSA' [visible]
+06-07 23:10:41.020 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout [visible]
+06-07 23:10:41.021 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout desc='Voice Recorder' [visible]
+06-07 23:10:41.021 D/AuraOrbit.A11y(19155):             android.widget.RelativeLayout [visible]
+06-07 23:10:41.021 D/AuraOrbit.A11y(19155):               android.widget.Chronometer text='00:00' desc='0 seconds' [visible]
+06-07 23:10:41.022 D/AuraOrbit.A11y(19155):               android.widget.LinearLayout desc='Record, Button' [visible]
+06-07 23:10:41.023 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='NoScroll' [visible]
+06-07 23:10:41.023 D/AuraOrbit.A11y(19155):           android.widget.TextView text='NoScroll' [visible]
+06-07 23:10:41.024 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Keep notes' [visible]
+06-07 23:10:41.024 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Keep notes' [visible]
+06-07 23:10:41.026 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='KDE Connect, 1 notification' [visible]
+06-07 23:10:41.027 D/AuraOrbit.A11y(19155):           android.widget.TextView text='KDE Connect' [visible]
+06-07 23:10:41.027 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Rapido' [visible]
+06-07 23:10:41.028 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Rapido' [visible]
+06-07 23:10:41.029 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Bixby' [visible]
+06-07 23:10:41.030 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Bixby' [visible]
+06-07 23:10:41.030 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout [visible]
+06-07 23:10:41.031 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout [visible]
+06-07 23:10:41.031 D/AuraOrbit.A11y(19155):             android.view.View desc='23:10' [visible]
+06-07 23:10:41.031 D/AuraOrbit.A11y(19155):             android.widget.TextView text='Sun,' desc='Sun,' [visible]
+06-07 23:10:41.031 D/AuraOrbit.A11y(19155):             android.widget.TextView text='7 Jun' desc='7 Jun' [visible]
+06-07 23:10:41.032 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Call of Duty' [visible]
+06-07 23:10:41.032 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Call of Duty' [visible]
+06-07 23:10:41.035 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Instagram' [visible]
+06-07 23:10:41.035 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Instagram' [visible]
+06-07 23:10:41.035 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Money Manager' [visible]
+06-07 23:10:41.035 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Money Manager' [visible]
+06-07 23:10:41.036 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Calculator' [visible]
+06-07 23:10:41.036 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Calculator' [visible]
+06-07 23:10:41.037 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout [visible]
+06-07 23:10:41.037 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout [visible]
+06-07 23:10:41.037 D/AuraOrbit.A11y(19155):             android.widget.LinearLayout desc='Type Gemini prompt' [visible]
+06-07 23:10:41.038 D/AuraOrbit.A11y(19155):               android.widget.TextView text='Ask Gemini' [visible]
+06-07 23:10:41.038 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout [visible]
+06-07 23:10:41.038 D/AuraOrbit.A11y(19155):             android.widget.LinearLayout desc='Share video with Gemini Live' [visible]
+06-07 23:10:41.039 D/AuraOrbit.A11y(19155):               android.widget.TextView text='Video' [visible]
+06-07 23:10:41.039 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout [visible]
+06-07 23:10:41.039 D/AuraOrbit.A11y(19155):             android.widget.LinearLayout desc='Talk with Gemini Live' [visible]
+06-07 23:10:41.040 D/AuraOrbit.A11y(19155):               android.widget.TextView text='Live' [visible]
+06-07 23:10:41.041 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout [visible]
+06-07 23:10:41.043 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout [visible]
+06-07 23:10:41.043 D/AuraOrbit.A11y(19155):             android.widget.ImageButton desc='Copy' [visible]
+06-07 23:10:41.043 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout [visible]
+06-07 23:10:41.044 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout [visible]
+06-07 23:10:41.044 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout desc='Mummy, Direct Dial' [visible]
+06-07 23:10:41.044 D/AuraOrbit.A11y(19155):           android.widget.TextView
+06-07 23:10:41.044 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Mummy' [visible]
+06-07 23:10:41.044 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout [visible]
+06-07 23:10:41.045 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout desc='Nency, Direct Dial' [visible]
+06-07 23:10:41.045 D/AuraOrbit.A11y(19155):           android.widget.TextView
+06-07 23:10:41.046 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Nency' [visible]
+06-07 23:10:41.046 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout [visible]
+06-07 23:10:41.046 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout desc='Papa, Direct Dial' [visible]
+06-07 23:10:41.047 D/AuraOrbit.A11y(19155):           android.widget.TextView
+06-07 23:10:41.047 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Papa' [visible]
+06-07 23:10:41.048 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout [visible]
+06-07 23:10:41.048 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout desc='No contact' [visible]
+06-07 23:10:41.049 D/AuraOrbit.A11y(19155):           android.widget.TextView
+06-07 23:10:41.049 D/AuraOrbit.A11y(19155):           android.widget.TextView [visible]
+06-07 23:10:41.050 D/AuraOrbit.A11y(19155):         android.widget.LinearLayout
+06-07 23:10:41.051 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout
+06-07 23:10:41.051 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout desc='Month'
+06-07 23:10:41.051 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout
+06-07 23:10:41.051 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.052 D/AuraOrbit.A11y(19155):                 android.widget.ImageView desc='Previous month Button'
+06-07 23:10:41.052 D/AuraOrbit.A11y(19155):               android.widget.TextView text='JUN' desc='June '
+06-07 23:10:41.052 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.053 D/AuraOrbit.A11y(19155):                 android.widget.ImageView desc='Next month Button'
+06-07 23:10:41.053 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.054 D/AuraOrbit.A11y(19155):                 android.widget.ImageView desc='Handwriting Button'
+06-07 23:10:41.054 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.054 D/AuraOrbit.A11y(19155):                 android.widget.ImageView desc='Add detailed event Button'
+06-07 23:10:41.055 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.055 D/AuraOrbit.A11y(19155):                 android.widget.TextView text='7' desc='7, Today Button'
+06-07 23:10:41.055 D/AuraOrbit.A11y(19155):             android.widget.TextView text='M'
+06-07 23:10:41.056 D/AuraOrbit.A11y(19155):             android.widget.TextView text='T'
+06-07 23:10:41.056 D/AuraOrbit.A11y(19155):             android.widget.TextView text='W'
+06-07 23:10:41.057 D/AuraOrbit.A11y(19155):             android.widget.TextView text='T'
+06-07 23:10:41.057 D/AuraOrbit.A11y(19155):             android.widget.TextView text='F'
+06-07 23:10:41.058 D/AuraOrbit.A11y(19155):             android.widget.TextView text='S'
+06-07 23:10:41.059 D/AuraOrbit.A11y(19155):             android.widget.TextView text='S'
+06-07 23:10:41.059 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout
+06-07 23:10:41.059 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.060 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Monday, 1 June, Add event'
+06-07 23:10:41.060 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.060 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Tuesday, 2 June, Add event'
+06-07 23:10:41.060 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.061 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Wednesday, 3 June, Add event'
+06-07 23:10:41.061 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.061 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Thursday, 4 June, Add event'
+06-07 23:10:41.062 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.062 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Friday, 5 June, Add event'
+06-07 23:10:41.063 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.063 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Saturday, 6 June, Add event'
+06-07 23:10:41.063 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.063 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Today, Sunday, 7 June, 1 event'
+06-07 23:10:41.064 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.064 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Monday, 8 June, Add event'
+06-07 23:10:41.065 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.065 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Tuesday, 9 June, Add event'
+06-07 23:10:41.065 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.066 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Wednesday, 10 June, Add event'
+06-07 23:10:41.067 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.067 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Thursday, 11 June, Add event'
+06-07 23:10:41.067 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.067 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Friday, 12 June, Add event'
+06-07 23:10:41.068 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.068 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Saturday, 13 June, Add event'
+06-07 23:10:41.069 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.069 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Sunday, 14 June, Add event'
+06-07 23:10:41.069 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.070 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Monday, 15 June, Add event'
+06-07 23:10:41.070 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.072 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Tuesday, 16 June, Add event'
+06-07 23:10:41.072 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.073 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Wednesday, 17 June, Add event'
+06-07 23:10:41.073 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.073 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Thursday, 18 June, Add event'
+06-07 23:10:41.074 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.074 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Friday, 19 June, Add event'
+06-07 23:10:41.075 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.075 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Saturday, 20 June, Add event'
+06-07 23:10:41.075 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.076 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Sunday, 21 June, Add event'
+06-07 23:10:41.076 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.077 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Monday, 22 June, Add event'
+06-07 23:10:41.077 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.077 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Tuesday, 23 June, Add event'
+06-07 23:10:41.078 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.078 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Wednesday, 24 June, Add event'
+06-07 23:10:41.079 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.079 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Thursday, 25 June, Add event'
+06-07 23:10:41.079 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.079 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Friday, 26 June, 1 event'
+06-07 23:10:41.080 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.081 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Saturday, 27 June, Add event'
+06-07 23:10:41.081 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.081 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Sunday, 28 June, Add event'
+06-07 23:10:41.082 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.082 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Monday, 29 June, Add event'
+06-07 23:10:41.083 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.084 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Tuesday, 30 June, 1 event'
+06-07 23:10:41.084 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.084 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Wednesday, 1 July, Add event'
+06-07 23:10:41.085 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.085 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Thursday, 2 July, Add event'
+06-07 23:10:41.086 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.086 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Friday, 3 July, Add event'
+06-07 23:10:41.086 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.086 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Saturday, 4 July, Add event'
+06-07 23:10:41.087 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.087 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Sunday, 5 July, 1 event'
+06-07 23:10:41.087 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout
+06-07 23:10:41.088 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:41.088 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout desc='Device care'
+06-07 23:10:41.088 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:41.088 D/AuraOrbit.A11y(19155):                 android.widget.ImageView desc='Optimise now'
+06-07 23:10:41.089 D/AuraOrbit.A11y(19155):               android.widget.TextView text='Optimise'
+06-07 23:10:41.089 D/AuraOrbit.A11y(19155):               android.widget.ProgressBar
+06-07 23:10:41.089 D/AuraOrbit.A11y(19155):               android.widget.TextView
+06-07 23:10:41.090 D/AuraOrbit.A11y(19155):               android.widget.TextView text='74.5 GB'
+06-07 23:10:41.090 D/AuraOrbit.A11y(19155):               android.widget.TextView
+06-07 23:10:41.091 D/AuraOrbit.A11y(19155):               android.widget.TextView text=' / '
+06-07 23:10:41.092 D/AuraOrbit.A11y(19155):               android.widget.TextView text='256 GB'
+06-07 23:10:41.092 D/AuraOrbit.A11y(19155):               android.widget.TextView
+06-07 23:10:41.093 D/AuraOrbit.A11y(19155):               android.widget.ProgressBar
+06-07 23:10:41.093 D/AuraOrbit.A11y(19155):               android.widget.TextView text='7.6'
+06-07 23:10:41.093 D/AuraOrbit.A11y(19155):               android.widget.TextView text='GB'
+06-07 23:10:41.094 D/AuraOrbit.A11y(19155):               android.widget.TextView text=' / '
+06-07 23:10:41.094 D/AuraOrbit.A11y(19155):               android.widget.TextView
+06-07 23:10:41.095 D/AuraOrbit.A11y(19155):               android.widget.TextView text='12 GB'
+06-07 23:10:41.095 D/AuraOrbit.A11y(19155):               android.widget.TextView
+06-07 23:10:41.095 D/AuraOrbit.A11y(19155):         android.widget.LinearLayout
+06-07 23:10:41.095 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Page 1 of 4, Default page' [visible]
+06-07 23:10:41.095 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Page 2 of 4 ' [visible] [selected]
+06-07 23:10:41.095 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Page 3 of 4 ' [visible]
+06-07 23:10:41.095 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Page 4 of 4 ' [visible]
+06-07 23:10:41.096 D/AuraOrbit.A11y(19155):     android.widget.RelativeLayout [visible]
+06-07 23:10:41.096 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Phone' [visible]
+06-07 23:10:41.096 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Phone' [visible]
+06-07 23:10:41.096 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Camera' [visible]
+06-07 23:10:41.096 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Camera' [visible]
+06-07 23:10:41.096 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Brave' [visible]
+06-07 23:10:41.096 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Brave' [visible]
+06-07 23:10:41.096 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='YouTube' [visible]
+06-07 23:10:41.096 D/AuraOrbit.A11y(19155):         android.widget.TextView text='YouTube' [visible]
+06-07 23:10:41.096 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='WhatsApp' [visible]
+06-07 23:10:41.096 D/AuraOrbit.A11y(19155):         android.widget.TextView text='WhatsApp' [visible]
+06-07 23:10:41.096 D/AuraOrbit.A11y(19155): === DEBUG DUMP TREE END ===
+06-07 23:10:41.100 D/AuraOrbit.A11y(19155): home page=2 of 4
+06-07 23:10:42.123 D/AuraOrbit.A11y(19155): home page=3 of 4
+06-07 23:10:43.609 D/AuraOrbit.A11y(19155): home page=2 of 4
+06-07 23:10:44.686 D/AuraOrbit.A11y(19155): home page=4 of 4
+06-07 23:10:46.143 D/AuraOrbit.A11y(19155): === DEBUG DUMP TREE START (Event: android.widget.FrameLayout) ===
+06-07 23:10:46.144 D/AuraOrbit.A11y(19155): android.widget.FrameLayout [visible]
+06-07 23:10:46.146 D/AuraOrbit.A11y(19155):   android.widget.FrameLayout [visible]
+06-07 23:10:46.146 D/AuraOrbit.A11y(19155):     android.widget.FrameLayout [visible]
+06-07 23:10:46.146 D/AuraOrbit.A11y(19155):       android.view.ViewGroup [visible]
+06-07 23:10:46.146 D/AuraOrbit.A11y(19155):         android.widget.LinearLayout
+06-07 23:10:46.146 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout
+06-07 23:10:46.147 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:46.149 D/AuraOrbit.A11y(19155):             android.widget.TextView text='32°' desc='Current temperature, 32 degrees'
+06-07 23:10:46.149 D/AuraOrbit.A11y(19155):             android.widget.TextView text='Tomorrow's high feels like 44°C due to humidity' desc='Tomorrow's high feels like 44°C due to humidity'
+06-07 23:10:46.149 D/AuraOrbit.A11y(19155):             android.widget.TextView text='TP 13' desc='TP 13'
+06-07 23:10:46.150 D/AuraOrbit.A11y(19155):             android.widget.ImageView desc='Smoke'
+06-07 23:10:46.150 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout
+06-07 23:10:46.151 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:46.154 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout desc='Screen time,6 hours 30 minutes Call of Duty 3 hours 11 minutes Instagram 1 hour 21 minutes YouTube 33 minutes'
+06-07 23:10:46.154 D/AuraOrbit.A11y(19155):               android.widget.TextView text='Call of Duty'
+06-07 23:10:46.154 D/AuraOrbit.A11y(19155):               android.widget.TextView text='Instagram'
+06-07 23:10:46.154 D/AuraOrbit.A11y(19155):               android.widget.TextView text='YouTube'
+06-07 23:10:46.154 D/AuraOrbit.A11y(19155):               android.widget.TextView text='6'
+06-07 23:10:46.155 D/AuraOrbit.A11y(19155):               android.widget.TextView text=' h '
+06-07 23:10:46.155 D/AuraOrbit.A11y(19155):               android.widget.TextView text='30'
+06-07 23:10:46.156 D/AuraOrbit.A11y(19155):               android.widget.TextView text=' m'
+06-07 23:10:46.157 D/AuraOrbit.A11y(19155):               android.widget.ProgressBar
+06-07 23:10:46.158 D/AuraOrbit.A11y(19155):               android.widget.ProgressBar
+06-07 23:10:46.159 D/AuraOrbit.A11y(19155):               android.widget.ProgressBar
+06-07 23:10:46.160 D/AuraOrbit.A11y(19155):               android.widget.ProgressBar
+06-07 23:10:46.161 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:46.161 D/AuraOrbit.A11y(19155):                 android.widget.ImageView desc='Refresh'
+06-07 23:10:46.162 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout
+06-07 23:10:46.162 D/AuraOrbit.A11y(19155):           android.widget.ImageView desc='Google Search'
+06-07 23:10:46.163 D/AuraOrbit.A11y(19155):           android.widget.ImageButton desc='Google app'
+06-07 23:10:46.163 D/AuraOrbit.A11y(19155):           android.widget.ImageButton desc='Voice search'
+06-07 23:10:46.163 D/AuraOrbit.A11y(19155):           android.widget.ImageButton desc='Camera search'
+06-07 23:10:46.164 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Gallery'
+06-07 23:10:46.164 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Gallery'
+06-07 23:10:46.164 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Play Store'
+06-07 23:10:46.165 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Play Store'
+06-07 23:10:46.165 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Settings'
+06-07 23:10:46.165 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Settings'
+06-07 23:10:46.166 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Messages'
+06-07 23:10:46.166 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Messages'
+06-07 23:10:46.167 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Money Manager'
+06-07 23:10:46.168 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Money Manager'
+06-07 23:10:46.169 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Payment, Folder'
+06-07 23:10:46.169 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Payment'
+06-07 23:10:46.170 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Food, Folder'
+06-07 23:10:46.170 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Food'
+06-07 23:10:46.171 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Authenticator'
+06-07 23:10:46.171 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Authenticator'
+06-07 23:10:46.171 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Microsoft, Folder'
+06-07 23:10:46.172 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Microsoft'
+06-07 23:10:46.172 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Google, Folder'
+06-07 23:10:46.173 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Google'
+06-07 23:10:46.173 D/AuraOrbit.A11y(19155):         android.widget.LinearLayout
+06-07 23:10:46.173 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout
+06-07 23:10:46.174 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout desc='Reminder widget'
+06-07 23:10:46.174 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout
+06-07 23:10:46.174 D/AuraOrbit.A11y(19155):               android.widget.LinearLayout desc='Open Reminder'
+06-07 23:10:46.174 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout
+06-07 23:10:46.175 D/AuraOrbit.A11y(19155):                   android.widget.LinearLayout desc='All Dropdown list'
+06-07 23:10:46.175 D/AuraOrbit.A11y(19155):                     android.widget.TextView text='All'
+06-07 23:10:46.175 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout
+06-07 23:10:46.176 D/AuraOrbit.A11y(19155):               android.widget.LinearLayout desc='Add reminder Button'
+06-07 23:10:46.176 D/AuraOrbit.A11y(19155):             android.widget.ListView
+06-07 23:10:46.177 D/AuraOrbit.A11y(19155):               android.appwidget.AppWidgetHostView
+06-07 23:10:46.177 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout
+06-07 23:10:46.177 D/AuraOrbit.A11y(19155):                   android.widget.LinearLayout desc='DSA'
+06-07 23:10:46.177 D/AuraOrbit.A11y(19155):                     android.widget.FrameLayout
+06-07 23:10:46.177 D/AuraOrbit.A11y(19155):                       android.widget.ImageView desc='Not checked, DSA'
+06-07 23:10:46.177 D/AuraOrbit.A11y(19155):                     android.widget.TextView text='DSA'
+06-07 23:10:46.178 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout
+06-07 23:10:46.179 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout desc='Voice Recorder'
+06-07 23:10:46.179 D/AuraOrbit.A11y(19155):             android.widget.RelativeLayout
+06-07 23:10:46.179 D/AuraOrbit.A11y(19155):               android.widget.Chronometer text='00:00' desc='0 seconds'
+06-07 23:10:46.179 D/AuraOrbit.A11y(19155):               android.widget.LinearLayout desc='Record, Button'
+06-07 23:10:46.180 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='NoScroll'
+06-07 23:10:46.180 D/AuraOrbit.A11y(19155):           android.widget.TextView text='NoScroll'
+06-07 23:10:46.180 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Keep notes'
+06-07 23:10:46.181 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Keep notes'
+06-07 23:10:46.181 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='KDE Connect, 1 notification'
+06-07 23:10:46.181 D/AuraOrbit.A11y(19155):           android.widget.TextView text='KDE Connect'
+06-07 23:10:46.182 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Rapido'
+06-07 23:10:46.182 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Rapido'
+06-07 23:10:46.183 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Bixby'
+06-07 23:10:46.183 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Bixby'
+06-07 23:10:46.183 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout
+06-07 23:10:46.184 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:46.184 D/AuraOrbit.A11y(19155):             android.view.View desc='23:10'
+06-07 23:10:46.184 D/AuraOrbit.A11y(19155):             android.widget.TextView text='Sun,' desc='Sun,'
+06-07 23:10:46.184 D/AuraOrbit.A11y(19155):             android.widget.TextView text='7 Jun' desc='7 Jun'
+06-07 23:10:46.185 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Call of Duty'
+06-07 23:10:46.185 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Call of Duty'
+06-07 23:10:46.186 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Instagram'
+06-07 23:10:46.186 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Instagram'
+06-07 23:10:46.186 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Money Manager'
+06-07 23:10:46.186 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Money Manager'
+06-07 23:10:46.187 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout desc='Calculator'
+06-07 23:10:46.187 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Calculator'
+06-07 23:10:46.187 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout
+06-07 23:10:46.188 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:46.188 D/AuraOrbit.A11y(19155):             android.widget.LinearLayout desc='Type Gemini prompt'
+06-07 23:10:46.188 D/AuraOrbit.A11y(19155):               android.widget.TextView text='Ask Gemini'
+06-07 23:10:46.188 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:46.188 D/AuraOrbit.A11y(19155):             android.widget.LinearLayout desc='Share video with Gemini Live'
+06-07 23:10:46.189 D/AuraOrbit.A11y(19155):               android.widget.TextView text='Video'
+06-07 23:10:46.189 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:46.189 D/AuraOrbit.A11y(19155):             android.widget.LinearLayout desc='Talk with Gemini Live'
+06-07 23:10:46.189 D/AuraOrbit.A11y(19155):               android.widget.TextView text='Live'
+06-07 23:10:46.190 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout
+06-07 23:10:46.190 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:46.190 D/AuraOrbit.A11y(19155):             android.widget.ImageButton desc='Copy'
+06-07 23:10:46.191 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout
+06-07 23:10:46.191 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:46.192 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout desc='Mummy, Direct Dial'
+06-07 23:10:46.192 D/AuraOrbit.A11y(19155):           android.widget.TextView
+06-07 23:10:46.192 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Mummy'
+06-07 23:10:46.192 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:46.193 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout desc='Nency, Direct Dial'
+06-07 23:10:46.193 D/AuraOrbit.A11y(19155):           android.widget.TextView
+06-07 23:10:46.194 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Nency'
+06-07 23:10:46.194 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:46.194 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout desc='Papa, Direct Dial'
+06-07 23:10:46.194 D/AuraOrbit.A11y(19155):           android.widget.TextView
+06-07 23:10:46.195 D/AuraOrbit.A11y(19155):           android.widget.TextView text='Papa'
+06-07 23:10:46.195 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout
+06-07 23:10:46.195 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout desc='No contact'
+06-07 23:10:46.195 D/AuraOrbit.A11y(19155):           android.widget.TextView
+06-07 23:10:46.196 D/AuraOrbit.A11y(19155):           android.widget.TextView
+06-07 23:10:46.196 D/AuraOrbit.A11y(19155):         android.widget.LinearLayout
+06-07 23:10:46.197 D/AuraOrbit.A11y(19155):         android.widget.FrameLayout [visible]
+06-07 23:10:46.197 D/AuraOrbit.A11y(19155):           android.widget.FrameLayout desc='Month' [visible]
+06-07 23:10:46.197 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout [visible]
+06-07 23:10:46.197 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:46.198 D/AuraOrbit.A11y(19155):                 android.widget.ImageView desc='Previous month Button'
+06-07 23:10:46.198 D/AuraOrbit.A11y(19155):               android.widget.TextView text='JUN' desc='June '
+06-07 23:10:46.198 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:46.198 D/AuraOrbit.A11y(19155):                 android.widget.ImageView desc='Next month Button'
+06-07 23:10:46.199 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:46.199 D/AuraOrbit.A11y(19155):                 android.widget.ImageView desc='Handwriting Button'
+06-07 23:10:46.199 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:46.200 D/AuraOrbit.A11y(19155):                 android.widget.ImageView desc='Add detailed event Button'
+06-07 23:10:46.200 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:46.200 D/AuraOrbit.A11y(19155):                 android.widget.TextView text='7' desc='7, Today Button'
+06-07 23:10:46.201 D/AuraOrbit.A11y(19155):             android.widget.TextView text='M'
+06-07 23:10:46.201 D/AuraOrbit.A11y(19155):             android.widget.TextView text='T'
+06-07 23:10:46.201 D/AuraOrbit.A11y(19155):             android.widget.TextView text='W'
+06-07 23:10:46.203 D/AuraOrbit.A11y(19155):             android.widget.TextView text='T'
+06-07 23:10:46.203 D/AuraOrbit.A11y(19155):             android.widget.TextView text='F'
+06-07 23:10:46.204 D/AuraOrbit.A11y(19155):             android.widget.TextView text='S'
+06-07 23:10:46.204 D/AuraOrbit.A11y(19155):             android.widget.TextView text='S'
+06-07 23:10:46.205 D/AuraOrbit.A11y(19155):             android.widget.FrameLayout [visible]
+06-07 23:10:46.205 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:46.210 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Monday, 1 June, Add event'
+06-07 23:10:46.210 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:46.211 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Tuesday, 2 June, Add event'
+06-07 23:10:46.211 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:46.211 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Wednesday, 3 June, Add event'
+06-07 23:10:46.211 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:46.211 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Thursday, 4 June, Add event'
+06-07 23:10:46.211 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:46.212 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Friday, 5 June, Add event'
+06-07 23:10:46.212 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:46.212 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Saturday, 6 June, Add event'
+06-07 23:10:46.213 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:46.213 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Today, Sunday, 7 June, 1 event'
+06-07 23:10:46.213 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:46.213 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Monday, 8 June, Add event'
+06-07 23:10:46.213 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:46.214 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Tuesday, 9 June, Add event'
+06-07 23:10:46.214 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:46.214 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Wednesday, 10 June, Add event'
+06-07 23:10:46.217 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:46.229 D/AuraOrbit.A11y(19155):                 android.widget.FrameLayout desc='Thursday, 11 June, Add event'
+06-07 23:10:46.242 D/AuraOrbit.A11y(19155):               android.widget.FrameLayout
+06-07 23:10:46.244 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Page 1 of 4, Default page' [visible]
+06-07 23:10:46.244 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Page 2 of 4 ' [visible]
+06-07 23:10:46.244 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Page 3 of 4 ' [visible]
+06-07 23:10:46.244 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Page 4 of 4 ' [visible] [selected]
+06-07 23:10:46.244 D/AuraOrbit.A11y(19155):     android.widget.RelativeLayout [visible]
+06-07 23:10:46.244 D/AuraOrbit.A11y(19155): === DEBUG DUMP TREE END ===
+06-07 23:10:46.249 D/AuraOrbit.A11y(19155): home page=4 of 4
+06-07 23:10:48.041 D/AuraOrbit.A11y(19155): home page=4 of 4
+06-07 23:10:50.267 D/AuraOrbit.A11y(19155): home page=3 of 4
+06-07 23:10:51.217 D/AuraOrbit.A11y(19155): === DEBUG DUMP TREE START (Event: android.view.ViewGroup) ===
+06-07 23:10:51.217 D/AuraOrbit.A11y(19155): android.widget.FrameLayout [visible]
+06-07 23:10:51.217 D/AuraOrbit.A11y(19155):   android.widget.FrameLayout [visible]
+06-07 23:10:51.217 D/AuraOrbit.A11y(19155):     android.view.ViewGroup [visible]
+06-07 23:10:51.218 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Samsung, Folder'
+06-07 23:10:51.218 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Samsung'
+06-07 23:10:51.219 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Google, Folder'
+06-07 23:10:51.219 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Google'
+06-07 23:10:51.220 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Microsoft, Folder'
+06-07 23:10:51.220 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Microsoft'
+06-07 23:10:51.220 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Play Store'
+06-07 23:10:51.220 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Play Store'
+06-07 23:10:51.221 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Gemini'
+06-07 23:10:51.221 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Gemini'
+06-07 23:10:51.221 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Members'
+06-07 23:10:51.222 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Members'
+06-07 23:10:51.222 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Store'
+06-07 23:10:51.222 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Store'
+06-07 23:10:51.223 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Spotify'
+06-07 23:10:51.223 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Spotify'
+06-07 23:10:51.225 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Phone'
+06-07 23:10:51.225 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Phone'
+06-07 23:10:51.226 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Messages'
+06-07 23:10:51.226 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Messages'
+06-07 23:10:51.227 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Camera'
+06-07 23:10:51.227 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Camera'
+06-07 23:10:51.228 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Gallery'
+06-07 23:10:51.228 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Gallery'
+06-07 23:10:51.228 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Clock'
+06-07 23:10:51.228 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Clock'
+06-07 23:10:51.229 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Contacts'
+06-07 23:10:51.229 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Contacts'
+06-07 23:10:51.230 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Settings'
+06-07 23:10:51.230 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Settings'
+06-07 23:10:51.230 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Calendar'
+06-07 23:10:51.230 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Calendar'
+06-07 23:10:51.231 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Calculator'
+06-07 23:10:51.231 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Calculator'
+06-07 23:10:51.231 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Tips'
+06-07 23:10:51.231 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Tips'
+06-07 23:10:51.232 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Notes'
+06-07 23:10:51.232 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Notes'
+06-07 23:10:51.232 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='My Galaxy'
+06-07 23:10:51.232 D/AuraOrbit.A11y(19155):         android.widget.TextView text='My Galaxy'
+06-07 23:10:51.233 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Brave'
+06-07 23:10:51.233 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Brave'
+06-07 23:10:51.234 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='KDE Connect, 1 notification'
+06-07 23:10:51.234 D/AuraOrbit.A11y(19155):         android.widget.TextView text='KDE Connect'
+06-07 23:10:51.235 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Digilocker'
+06-07 23:10:51.235 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Digilocker'
+06-07 23:10:51.236 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='NoScroll'
+06-07 23:10:51.236 D/AuraOrbit.A11y(19155):         android.widget.TextView text='NoScroll'
+06-07 23:10:51.237 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='WhatsApp'
+06-07 23:10:51.237 D/AuraOrbit.A11y(19155):         android.widget.TextView text='WhatsApp'
+06-07 23:10:51.238 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Instagram'
+06-07 23:10:51.238 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Instagram'
+06-07 23:10:51.238 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Telegram'
+06-07 23:10:51.238 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Telegram'
+06-07 23:10:51.239 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Discord'
+06-07 23:10:51.239 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Discord'
+06-07 23:10:51.239 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='GitHub'
+06-07 23:10:51.240 D/AuraOrbit.A11y(19155):         android.widget.TextView text='GitHub'
+06-07 23:10:51.240 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Reddit'
+06-07 23:10:51.240 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Reddit'
+06-07 23:10:51.241 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='My Ration'
+06-07 23:10:51.241 D/AuraOrbit.A11y(19155):         android.widget.TextView text='My Ration'
+06-07 23:10:51.241 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Claude'
+06-07 23:10:51.241 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Claude'
+06-07 23:10:51.242 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Good Lock'
+06-07 23:10:51.242 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Good Lock'
+06-07 23:10:51.243 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Pentastic'
+06-07 23:10:51.243 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Pentastic'
+06-07 23:10:51.243 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Game Booster +'
+06-07 23:10:51.244 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Game Booster +'
+06-07 23:10:51.244 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Theme Park'
+06-07 23:10:51.244 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Theme Park'
+06-07 23:10:51.245 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Creative studio'
+06-07 23:10:51.246 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Creative studio'
+06-07 23:10:51.246 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Wonderland'
+06-07 23:10:51.246 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Wonderland'
+06-07 23:10:51.246 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='NotiStar'
+06-07 23:10:51.247 D/AuraOrbit.A11y(19155):         android.widget.TextView text='NotiStar'
+06-07 23:10:51.247 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Routines +'
+06-07 23:10:51.247 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Routines +'
+06-07 23:10:51.248 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Camera Assistant'
+06-07 23:10:51.248 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Camera Assistant'
+06-07 23:10:51.248 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Modes and Routines'
+06-07 23:10:51.248 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Modes and Routines'
+06-07 23:10:51.249 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Weather'
+06-07 23:10:51.249 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Weather'
+06-07 23:10:51.249 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='GPay'
+06-07 23:10:51.249 D/AuraOrbit.A11y(19155):         android.widget.TextView text='GPay'
+06-07 23:10:51.250 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Paytm'
+06-07 23:10:51.250 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Paytm'
+06-07 23:10:51.250 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Blinkit'
+06-07 23:10:51.251 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Blinkit'
+06-07 23:10:51.251 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Amazon'
+06-07 23:10:51.251 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Amazon'
+06-07 23:10:51.251 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Money Manager'
+06-07 23:10:51.252 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Money Manager'
+06-07 23:10:51.252 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='YONO SBI'
+06-07 23:10:51.252 D/AuraOrbit.A11y(19155):         android.widget.TextView text='YONO SBI'
+06-07 23:10:51.253 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Authenticator'
+06-07 23:10:51.253 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Authenticator'
+06-07 23:10:51.253 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Authenticator'
+06-07 23:10:51.254 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Authenticator'
+06-07 23:10:51.254 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Teams'
+06-07 23:10:51.254 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Teams'
+06-07 23:10:51.255 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Swiggy'
+06-07 23:10:51.255 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Swiggy'
+06-07 23:10:51.255 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='JioHotstar'
+06-07 23:10:51.255 D/AuraOrbit.A11y(19155):         android.widget.TextView text='JioHotstar'
+06-07 23:10:51.255 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Rapido'
+06-07 23:10:51.256 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Rapido'
+06-07 23:10:51.256 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Uber'
+06-07 23:10:51.257 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Uber'
+06-07 23:10:51.257 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Secure Folder'
+06-07 23:10:51.257 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Secure Folder'
+06-07 23:10:51.257 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='CPU-Z'
+06-07 23:10:51.258 D/AuraOrbit.A11y(19155):         android.widget.TextView text='CPU-Z'
+06-07 23:10:51.258 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Keep notes'
+06-07 23:10:51.258 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Keep notes'
+06-07 23:10:51.259 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Translate'
+06-07 23:10:51.259 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Translate'
+06-07 23:10:51.259 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Keys Cafe'
+06-07 23:10:51.260 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Keys Cafe'
+06-07 23:10:51.261 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Call of Duty'
+06-07 23:10:51.261 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Call of Duty'
+06-07 23:10:51.261 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='SSKPSS Vadodara' [visible]
+06-07 23:10:51.261 D/AuraOrbit.A11y(19155):         android.widget.TextView text='SSKPSS Vadodara' [visible]
+06-07 23:10:51.261 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Reminder' [visible]
+06-07 23:10:51.262 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Reminder' [visible]
+06-07 23:10:51.262 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Chill Live Wallpaper' [visible]
+06-07 23:10:51.262 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Chill Live Wallpaper' [visible]
+06-07 23:10:51.262 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='Files' [visible]
+06-07 23:10:51.262 D/AuraOrbit.A11y(19155):         android.widget.TextView text='Files' [visible]
+06-07 23:10:51.263 D/AuraOrbit.A11y(19155):       android.widget.FrameLayout desc='AuraOrbit' [visible]
+06-07 23:10:51.263 D/AuraOrbit.A11y(19155):         android.widget.TextView text='AuraOrbit' [visible]
+06-07 23:10:51.263 D/AuraOrbit.A11y(19155):     android.widget.FrameLayout desc='Page 1 of 4. ' [visible]
+06-07 23:10:51.263 D/AuraOrbit.A11y(19155):     android.widget.FrameLayout desc='Page 2 of 4. ' [visible]
+06-07 23:10:51.263 D/AuraOrbit.A11y(19155):     android.widget.FrameLayout desc='Page 3 of 4. ' [visible]
+06-07 23:10:51.263 D/AuraOrbit.A11y(19155):     android.widget.FrameLayout desc='Page 4 of 4. ' [visible] [selected]
+06-07 23:10:51.263 D/AuraOrbit.A11y(19155):     android.widget.ImageView desc='More options' [visible]
+06-07 23:10:51.263 D/AuraOrbit.A11y(19155):     android.widget.LinearLayout [visible]
+06-07 23:10:51.263 D/AuraOrbit.A11y(19155):       android.widget.TextView text='Search' [visible]
+06-07 23:10:51.263 D/AuraOrbit.A11y(19155):     android.widget.ImageView desc='Voice search' [visible]
+06-07 23:10:51.263 D/AuraOrbit.A11y(19155): === DEBUG DUMP TREE END ===
+06-07 23:10:53.371 D/AuraOrbit.A11y(19155): home page=4 of 4

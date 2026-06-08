@@ -82,8 +82,14 @@ public class SphereModeActivity extends AndroidApplication {
 
         // Initialize libGDX with activityMode=true so the engine bypasses all
         // wallpaper-specific guards (page isolation, edge exclusion, zoom revert,
-        // command gating). initialize() sets the content view internally.
-        initialize(new SphereEngine(this, true), config);
+        // command gating).
+        View glView = initializeForView(new SphereEngine(this, true), config);
+        if (graphics.getView() instanceof android.view.SurfaceView) {
+            android.view.SurfaceView surfaceView = (android.view.SurfaceView) graphics.getView();
+            surfaceView.getHolder().setFormat(android.graphics.PixelFormat.TRANSLUCENT);
+            surfaceView.setZOrderMediaOverlay(true);
+        }
+        setContentView(glView);
 
         // ─── Overlay: floating gear button ─────────────────────────────────
         // The libGDX surface is now the content view. We overlay an Android
