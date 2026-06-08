@@ -347,7 +347,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * Prevents a visible jump when idle spin first engages after a fling stops.
      * Reset to 0 immediately on user touch so the ramp restarts cleanly.
      */
-    private float idleBlend = 0f;
+    private float idleBlend = 1f;
 
     // ─── Group Backdrop Meshes ──────────────────────────────────────────
     private Array<ModelInstance> groupBackdrops;
@@ -704,8 +704,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     /** Throttle for the owner-requested live visibility debug dump (1 Hz). */
     private float visDebugTimer = 0f;
 
-    private float idleTimer = 0f;
-    private static final float IDLE_DELAY = 3f; // Seconds before auto-spin resumes
+    private float idleTimer = 0.5f;
+    private static final float IDLE_DELAY = 0.5f; // Seconds before auto-spin resumes
 
     // ─── Two-finger drag state ──────────────────────────────────────────
     /**
@@ -2550,9 +2550,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             idleTimer += delta;
 
             if (idleTimer > IDLE_DELAY) {
-                // Smooth ramp-in over 1.5 s so there is no visible jump when
+                // Smooth ramp-in over 0.5 s so there is no visible jump when
                 // idle spin first engages (e.g. just after a fling decays).
-                idleBlend = Math.min(1f, idleBlend + delta / 1.5f);
+                idleBlend = Math.min(1f, idleBlend + delta / 0.5f);
 
                 if (idleBlend > 0f) {
                     // Constant Y-axis rotation, scaled by user speed preference.
@@ -3577,6 +3577,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 returnAnimPending = false;
                 Log.d(TAG, "setVisible: return animation armed");
             }
+
+            // Force immediate spin resume when the sphere becomes visible
+            idleTimer = IDLE_DELAY;
+            idleBlend = 1f;
         }
     }
 
