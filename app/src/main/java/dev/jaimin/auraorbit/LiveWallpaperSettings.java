@@ -628,58 +628,7 @@ public class LiveWallpaperSettings extends AppCompatActivity {
          * time the user opens the settings activity if a grant is still missing.</p>
          */
         private void maybeShowPermissionOnboarding() {
-            // Guard: show at most once per fragment instance.
-            if (onboardingShownThisInstance) return;
-
-            boolean needA11y    = !isA11yServiceEnabled();
-            boolean needStorage = !isExternalStorageManager();
-
-            // Nothing missing — no dialog needed.
-            if (!needA11y && !needStorage) return;
-
-            // Mark as shown for this instance before we build the dialog so that
-            // the flag is set even if the user rotates mid-dialog.
-            onboardingShownThisInstance = true;
-
-            // Build the message body from the missing items.
-            StringBuilder message = new StringBuilder();
-            if (needA11y) {
-                message.append(getString(R.string.onboarding_item_a11y));
-            }
-            if (needA11y && needStorage) {
-                message.append("\n\n");
-            }
-            if (needStorage) {
-                message.append(getString(R.string.onboarding_item_storage));
-            }
-
-            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(R.string.onboarding_title)
-                    .setMessage(message.toString());
-
-            if (needA11y && needStorage) {
-                // Both missing: three buttons — a11y (positive), storage (neutral), Later (negative).
-                builder
-                        .setPositiveButton(R.string.onboarding_btn_enable_page_detection,
-                                (d, w) -> handleExactPageDetectionClick())
-                        .setNeutralButton(R.string.onboarding_btn_wallpaper_access,
-                                (d, w) -> handleSystemWallpaperClick())
-                        .setNegativeButton(R.string.onboarding_btn_later, null);
-            } else if (needA11y) {
-                // Only a11y missing.
-                builder
-                        .setPositiveButton(R.string.onboarding_btn_enable_page_detection,
-                                (d, w) -> handleExactPageDetectionClick())
-                        .setNegativeButton(R.string.onboarding_btn_later, null);
-            } else {
-                // Only storage missing.
-                builder
-                        .setPositiveButton(R.string.onboarding_btn_grant_access,
-                                (d, w) -> handleSystemWallpaperClick())
-                        .setNegativeButton(R.string.onboarding_btn_later, null);
-            }
-
-            builder.show();
+            // Permission onboarding removed as requested
         }
 
         // ─────────────────────────────────────────────────────────────────

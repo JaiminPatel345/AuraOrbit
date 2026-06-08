@@ -55,4 +55,11 @@
             android:defaultValue="120" />
         
     </PreferenceCategory>
+
+    <PreferenceCategory android:title="About">
+        <Preference
+            android:key="pref_developer"
+            android:title="Developer"
+            android:summary="Jaimin Detroja" />
+    </PreferenceCategory>
 </PreferenceScreen>
