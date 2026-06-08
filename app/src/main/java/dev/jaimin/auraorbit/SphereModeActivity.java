@@ -2,11 +2,8 @@ package dev.jaimin.auraorbit;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.FrameLayout;
-import android.widget.ImageButton;
 
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -91,12 +88,6 @@ public class SphereModeActivity extends AndroidApplication {
         }
         setContentView(glView);
 
-        // ─── Overlay: floating gear button ─────────────────────────────────
-        // The libGDX surface is now the content view. We overlay an Android
-        // ImageButton on top via addContentView so it receives touch events
-        // without interfering with libGDX's input processing on the GL surface.
-        addSettingsButton();
-
         // ─── Hide system bars (immersive fullscreen) ─────────────────────
         // Must be called AFTER super.onCreate / initialize so the window is
         // fully decorated and the insets controller is available.
@@ -124,38 +115,7 @@ public class SphereModeActivity extends AndroidApplication {
                 | WindowInsetsCompat.Type.navigationBars());
     }
 
-    /**
-     * Adds a small floating gear (settings) button in the top-right corner.
-     *
-     * The button is overlaid via {@link #addContentView} on top of the libGDX
-     * GL surface using a {@link FrameLayout} wrapper with GRAVITY_TOP|END
-     * placement. Alpha is 0.6f (subtle, non-intrusive).
-     */
-    private void addSettingsButton() {
-        // Convert 40dp to pixels for the button size.
-        int sizePx = (int) (40 * getResources().getDisplayMetrics().density);
-        int marginPx = (int) (12 * getResources().getDisplayMetrics().density);
 
-        ImageButton gearButton = new ImageButton(this);
-        gearButton.setImageResource(android.R.drawable.ic_menu_preferences);
-        gearButton.setBackgroundResource(android.R.drawable.btn_default);
-        gearButton.setAlpha(0.6f);
-        gearButton.setContentDescription(getString(R.string.sphere_mode_open_settings));
-
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(sizePx, sizePx);
-        lp.gravity = Gravity.TOP | Gravity.END;
-        lp.topMargin = marginPx;
-        lp.rightMargin = marginPx;
-
-        gearButton.setOnClickListener(v -> {
-            Intent intent = new Intent(this, LiveWallpaperSettings.class);
-            startActivity(intent);
-        });
-
-        // addContentView places the FrameLayout on top of the existing content
-        // (the libGDX surface) without replacing it.
-        addContentView(gearButton, lp);
-    }
 
     /**
      * Re-apply immersive mode when the activity window focus returns

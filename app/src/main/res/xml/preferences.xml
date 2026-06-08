@@ -16,18 +16,7 @@
             android:summary="@string/pref_manage_groups_summary" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/pref_category_background">
-        <Preference
-            android:key="pref_background_image"
-            android:title="@string/pref_background_title"
-            android:summary="@string/summary_background_not_set" />
-        <!-- System-wallpaper mirror: grant/revoke All-files-access.
-             Title and summary are set dynamically in MainSettingsFragment.updateSummaries(). -->
-        <Preference
-            android:key="pref_system_wallpaper_access"
-            android:title="@string/pref_system_wallpaper_title_denied"
-            android:summary="@string/pref_system_wallpaper_summary_denied" />
-    </PreferenceCategory>
+    
 
     <PreferenceCategory android:title="@string/pref_category_sphere">
         <SeekBarPreference
@@ -54,15 +43,7 @@
             android:summary="@string/pref_gesture_tips_summary" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/pref_category_sphere_detection">
-        <!-- Exact page detection via accessibility service (opt-in, One UI only).
-             Title and summary are set dynamically in MainSettingsFragment.updateSummaries()
-             to reflect whether the service is currently enabled. -->
-        <Preference
-            android:key="pref_exact_page_detection"
-            android:title="@string/pref_exact_page_detection_title_disabled"
-            android:summary="@string/pref_exact_page_detection_summary_disabled" />
-    </PreferenceCategory>
+    
 
     <PreferenceCategory android:title="@string/pref_category_performance">
         <ListPreference
@@ -72,11 +53,6 @@
             android:entries="@array/target_fps_entries"
             android:entryValues="@array/target_fps_values"
             android:defaultValue="120" />
-        <dev.jaimin.auraorbit.ui.PageStepperPreference
-            android:key="pref_active_page"
-            android:title="@string/pref_active_page_title"
-            android:summary="@string/pref_active_page_summary"
-            android:defaultValue="1"
-            android:persistent="true" />
+        
     </PreferenceCategory>
 </PreferenceScreen>
