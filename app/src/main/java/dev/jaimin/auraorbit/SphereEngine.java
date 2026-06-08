@@ -2415,7 +2415,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // ─── Layer 4: Empty-state hint ───────────────────────────────────
         // Drawn on top of everything when no apps are configured.
         if (appNodes == null || appNodes.isEmpty()) {
-            renderEmptyHint();
+            if (!activityMode) {
+                renderEmptyHint();
+            }
         }
     }
 
