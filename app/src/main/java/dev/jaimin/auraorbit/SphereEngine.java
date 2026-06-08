@@ -379,6 +379,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private float xOffsetStep = 0f;        // Fraction per page
     private int activePage = 0;            // User-configured target page
     private float pageVisibility = 1f;     // 0.0 (hidden) → 1.0 (full render)
+    private boolean fanOutPending = false;
     private boolean lastOverlayInteractive = false;
     private int lastOverlaySize = 0;
 
@@ -808,6 +809,19 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     public SphereEngine(Context context, boolean activityMode) {
         this.context = context;
         this.activityMode = activityMode;
+        if (activityMode) {
+            this.pageVisibility = 0f;
+        }
+    }
+
+    public void fanOutAndFinish() {
+        if (activityMode) {
+            fanOutPending = true;
+        } else {
+            if (context instanceof android.app.Activity) {
+                ((android.app.Activity) context).finish();
+            }
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -2620,13 +2634,26 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
         // ─── Activity-mode hard guard ─────────────────────────────────────────
         // In activity mode the sphere is always fully visible — there are no
-        // home-screen pages, no launcher offsets, and no dead-reckoning needed.
-        // Reuse the preview guard pattern (OR-ing activityMode) so the sphere is
-        // pinned to pageVisibility = 1 every frame without any page math.
-        if (isPreviewMode || activityMode) {
+        // In activity mode the sphere animates in/out, bypassing page math.
+        if (isPreviewMode) {
             targetVisibility = 1f;
             pageVisibility = MathUtils.lerp(pageVisibility, targetVisibility, delta * 8f);
-            if (dbg) logVisDebug(activityMode ? "ACTIVITY" : "PREVIEW", targetVisibility);
+            if (dbg) logVisDebug("PREVIEW", targetVisibility);
+            return;
+        }
+
+        if (activityMode) {
+            targetVisibility = fanOutPending ? 0f : 1f;
+            pageVisibility = MathUtils.lerp(pageVisibility, targetVisibility, delta * (fanOutPending ? 15f : 10f));
+            if (dbg) logVisDebug("ACTIVITY", targetVisibility);
+            
+            if (fanOutPending && pageVisibility < 0.02f) {
+                Gdx.app.postRunnable(() -> {
+                    if (context instanceof android.app.Activity) {
+                        ((android.app.Activity) context).finish();
+                    }
+                });
+            }
             return;
         }
 
