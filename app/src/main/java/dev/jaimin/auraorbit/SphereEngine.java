@@ -347,7 +347,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * Prevents a visible jump when idle spin first engages after a fling stops.
      * Reset to 0 immediately on user touch so the ramp restarts cleanly.
      */
-    private float idleBlend = 0f;
+    private float idleBlend = 1f;
 
     // ─── Group Backdrop Meshes ──────────────────────────────────────────
     private Array<ModelInstance> groupBackdrops;
@@ -379,6 +379,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private float xOffsetStep = 0f;        // Fraction per page
     private int activePage = 0;            // User-configured target page
     private float pageVisibility = 1f;     // 0.0 (hidden) → 1.0 (full render)
+    private boolean fanOutPending = false;
     private boolean lastOverlayInteractive = false;
     private int lastOverlaySize = 0;
 
@@ -704,8 +705,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     /** Throttle for the owner-requested live visibility debug dump (1 Hz). */
     private float visDebugTimer = 0f;
 
-    private float idleTimer = 0f;
-    private static final float IDLE_DELAY = 3f; // Seconds before auto-spin resumes
+    private float idleTimer = 0.5f;
+    private static final float IDLE_DELAY = 0.5f; // Seconds before auto-spin resumes
 
     // ─── Two-finger drag state ──────────────────────────────────────────
     /**
@@ -762,7 +763,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             "pref_sphere_radius",
             "pref_icon_size",
             "pref_rotation_speed",
-            "pref_active_page"
+            "pref_active_page",
+            "pref_target_fps"
     );
 
     /**
@@ -808,6 +810,19 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     public SphereEngine(Context context, boolean activityMode) {
         this.context = context;
         this.activityMode = activityMode;
+        if (activityMode) {
+            this.pageVisibility = 0f;
+        }
+    }
+
+    public void fanOutAndFinish() {
+        if (activityMode) {
+            fanOutPending = true;
+        } else {
+            if (context instanceof android.app.Activity) {
+                ((android.app.Activity) context).finish();
+            }
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -905,6 +920,14 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // Rotation speed: pref value 10–300, divide by 100 to get factor, clamp to [0.1, 3.0]
         rotationSpeedFactor = MathUtils.clamp(prefs.getInt("pref_rotation_speed", 100) / 100f, 0.1f, 3.0f);
 
+        // Target FPS
+        try {
+            int targetFps = Integer.parseInt(prefs.getString("pref_target_fps", "120"));
+            Gdx.graphics.setForegroundFPS(targetFps);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to parse target fps", e);
+        }
+
         Log.i(TAG, "Config — radius: " + sphereRadius + ", iconSize: " + iconSize
                 + ", showBackground: " + showBackground + ", activePage: " + activePage
                 + ", rotationSpeedFactor: " + rotationSpeedFactor);
@@ -939,6 +962,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         sb.append(prefs.getInt("pref_icon_size", 50)).append('|');
         sb.append(prefs.getInt("pref_rotation_speed", 100)).append('|');
         sb.append(prefs.getInt("pref_active_page", 1)).append('|'); // raw 1-based value (UI default)
+        sb.append(prefs.getString("pref_target_fps", "120")).append('|');
 
         // System-wallpaper mirror: changing the system wallpaper or granting
         // MANAGE_EXTERNAL_STORAGE must both trigger a background rebuild on next
@@ -1493,7 +1517,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             if (M < 2) continue;  // backdrops only for groups with ≥2 members
 
             String colorHex = groupColorMap.getOrDefault(groupId, "#FFFFFF");
-            Color gdxColor  = parseHexColor(colorHex, 0.32f);
+            Color gdxColor  = parseHexColor(colorHex, 0.75f);
 
             // ── 1. Centroid direction c ────────────────────────────────────
             Vector3 c = new Vector3();
@@ -1537,7 +1561,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             final int K = 12;
             // Pad uses effectiveIconSize so the cloth margin scales with the icon
             // when the screen-width cap is active (preserves visual proportion).
-            float pad = (0.8f * effectiveIconSize) / effectiveRadius;
+            float pad = (2.5f * effectiveIconSize) / effectiveRadius;
             int totalSamples = M * K;
             float[] allU = new float[totalSamples];
             float[] allV = new float[totalSamples];
@@ -1619,7 +1643,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
             Material material = new Material(
                     ColorAttribute.createDiffuse(gdxColor),
-                    new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.32f),
+                    new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.75f),
                     new DepthTestAttribute(GL20.GL_LEQUAL, false),
                     IntAttribute.createCullFace(GL20.GL_NONE)
             );
@@ -1904,7 +1928,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 // Convert screen-space drag to rotation angles
                 // deltaX → rotate around Y axis (horizontal drag = horizontal spin)
                 // deltaY → rotate around X axis (vertical drag = vertical spin)
-                float angleY = -deltaX * ROTATION_SENSITIVITY;
+                float angleY = deltaX * ROTATION_SENSITIVITY;
                 float angleX = deltaY * ROTATION_SENSITIVITY;
 
                 // Pre-multiply: apply rotation in WORLD space so horizontal drags
@@ -1971,7 +1995,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 // by the user's rotation speed preference.
                 angularVelocity.set(
                         velocityY * FLING_SENSITIVITY * rotationSpeedFactor,   // X axis
-                        -velocityX * FLING_SENSITIVITY * rotationSpeedFactor,  // Y axis
+                        velocityX * FLING_SENSITIVITY * rotationSpeedFactor,  // Y axis
                         0f                                                       // No Z
                 );
 
@@ -2060,7 +2084,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 // Rotate sphere using the same sensitivity and world-space
                 // pre-multiplication as the one-finger pan() handler so the
                 // feel is identical regardless of which gesture is used.
-                float angleY = -deltaX * ROTATION_SENSITIVITY;
+                float angleY = deltaX * ROTATION_SENSITIVITY;
                 float angleX =  deltaY * ROTATION_SENSITIVITY;
 
                 tmpQuat.setFromAxis(Vector3.Y, (float) Math.toDegrees(angleY));
@@ -2550,9 +2574,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             idleTimer += delta;
 
             if (idleTimer > IDLE_DELAY) {
-                // Smooth ramp-in over 1.5 s so there is no visible jump when
+                // Smooth ramp-in over 0.5 s so there is no visible jump when
                 // idle spin first engages (e.g. just after a fling decays).
-                idleBlend = Math.min(1f, idleBlend + delta / 1.5f);
+                idleBlend = Math.min(1f, idleBlend + delta / 0.5f);
 
                 if (idleBlend > 0f) {
                     // Constant Y-axis rotation, scaled by user speed preference.
@@ -2620,13 +2644,26 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
         // ─── Activity-mode hard guard ─────────────────────────────────────────
         // In activity mode the sphere is always fully visible — there are no
-        // home-screen pages, no launcher offsets, and no dead-reckoning needed.
-        // Reuse the preview guard pattern (OR-ing activityMode) so the sphere is
-        // pinned to pageVisibility = 1 every frame without any page math.
-        if (isPreviewMode || activityMode) {
+        // In activity mode the sphere animates in/out, bypassing page math.
+        if (isPreviewMode) {
             targetVisibility = 1f;
             pageVisibility = MathUtils.lerp(pageVisibility, targetVisibility, delta * 8f);
-            if (dbg) logVisDebug(activityMode ? "ACTIVITY" : "PREVIEW", targetVisibility);
+            if (dbg) logVisDebug("PREVIEW", targetVisibility);
+            return;
+        }
+
+        if (activityMode) {
+            targetVisibility = fanOutPending ? 0f : 1f;
+            pageVisibility = MathUtils.lerp(pageVisibility, targetVisibility, delta * (fanOutPending ? 15f : 10f));
+            if (dbg) logVisDebug("ACTIVITY", targetVisibility);
+            
+            if (fanOutPending && pageVisibility < 0.02f) {
+                Gdx.app.postRunnable(() -> {
+                    if (context instanceof android.app.Activity) {
+                        ((android.app.Activity) context).finish();
+                    }
+                });
+            }
             return;
         }
 
@@ -2897,8 +2934,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             if (groupPatchDirs != null && i < groupPatchDirs.size) {
                 tmpVec.set(groupPatchDirs.get(i));
                 sphereRotation.transform(tmpVec);
-                // z in [-1, 1]: map to alpha in [0.12, 0.35], then multiply otherFade and returnAlphaFactor
-                float alpha = MathUtils.lerp(0.12f, 0.35f, (tmpVec.z + 1f) * 0.5f) * otherFade * returnAlphaFactor;
+                // z in [-1, 1]: map to alpha in [0.35, 0.75], then multiply otherFade and returnAlphaFactor
+                float alpha = MathUtils.lerp(0.35f, 0.75f, (tmpVec.z + 1f) * 0.5f) * otherFade * returnAlphaFactor;
 
                 // Mutate this instance's BlendingAttribute (safe: ModelInstance
                 // copies materials, so this only affects this instance).
@@ -3577,6 +3614,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 returnAnimPending = false;
                 Log.d(TAG, "setVisible: return animation armed");
             }
+
+            // Force immediate spin resume when the sphere becomes visible
+            idleTimer = IDLE_DELAY;
+            idleBlend = 1f;
         }
     }
 

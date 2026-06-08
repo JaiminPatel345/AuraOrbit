@@ -49,6 +49,8 @@ import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 public class SphereModeActivity extends AndroidApplication {
 
     private static final String TAG = "AuraOrbit.SphereMode";
+    
+    private SphereEngine sphereEngine;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,7 +82,8 @@ public class SphereModeActivity extends AndroidApplication {
         // Initialize libGDX with activityMode=true so the engine bypasses all
         // wallpaper-specific guards (page isolation, edge exclusion, zoom revert,
         // command gating).
-        View glView = initializeForView(new SphereEngine(this, true), config);
+        sphereEngine = new SphereEngine(this, true);
+        View glView = initializeForView(sphereEngine, config);
         if (graphics.getView() instanceof android.view.SurfaceView) {
             android.view.SurfaceView surfaceView = (android.view.SurfaceView) graphics.getView();
             surfaceView.getHolder().setFormat(android.graphics.PixelFormat.TRANSLUCENT);
@@ -186,9 +189,22 @@ public class SphereModeActivity extends AndroidApplication {
     @Override
     public boolean onTouchEvent(android.view.MotionEvent event) {
         if (event.getAction() == android.view.MotionEvent.ACTION_OUTSIDE) {
-            finish();
+            if (sphereEngine != null) {
+                sphereEngine.fanOutAndFinish();
+            } else {
+                finish();
+            }
             return true;
         }
         return super.onTouchEvent(event);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (sphereEngine != null) {
+            sphereEngine.fanOutAndFinish();
+        } else {
+            super.onBackPressed();
+        }
     }
 }
