@@ -21,14 +21,17 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_apply_wallpaper"
-                style="@style/Widget.Material3.Button"
+                style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
                 android:layout_marginEnd="12dp"
                 android:paddingTop="8dp"
                 android:paddingBottom="8dp"
-                android:text="@string/pref_apply_wallpaper_title_inactive"
+                android:text="Preview"
+                app:icon="@android:drawable/ic_menu_view"
+                android:textColor="#F8FAFC"
+                app:iconTint="#F8FAFC"
                 android:visibility="gone" />
 
         </com.google.android.material.appbar.MaterialToolbar>
