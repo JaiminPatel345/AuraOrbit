@@ -114,8 +114,10 @@ public class SphereModeActivity extends AndroidApplication {
             new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
                 .setTitle("No Apps Selected")
                 .setMessage("You need to select at least one app to see it in the AuraOrbit sphere.")
-                .setPositiveButton("Go to Settings", (dialog, which) -> {
-                    startActivity(new Intent(this, LiveWallpaperSettings.class));
+                .setPositiveButton("Go to Apps", (dialog, which) -> {
+                    Intent intent = new Intent(this, LiveWallpaperSettings.class);
+                    intent.putExtra("open_fragment", "apps");
+                    startActivity(intent);
                     finish();
                 })
                 .setNegativeButton("Close", (dialog, which) -> {

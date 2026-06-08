@@ -118,6 +118,14 @@ public class LiveWallpaperSettings extends AppCompatActivity {
                     .beginTransaction()
                     .replace(R.id.settings_container, new dev.jaimin.auraorbit.ui.DashboardFragment())
                     .commit();
+
+            if ("apps".equals(getIntent().getStringExtra("open_fragment"))) {
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.settings_container, new dev.jaimin.auraorbit.ui.AppPickerFragment())
+                        .addToBackStack(null)
+                        .commit();
+            }
         }
 
         // Show or hide the action-bar up arrow — AND the Apply button —
