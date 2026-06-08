@@ -1537,7 +1537,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             final int K = 12;
             // Pad uses effectiveIconSize so the cloth margin scales with the icon
             // when the screen-width cap is active (preserves visual proportion).
-            float pad = (1.4f * effectiveIconSize) / effectiveRadius;
+            float pad = (2.5f * effectiveIconSize) / effectiveRadius;
             int totalSamples = M * K;
             float[] allU = new float[totalSamples];
             float[] allV = new float[totalSamples];
@@ -2897,8 +2897,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             if (groupPatchDirs != null && i < groupPatchDirs.size) {
                 tmpVec.set(groupPatchDirs.get(i));
                 sphereRotation.transform(tmpVec);
-                // z in [-1, 1]: map to alpha in [0.12, 0.35], then multiply otherFade and returnAlphaFactor
-                float alpha = MathUtils.lerp(0.12f, 0.35f, (tmpVec.z + 1f) * 0.5f) * otherFade * returnAlphaFactor;
+                // z in [-1, 1]: map to alpha in [0.35, 0.75], then multiply otherFade and returnAlphaFactor
+                float alpha = MathUtils.lerp(0.35f, 0.75f, (tmpVec.z + 1f) * 0.5f) * otherFade * returnAlphaFactor;
 
                 // Mutate this instance's BlendingAttribute (safe: ModelInstance
                 // copies materials, so this only affects this instance).
