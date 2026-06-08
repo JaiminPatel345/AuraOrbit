@@ -134,7 +134,7 @@ public class DashboardFragment extends Fragment {
 
         // GitHub link
         view.findViewById(R.id.btn_github).setOnClickListener(v -> {
-            android.content.Intent browserIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/JaiminPatel345"));
+            android.content.Intent browserIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/JaiminPatel345/AuraOrbit"));
             startActivity(browserIntent);
         });
     }

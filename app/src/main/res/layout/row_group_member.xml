@@ -26,6 +26,7 @@
             android:id="@+id/member_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:textColor="?android:attr/textColorPrimary"
             android:textAppearance="?attr/textAppearanceBodyLarge"
             android:singleLine="true"
             android:ellipsize="end" />
@@ -34,6 +35,7 @@
             android:id="@+id/member_subtitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:textColor="?android:attr/textColorSecondary"
             android:textAppearance="?attr/textAppearanceBodySmall"
             android:visibility="gone" />
 

@@ -23,12 +23,14 @@
             android:id="@+id/group_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:textColor="?android:attr/textColorPrimary"
             android:textAppearance="?attr/textAppearanceBodyLarge" />
 
         <TextView
             android:id="@+id/group_count"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:textColor="?android:attr/textColorSecondary"
             android:textAppearance="?attr/textAppearanceBodySmall" />
 
     </LinearLayout>
