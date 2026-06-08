@@ -193,14 +193,6 @@ public class GroupEditFragment extends Fragment {
         // Seed the working members set.
         if (existingGroup != null) {
             workingMembers.addAll(existingGroup.packages);
-
-            // "What you see is what you save": retain only packages that are
-            // currently selected (visible in the member list). A package that
-            // was deselected in the App Picker would otherwise stay invisibly
-            // in the working set and get re-saved on the next Save tap.
-            Set<String> selectedSet = prefs.getStringSet(
-                    AppFetcher.PREF_SELECTED_APPS, new HashSet<>());
-            workingMembers.retainAll(selectedSet);
         }
 
         // Prefill name.
@@ -348,38 +340,36 @@ public class GroupEditFragment extends Fragment {
         // Build a package→group reverse map to detect conflicting membership.
         Map<String, GroupStore.Group> pkgToGroup = GroupStore.packageToGroup(groups);
 
-        // Read selected apps before going off-thread (prefs access is thread-safe).
-        Set<String> selectedApps = prefs.getStringSet(
-                AppFetcher.PREF_SELECTED_APPS, new HashSet<>());
-
         executor.submit(() -> {
             PackageManager pm = appCtx.getPackageManager();
+            java.util.List<android.content.pm.ResolveInfo> resolvedApps = AppFetcher.getAllLaunchableApps(appCtx);
 
             List<MemberRow> rows = new ArrayList<>();
-            for (String pkg : selectedApps) {
-                try {
-                    android.content.pm.ApplicationInfo info =
-                            pm.getApplicationInfo(pkg, 0);
-                    String label    = pm.getApplicationLabel(info).toString();
-                    Drawable icon   = pm.getApplicationIcon(info);
+            for (android.content.pm.ResolveInfo ri : resolvedApps) {
+                String pkg = ri.activityInfo.packageName;
+                String label = ri.loadLabel(pm).toString();
+                Drawable icon = ri.loadIcon(pm);
 
-                    // Determine if this app already belongs to a DIFFERENT group.
-                    GroupStore.Group owningGroup = pkgToGroup.get(pkg);
-                    String otherGroupName = null;
-                    if (owningGroup != null
-                            && !owningGroup.name.equalsIgnoreCase(
-                                    originalGroupName == null ? "" : originalGroupName)) {
-                        otherGroupName = owningGroup.name;
-                    }
-
-                    rows.add(new MemberRow(pkg, label, icon, otherGroupName));
-                } catch (PackageManager.NameNotFoundException e) {
-                    // App uninstalled since selection — skip silently.
+                // Determine if this app already belongs to a DIFFERENT group.
+                GroupStore.Group owningGroup = pkgToGroup.get(pkg);
+                String otherGroupName = null;
+                if (owningGroup != null
+                        && !owningGroup.name.equalsIgnoreCase(
+                                originalGroupName == null ? "" : originalGroupName)) {
+                    otherGroupName = owningGroup.name;
                 }
+
+                rows.add(new MemberRow(pkg, label, icon, otherGroupName));
             }
 
-            // Sort alphabetically by label for a predictable order.
-            rows.sort((a, b) -> a.label.compareToIgnoreCase(b.label));
+            // Sort: apps which are selected (workingMembers.contains(a.packageName)) first, then alphabetically
+            rows.sort((a, b) -> {
+                boolean aSel = workingMembers.contains(a.packageName);
+                boolean bSel = workingMembers.contains(b.packageName);
+                if (aSel && !bSel) return -1;
+                if (!aSel && bSel) return 1;
+                return a.label.compareToIgnoreCase(b.label);
+            });
 
             mainHandler.post(() -> {
                 if (!isAdded()) return; // Fragment detached while loading
@@ -437,6 +427,12 @@ public class GroupEditFragment extends Fragment {
 
         // Persist the mutated list.
         GroupStore.save(prefs, groups);
+
+        // Ensure apps added to this group are also visible on the sphere
+        Set<String> selectedApps = new HashSet<>(prefs.getStringSet(AppFetcher.PREF_SELECTED_APPS, new HashSet<>()));
+        if (selectedApps.addAll(workingMembers)) {
+            prefs.edit().putStringSet(AppFetcher.PREF_SELECTED_APPS, selectedApps).apply();
+        }
 
         Toast.makeText(requireContext(),
                 R.string.toast_saved,
