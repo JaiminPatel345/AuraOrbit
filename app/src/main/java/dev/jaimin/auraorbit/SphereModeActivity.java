@@ -88,6 +88,20 @@ public class SphereModeActivity extends AndroidApplication {
         }
         setContentView(glView);
 
+        // ─── Window Bounds ────────────────────────────────────────────────
+        // Make the window a perfect square in the center of the screen.
+        // This leaves the top and bottom of the screen completely outside our window
+        // bounds, so notification swipes and gesture navigation pass directly to the OS!
+        android.util.DisplayMetrics metrics = getResources().getDisplayMetrics();
+        int screenWidth = metrics.widthPixels;
+        WindowManager.LayoutParams params = getWindow().getAttributes();
+        params.width = screenWidth;
+        params.height = screenWidth;
+        params.gravity = android.view.Gravity.CENTER;
+        params.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+        params.flags |= WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
+        getWindow().setAttributes(params);
+
         // ─── Hide system bars (immersive fullscreen) ─────────────────────
         // Must be called AFTER super.onCreate / initialize so the window is
         // fully decorated and the insets controller is available.
@@ -147,5 +161,14 @@ public class SphereModeActivity extends AndroidApplication {
         if (hasFocus) {
             hideSystemBars();
         }
+    }
+
+    @Override
+    public boolean onTouchEvent(android.view.MotionEvent event) {
+        if (event.getAction() == android.view.MotionEvent.ACTION_OUTSIDE) {
+            finish();
+            return true;
+        }
+        return super.onTouchEvent(event);
     }
 }
