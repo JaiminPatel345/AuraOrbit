@@ -18,7 +18,7 @@
             android:text="AuraOrbit"
             android:textSize="32sp"
             android:textStyle="bold"
-            android:textColor="#FFFFFF"
+            android:textColor="?android:attr/textColorPrimary"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="24dp" />
@@ -29,7 +29,7 @@
             android:layout_height="wrap_content"
             android:text="Dashboard"
             android:textSize="16sp"
-            android:textColor="#AAAAAA"
+            android:textColor="?android:attr/textColorSecondary"
             app:layout_constraintTop_toBottomOf="@id/tv_header"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="4dp"
@@ -42,7 +42,7 @@
             android:layout_height="120dp"
             android:layout_marginTop="32dp"
             android:layout_marginEnd="8dp"
-            app:cardBackgroundColor="#1C1C1E"
+            app:cardBackgroundColor="?attr/colorSurfaceVariant"
             app:cardCornerRadius="16dp"
             app:cardElevation="0dp"
             app:layout_constraintTop_toBottomOf="@id/tv_subtitle"
@@ -62,7 +62,7 @@
                     android:layout_width="32dp"
                     android:layout_height="32dp"
                     android:src="@android:drawable/ic_menu_agenda"
-                    app:tint="#FFFFFF"
+                    app:tint="?attr/colorOnSurfaceVariant"
                     android:layout_marginBottom="12dp"/>
                     
                 <TextView
@@ -71,7 +71,7 @@
                     android:text="Apps"
                     android:textSize="16sp"
                     android:textStyle="bold"
-                    android:textColor="#FFFFFF"/>
+                    android:textColor="?android:attr/textColorPrimary"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -82,7 +82,7 @@
             android:layout_height="120dp"
             android:layout_marginTop="32dp"
             android:layout_marginStart="8dp"
-            app:cardBackgroundColor="#1C1C1E"
+            app:cardBackgroundColor="?attr/colorSurfaceVariant"
             app:cardCornerRadius="16dp"
             app:cardElevation="0dp"
             app:layout_constraintTop_toBottomOf="@id/tv_subtitle"
@@ -102,7 +102,7 @@
                     android:layout_width="32dp"
                     android:layout_height="32dp"
                     android:src="@android:drawable/ic_menu_sort_by_size"
-                    app:tint="#FFFFFF"
+                    app:tint="?attr/colorOnSurfaceVariant"
                     android:layout_marginBottom="12dp"/>
                     
                 <TextView
@@ -111,7 +111,7 @@
                     android:text="Groups"
                     android:textSize="16sp"
                     android:textStyle="bold"
-                    android:textColor="#FFFFFF"/>
+                    android:textColor="?android:attr/textColorPrimary"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -123,7 +123,7 @@
             android:text="Appearance"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="#FFFFFF"
+            android:textColor="?android:attr/textColorPrimary"
             app:layout_constraintTop_toBottomOf="@id/card_apps"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="32dp"/>
@@ -133,7 +133,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            app:cardBackgroundColor="#1C1C1E"
+            app:cardBackgroundColor="?attr/colorSurfaceVariant"
             app:cardCornerRadius="16dp"
             app:cardElevation="0dp"
             app:layout_constraintTop_toBottomOf="@id/tv_sphere_title">
@@ -156,14 +156,14 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Background Image"
-                            android:textColor="#FFFFFF"
+                            android:textColor="?android:attr/textColorPrimary"
                             android:textSize="16sp"/>
                         <TextView
                             android:id="@+id/tv_background_status"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Default"
-                            android:textColor="#AAAAAA"
+                            android:textColor="?android:attr/textColorSecondary"
                             android:layout_marginTop="4dp"/>
                     </LinearLayout>
                     <com.google.android.material.button.MaterialButton
@@ -173,15 +173,13 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
-                        android:text="Change"
-                        android:textColor="#FFFFFF"
-                        app:strokeColor="#555555"/>
+                        android:text="Change" />
                 </RelativeLayout>
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#2C2C2E"
+                    android:background="?attr/colorOutlineVariant"
                     android:layout_marginTop="20dp"
                     android:layout_marginBottom="20dp"/>
 
@@ -190,24 +188,21 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Sphere Radius"
-                    android:textColor="#FFFFFF" />
+                    android:textColor="?android:attr/textColorPrimary" />
                 <com.google.android.material.slider.Slider
                     android:id="@+id/slider_radius"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:valueFrom="20"
                     android:valueTo="100"
-                    android:stepSize="1"
-                    app:thumbColor="#FFFFFF"
-                    app:trackColorActive="#FFFFFF"
-                    app:trackColorInactive="#333333" />
+                    android:stepSize="1" />
 
                 <!-- Icon Size -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Icon Size"
-                    android:textColor="#FFFFFF"
+                    android:textColor="?android:attr/textColorPrimary"
                     android:layout_marginTop="16dp"/>
                 <com.google.android.material.slider.Slider
                     android:id="@+id/slider_icon_size"
@@ -215,17 +210,14 @@
                     android:layout_height="wrap_content"
                     android:valueFrom="20"
                     android:valueTo="100"
-                    android:stepSize="1"
-                    app:thumbColor="#FFFFFF"
-                    app:trackColorActive="#FFFFFF"
-                    app:trackColorInactive="#333333" />
+                    android:stepSize="1" />
 
                 <!-- Speed -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Rotation Speed"
-                    android:textColor="#FFFFFF"
+                    android:textColor="?android:attr/textColorPrimary"
                     android:layout_marginTop="16dp"/>
                 <com.google.android.material.slider.Slider
                     android:id="@+id/slider_speed"
@@ -233,10 +225,7 @@
                     android:layout_height="wrap_content"
                     android:valueFrom="10"
                     android:valueTo="300"
-                    android:stepSize="1"
-                    app:thumbColor="#FFFFFF"
-                    app:trackColorActive="#FFFFFF"
-                    app:trackColorInactive="#333333" />
+                    android:stepSize="1" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -249,7 +238,7 @@
             android:text="System"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="#FFFFFF"
+            android:textColor="?android:attr/textColorPrimary"
             app:layout_constraintTop_toBottomOf="@id/card_sphere"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="32dp"/>
@@ -259,7 +248,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            app:cardBackgroundColor="#1C1C1E"
+            app:cardBackgroundColor="?attr/colorSurfaceVariant"
             app:cardCornerRadius="16dp"
             app:cardElevation="0dp"
             app:layout_constraintTop_toBottomOf="@id/tv_advanced_title">
@@ -281,14 +270,14 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Target FPS"
-                            android:textColor="#FFFFFF"
+                            android:textColor="?android:attr/textColorPrimary"
                             android:textSize="16sp"/>
                         <TextView
                             android:id="@+id/tv_fps_value"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="120 FPS"
-                            android:textColor="#AAAAAA"
+                            android:textColor="?android:attr/textColorSecondary"
                             android:layout_marginTop="4dp"/>
                     </LinearLayout>
                     <com.google.android.material.button.MaterialButton
@@ -298,9 +287,7 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
-                        android:text="Change"
-                        android:textColor="#FFFFFF"
-                        app:strokeColor="#555555"/>
+                        android:text="Change" />
                 </RelativeLayout>
 
             </LinearLayout>
@@ -322,7 +309,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Developed by Jaimin Detroja"
-                android:textColor="#FFFFFF"
+                android:textColor="?android:attr/textColorPrimary"
                 android:textSize="14sp" />
                 
             <!-- GitHub Clickable Logo/Text -->
@@ -342,13 +329,13 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@drawable/ic_github"
-                    app:tint="#FFFFFF"/>
+                    app:tint="?android:attr/textColorPrimary"/>
                     
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="GitHub"
-                    android:textColor="#FFFFFF"
+                    android:textColor="?android:attr/textColorPrimary"
                     android:layout_marginStart="8dp"/>
             </LinearLayout>
             
@@ -359,7 +346,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Made with 💙 from India 🇮🇳"
-            android:textColor="#888888"
+            android:textColor="?android:attr/textColorSecondary"
             android:textSize="12sp"
             android:layout_marginTop="32dp"
             app:layout_constraintTop_toBottomOf="@id/layout_footer"

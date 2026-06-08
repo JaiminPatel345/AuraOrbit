@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_dashboard">
+    android:background="?android:attr/colorBackground">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -16,8 +16,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="@android:color/transparent"
-            app:titleTextColor="#F8FAFC">
+            android:background="@android:color/transparent">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_apply_wallpaper"
@@ -30,8 +29,6 @@
                 android:paddingBottom="8dp"
                 android:text="Preview"
                 app:icon="@android:drawable/ic_menu_view"
-                android:textColor="#F8FAFC"
-                app:iconTint="#F8FAFC"
                 android:visibility="gone" />
 
         </com.google.android.material.appbar.MaterialToolbar>

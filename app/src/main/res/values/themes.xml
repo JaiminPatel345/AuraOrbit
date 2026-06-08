@@ -8,14 +8,14 @@
     <!-- Settings theme: Material 3 with a MaterialToolbar (NoActionBar) for
          proper edge-to-edge inset handling on Android 15+. The MaterialToolbar
          is declared in activity_settings.xml and registered via setSupportActionBar. -->
-    <style name="Theme.AuraOrbit.Settings" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.AuraOrbit.Settings" parent="Theme.AuraOrbit">
         <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
     </style>
 
     <!-- Sphere Mode theme: NoActionBar, fully transparent/black window background
          so the libGDX GL surface fills the entire screen without a white flash.
          Edge-to-edge is configured in SphereModeActivity via WindowCompat. -->
-    <style name="Theme.AuraOrbit.SphereMode" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.AuraOrbit.SphereMode" parent="Theme.AuraOrbit">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowFullscreen">true</item>
