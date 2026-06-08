@@ -209,7 +209,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:valueFrom="20"
-                    android:valueTo="100"
+                    android:valueTo="200"
                     android:stepSize="1" />
 
                 <!-- Speed -->

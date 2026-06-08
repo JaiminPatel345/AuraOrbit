@@ -26,7 +26,7 @@
                 android:id="@+id/app_label"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:textColor="?android:attr/textColorPrimary"
                 android:singleLine="true"
                 android:ellipsize="end" />
@@ -35,7 +35,7 @@
                 android:id="@+id/app_group_badge"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="?android:attr/textColorSecondary"
                 android:visibility="gone" />
 

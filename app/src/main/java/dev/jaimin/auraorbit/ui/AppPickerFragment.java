@@ -125,29 +125,16 @@ public class AppPickerFragment extends Fragment {
             }
         });
 
-        // Register the "Select all / Clear all" toolbar menu.  Using
-        // MenuProvider + getViewLifecycleOwner() ensures the menu items are
-        // only present while this fragment is visible (RESUMED state) and are
-        // automatically removed when the fragment leaves the back stack.
-        requireActivity().addMenuProvider(new MenuProvider() {
-            @Override
-            public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-                inflater.inflate(R.menu.menu_app_picker, menu);
+        // Wire up the new "Select All" checkbox next to the search bar.
+        // It selects/deselects all currently visible apps based on the active filter.
+        com.google.android.material.checkbox.MaterialCheckBox cbSelectAll = root.findViewById(R.id.cb_select_all);
+        cbSelectAll.setOnClickListener(v -> {
+            if (cbSelectAll.isChecked()) {
+                selectAllVisible();
+            } else {
+                clearAllSelection();
             }
-
-            @Override
-            public boolean onMenuItemSelected(@NonNull MenuItem item) {
-                int id = item.getItemId();
-                if (id == R.id.action_select_all) {
-                    selectAllVisible();
-                    return true;
-                } else if (id == R.id.action_clear_all) {
-                    clearAllSelection();
-                    return true;
-                }
-                return false;
-            }
-        }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
+        });
 
         // Kick off the background data load.
         loadAppsAsync(prefs);
@@ -278,12 +265,14 @@ public class AppPickerFragment extends Fragment {
         SharedPreferences prefs =
                 PreferenceManager.getDefaultSharedPreferences(requireContext());
 
-        // Un-check every row in the full list (allItems) so rows hidden by
-        // the active filter are also cleared when the filter is removed.
-        for (AppRow row : adapter.allItems) {
+        // Start from current persisted selection and remove visible items
+        Set<String> sel = new HashSet<>(prefs.getStringSet(
+                AppFetcher.PREF_SELECTED_APPS, new HashSet<>()));
+        for (AppRow row : adapter.displayItems) {
             row.checked = false;
+            sel.remove(row.packageName);
         }
-        prefs.edit().putStringSet(AppFetcher.PREF_SELECTED_APPS, new HashSet<>()).apply();
+        prefs.edit().putStringSet(AppFetcher.PREF_SELECTED_APPS, sel).apply();
 
         adapter.notifyDataSetChanged();
         updateTitle();
