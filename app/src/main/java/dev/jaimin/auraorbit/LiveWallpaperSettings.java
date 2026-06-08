@@ -116,7 +116,7 @@ public class LiveWallpaperSettings extends AppCompatActivity {
         if (savedInstanceState == null) {
             getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.settings_container, new MainSettingsFragment())
+                    .replace(R.id.settings_container, new dev.jaimin.auraorbit.ui.DashboardFragment())
                     .commit();
         }
 
