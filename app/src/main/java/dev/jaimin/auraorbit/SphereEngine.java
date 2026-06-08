@@ -1493,7 +1493,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             if (M < 2) continue;  // backdrops only for groups with ≥2 members
 
             String colorHex = groupColorMap.getOrDefault(groupId, "#FFFFFF");
-            Color gdxColor  = parseHexColor(colorHex, 0.32f);
+            Color gdxColor  = parseHexColor(colorHex, 0.75f);
 
             // ── 1. Centroid direction c ────────────────────────────────────
             Vector3 c = new Vector3();
@@ -1537,7 +1537,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             final int K = 12;
             // Pad uses effectiveIconSize so the cloth margin scales with the icon
             // when the screen-width cap is active (preserves visual proportion).
-            float pad = (0.8f * effectiveIconSize) / effectiveRadius;
+            float pad = (1.4f * effectiveIconSize) / effectiveRadius;
             int totalSamples = M * K;
             float[] allU = new float[totalSamples];
             float[] allV = new float[totalSamples];
@@ -1619,7 +1619,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
             Material material = new Material(
                     ColorAttribute.createDiffuse(gdxColor),
-                    new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.32f),
+                    new BlendingAttribute(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, 0.75f),
                     new DepthTestAttribute(GL20.GL_LEQUAL, false),
                     IntAttribute.createCullFace(GL20.GL_NONE)
             );
