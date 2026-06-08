@@ -268,9 +268,16 @@ public class GroupEditFragment extends Fragment {
         int circleSizePx = dpToPx(40);
         int marginEndPx  = dpToPx(8);
 
+        boolean isCustomSelected = true;
+        for (String hex : colorHexValues) {
+            if (hex.equalsIgnoreCase(selectedColor)) {
+                isCustomSelected = false;
+                break;
+            }
+        }
+
         for (int i = 0; i < colorHexValues.length; i++) {
             final String hex = colorHexValues[i];
-            final int    idx = i;
 
             View circle = new View(requireContext());
             LinearLayout.LayoutParams lp =
@@ -282,21 +289,104 @@ public class GroupEditFragment extends Fragment {
             colorCircles.add(circle);
             colorRow.addView(circle);
 
-            // Draw the circle (and initial stroke if selected).
             applyCircleDrawable(circle, hex, hex.equalsIgnoreCase(selectedColor));
 
             circle.setOnClickListener(v -> {
                 selectedColor = hex;
-                // Redraw all circles: only the new selection gets a stroke.
-                for (int j = 0; j < colorCircles.size(); j++) {
-                    applyCircleDrawable(
-                            colorCircles.get(j),
-                            colorHexValues[j],
-                            colorHexValues[j].equalsIgnoreCase(hex)
-                    );
-                }
+                buildColorRow(colorRow);
             });
         }
+
+        // Add Custom Color Circle
+        View customCircle = new View(requireContext());
+        LinearLayout.LayoutParams customLp =
+                new LinearLayout.LayoutParams(circleSizePx, circleSizePx);
+        customCircle.setLayoutParams(customLp);
+        customCircle.setContentDescription("Custom Color");
+
+        if (isCustomSelected) {
+            applyCircleDrawable(customCircle, selectedColor, true);
+        } else {
+            // Draw a rainbow wheel
+            android.graphics.drawable.ShapeDrawable rainbow = new android.graphics.drawable.ShapeDrawable(new android.graphics.drawable.shapes.OvalShape());
+            rainbow.getPaint().setShader(new android.graphics.SweepGradient(
+                    circleSizePx / 2f, circleSizePx / 2f,
+                    new int[]{Color.RED, Color.YELLOW, Color.GREEN, Color.CYAN, Color.BLUE, Color.MAGENTA, Color.RED},
+                    null));
+            customCircle.setBackground(rainbow);
+        }
+
+        customCircle.setOnClickListener(v -> showColorPickerDialog());
+        colorRow.addView(customCircle);
+    }
+
+    private void showColorPickerDialog() {
+        LinearLayout layout = new LinearLayout(requireContext());
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(dpToPx(24), dpToPx(24), dpToPx(24), dpToPx(24));
+
+        View preview = new View(requireContext());
+        LinearLayout.LayoutParams previewLp = new LinearLayout.LayoutParams(dpToPx(100), dpToPx(100));
+        previewLp.gravity = android.view.Gravity.CENTER;
+        previewLp.bottomMargin = dpToPx(24);
+        preview.setLayoutParams(previewLp);
+        GradientDrawable gd = new GradientDrawable();
+        gd.setShape(GradientDrawable.OVAL);
+        preview.setBackground(gd);
+
+        int currentColor;
+        try {
+            currentColor = Color.parseColor(selectedColor);
+        } catch (Exception e) {
+            currentColor = Color.parseColor(colorHexValues[0]);
+        }
+
+        final int[] rgb = { Color.red(currentColor), Color.green(currentColor), Color.blue(currentColor) };
+        gd.setColor(Color.rgb(rgb[0], rgb[1], rgb[2]));
+
+        com.google.android.material.slider.Slider sliderR = new com.google.android.material.slider.Slider(requireContext());
+        sliderR.setValueFrom(0); sliderR.setValueTo(255); sliderR.setValue(rgb[0]);
+        sliderR.setThumbTintList(android.content.res.ColorStateList.valueOf(Color.RED));
+        sliderR.setTrackActiveTintList(android.content.res.ColorStateList.valueOf(Color.RED));
+
+        com.google.android.material.slider.Slider sliderG = new com.google.android.material.slider.Slider(requireContext());
+        sliderG.setValueFrom(0); sliderG.setValueTo(255); sliderG.setValue(rgb[1]);
+        sliderG.setThumbTintList(android.content.res.ColorStateList.valueOf(Color.GREEN));
+        sliderG.setTrackActiveTintList(android.content.res.ColorStateList.valueOf(Color.GREEN));
+
+        com.google.android.material.slider.Slider sliderB = new com.google.android.material.slider.Slider(requireContext());
+        sliderB.setValueFrom(0); sliderB.setValueTo(255); sliderB.setValue(rgb[2]);
+        sliderB.setThumbTintList(android.content.res.ColorStateList.valueOf(Color.BLUE));
+        sliderB.setTrackActiveTintList(android.content.res.ColorStateList.valueOf(Color.BLUE));
+
+        com.google.android.material.slider.Slider.OnChangeListener listener = (slider, value, fromUser) -> {
+            if (slider == sliderR) rgb[0] = (int) value;
+            if (slider == sliderG) rgb[1] = (int) value;
+            if (slider == sliderB) rgb[2] = (int) value;
+            gd.setColor(Color.rgb(rgb[0], rgb[1], rgb[2]));
+        };
+        sliderR.addOnChangeListener(listener);
+        sliderG.addOnChangeListener(listener);
+        sliderB.addOnChangeListener(listener);
+
+        layout.addView(preview);
+        
+        TextView tvR = new TextView(requireContext()); tvR.setText("Red"); layout.addView(tvR); layout.addView(sliderR);
+        TextView tvG = new TextView(requireContext()); tvG.setText("Green"); layout.addView(tvG); layout.addView(sliderG);
+        TextView tvB = new TextView(requireContext()); tvB.setText("Blue"); layout.addView(tvB); layout.addView(sliderB);
+
+        new MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Custom Color")
+            .setView(layout)
+            .setPositiveButton("Select", (dialog, which) -> {
+                selectedColor = String.format("#%02X%02X%02X", rgb[0], rgb[1], rgb[2]);
+                View colorRow = requireView().findViewById(R.id.color_row);
+                if (colorRow instanceof LinearLayout) {
+                    buildColorRow((LinearLayout) colorRow);
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
     }
 
     /**
