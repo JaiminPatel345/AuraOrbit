@@ -1918,7 +1918,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 // Convert screen-space drag to rotation angles
                 // deltaX → rotate around Y axis (horizontal drag = horizontal spin)
                 // deltaY → rotate around X axis (vertical drag = vertical spin)
-                float angleY = -deltaX * ROTATION_SENSITIVITY;
+                float angleY = deltaX * ROTATION_SENSITIVITY;
                 float angleX = deltaY * ROTATION_SENSITIVITY;
 
                 // Pre-multiply: apply rotation in WORLD space so horizontal drags
@@ -1985,7 +1985,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 // by the user's rotation speed preference.
                 angularVelocity.set(
                         velocityY * FLING_SENSITIVITY * rotationSpeedFactor,   // X axis
-                        -velocityX * FLING_SENSITIVITY * rotationSpeedFactor,  // Y axis
+                        velocityX * FLING_SENSITIVITY * rotationSpeedFactor,  // Y axis
                         0f                                                       // No Z
                 );
 
@@ -2074,7 +2074,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 // Rotate sphere using the same sensitivity and world-space
                 // pre-multiplication as the one-finger pan() handler so the
                 // feel is identical regardless of which gesture is used.
-                float angleY = -deltaX * ROTATION_SENSITIVITY;
+                float angleY = deltaX * ROTATION_SENSITIVITY;
                 float angleX =  deltaY * ROTATION_SENSITIVITY;
 
                 tmpQuat.setFromAxis(Vector3.Y, (float) Math.toDegrees(angleY));
