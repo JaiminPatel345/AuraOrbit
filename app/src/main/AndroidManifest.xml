@@ -66,6 +66,9 @@
             android:theme="@style/Theme.AuraOrbit.SphereMode"
             android:exported="true"
             android:screenOrientation="portrait"
+            android:taskAffinity=".SphereTask"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
             android:configChanges="orientation|screenSize|keyboardHidden">
         </activity>
 

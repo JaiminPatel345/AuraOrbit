@@ -2135,6 +2135,21 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                     // exclusion zones are needed; every gesture is ours.
                     if (activityMode) {
                         edgeClaimedGesture = false;
+                        
+                        // If touch starts outside the sphere (with 30% padding), close immediately 
+                        // so the user can interact with their launcher (e.g. swipe notifications).
+                        if (camera != null) {
+                            com.badlogic.gdx.math.collision.Ray ray = camera.getPickRay(screenX, screenY);
+                            float radius = sphereRadius * 1.3f;
+                            if (!com.badlogic.gdx.math.Intersector.intersectRaySphere(ray, com.badlogic.gdx.math.Vector3.Zero, radius, tmpVec)) {
+                                if (context instanceof android.app.Activity) {
+                                    Gdx.app.postRunnable(() -> ((android.app.Activity) context).finish());
+                                }
+                                // Return false so we don't consume the touch, 
+                                // letting the system handle the swipe if possible.
+                                return false;
+                            }
+                        }
                     } else {
                         float hFrac = (float) screenY / Math.max(1, Gdx.graphics.getHeight());
                         edgeClaimedGesture = hFrac < EDGE_EXCLUSION_FRACTION
