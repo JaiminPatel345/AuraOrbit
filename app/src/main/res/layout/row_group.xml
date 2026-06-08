@@ -42,7 +42,7 @@
         android:layout_height="48dp"
         android:padding="12dp"
         android:src="@android:drawable/ic_menu_delete"
-        app:tint="?android:attr/textColorSecondary"
+        app:tint="?attr/colorError"
         android:contentDescription="@string/btn_delete_group"
         android:background="?attr/selectableItemBackgroundBorderless" />
 
