@@ -23,7 +23,7 @@ AuraOrbit seamlessly merges standard Android UI with a high-performance C++ Open
 
 ## 📦 How to Build & Install
 
-🎉 **Good news! AuraOrbit will be available on the Google Play Store very soon!**
+**AuraOrbit will be available on the Google Play Store very soon!**
 
 In the meantime, you can download the latest compiled APK directly from this repository:
 👉 **[Download AuraOrbit.apk](apk/AuraOrbit.apk)**
@@ -55,3 +55,9 @@ Hit the **Settings ⚙️** icon in the preview window to open the AuraOrbit das
 - Set the target framerate (60/90/120).
 - Toggle your underlying system background.
 - Adjust sphere radius and icon scaling!
+
+## 📄 License
+
+This project is licensed under a custom **Non-Commercial License**. You are free to use, copy, and modify the software for personal and non-commercial purposes. Commercial use, distribution, or monetization is strictly prohibited without explicit prior written permission from the author. 
+
+For more details, please read the [LICENSE](LICENSE) file.
