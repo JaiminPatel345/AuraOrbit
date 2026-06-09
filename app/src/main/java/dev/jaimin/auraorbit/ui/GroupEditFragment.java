@@ -270,8 +270,12 @@ public class GroupEditFragment extends Fragment {
             callbackIntent.putExtra(WidgetPinnedReceiver.EXTRA_GROUP_NAME, groupName);
             
             int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                flags |= PendingIntent.FLAG_IMMUTABLE;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                flags |= PendingIntent.FLAG_MUTABLE;
+            } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                // Before Android 12, FLAG_MUTABLE is not strictly required but we shouldn't use FLAG_IMMUTABLE 
+                // because the system needs to modify the intent to add EXTRA_APPWIDGET_ID.
+                flags |= PendingIntent.FLAG_MUTABLE;
             }
             PendingIntent successCallback = PendingIntent.getBroadcast(
                     requireContext(),
