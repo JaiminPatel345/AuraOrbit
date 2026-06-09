@@ -58,6 +58,6 @@ Hit the **Settings ⚙️** icon in the preview window to open the AuraOrbit das
 
 ## 📄 License
 
-This project is licensed under a custom **Non-Commercial License**. You are free to use, copy, and modify the software for personal and non-commercial purposes. Commercial use, distribution, or monetization is strictly prohibited without explicit prior written permission from the author. 
+This project is licensed under the **GNU General Public License v3.0 (GPLv3)**. It is Free and Open Source Software (FOSS). You are free to use, modify, and distribute the software.
 
 For more details, please read the [LICENSE](LICENSE) file.
