@@ -161,6 +161,19 @@ public class SphereModeActivity extends AndroidApplication {
      * (e.g. after returning from Settings or a launched app).
      */
     @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        
+        // If the activity was already running and another widget was clicked,
+        // update the engine with the new group name!
+        if (sphereEngine != null) {
+            String groupName = intent.getStringExtra("group_name");
+            sphereEngine.setPinnedGroupName(groupName);
+        }
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         

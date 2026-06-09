@@ -823,6 +823,19 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         }
     }
 
+    /**
+     * Updates the pinned group name dynamically (used when SphereModeActivity receives onNewIntent).
+     */
+    public void setPinnedGroupName(String newGroupName) {
+        if ((this.pinnedGroupName == null && newGroupName != null) || 
+            (this.pinnedGroupName != null && !this.pinnedGroupName.equals(newGroupName))) {
+            this.pinnedGroupName = newGroupName;
+            // Force a rebuild to apply the new group filtering
+            lastConfigSnapshot = ""; 
+            applyConfig();
+        }
+    }
+
     public void fanOutAndFinish() {
         if (activityMode) {
             fanOutPending = true;
