@@ -5,4 +5,6 @@
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/widget_sphere"
     android:resizeMode="horizontal|vertical"
+    android:previewImage="@mipmap/ic_launcher"
+    android:previewLayout="@layout/widget_sphere"
     android:widgetCategory="home_screen" />
