@@ -25,8 +25,8 @@ AuraOrbit seamlessly merges standard Android UI with a high-performance C++ Open
 
 **AuraOrbit will be available on the Google Play Store very soon!**
 
-In the meantime, you can download the latest compiled APK directly from this repository:
-👉 **[Download AuraOrbit.apk](apk/AuraOrbit.apk)**
+In the meantime, you can download the latest signed APK from the Releases page:
+👉 **[Download the latest APK](https://github.com/JaiminPatel345/AuraOrbit/releases/latest)**
 
 If you prefer to build it from source, the codebase requires **Java 17+** (due to AGP 8.x) to build correctly. Newer versions like Java 21 work perfectly as well. 
 
