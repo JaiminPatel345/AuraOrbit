@@ -1045,6 +1045,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // ─── Dispose old group models ────────────────────────────────────
         if (groupModels != null) {
             for (Model model : groupModels) model.dispose();
+            groupModels.clear();
+        }
+        if (groupBackdrops != null) {
+            groupBackdrops.clear();
         }
 
         // ─── Dispose old background texture ─────────────────────────────
@@ -1119,9 +1123,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         
         distributeNodesOnSphere();
         createDecals();
-        if (pinnedGroupName == null) {
-            buildGroupBackdrops();
-        }
+        // if (pinnedGroupName == null) {
+        //     buildGroupBackdrops();
+        // }
 
         // ─── Reload background: custom photo > system wallpaper mirror > gradient ──
         //
