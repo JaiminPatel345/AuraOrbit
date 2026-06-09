@@ -786,6 +786,12 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      */
     private String lastConfigSnapshot = "";
 
+    /**
+     * If non-null, this engine instance is running inside a pinned widget,
+     * and should only render apps belonging to this specific group.
+     */
+    private String pinnedGroupName = null;
+
     // ═══════════════════════════════════════════════════════════════════════
     //  Constructor
     // ═══════════════════════════════════════════════════════════════════════
@@ -797,7 +803,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      *                extends Context, so the service itself IS a Context.
      */
     public SphereEngine(Context context) {
-        this(context, false);
+        this(context, false, null);
     }
 
     /**
@@ -806,12 +812,27 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * @param context      The Android context ({@link SphereModeActivity}).
      * @param activityMode {@code true} when running inside a fullscreen activity
      *                     that owns all input exclusively.
+     * @param pinnedGroupName The name of the group to display exclusively, or null for all apps.
      */
-    public SphereEngine(Context context, boolean activityMode) {
+    public SphereEngine(Context context, boolean activityMode, String pinnedGroupName) {
         this.context = context;
         this.activityMode = activityMode;
+        this.pinnedGroupName = pinnedGroupName;
         if (activityMode) {
             this.pageVisibility = 0f;
+        }
+    }
+
+    /**
+     * Updates the pinned group name dynamically (used when SphereModeActivity receives onNewIntent).
+     */
+    public void setPinnedGroupName(String newGroupName) {
+        if ((this.pinnedGroupName == null && newGroupName != null) || 
+            (this.pinnedGroupName != null && !this.pinnedGroupName.equals(newGroupName))) {
+            this.pinnedGroupName = newGroupName;
+            // Force a rebuild to apply the new group filtering
+            lastConfigSnapshot = ""; 
+            applyConfig();
         }
     }
 
@@ -1024,6 +1045,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // ─── Dispose old group models ────────────────────────────────────
         if (groupModels != null) {
             for (Model model : groupModels) model.dispose();
+            groupModels.clear();
+        }
+        if (groupBackdrops != null) {
+            groupBackdrops.clear();
         }
 
         // ─── Dispose old background texture ─────────────────────────────
@@ -1083,9 +1108,24 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
         // ─── Re-fetch apps, redistribute, recreate decals and backdrops ──
         appNodes = AppFetcher.fetchSelectedApps(context);
+        
+        if (pinnedGroupName != null) {
+            java.util.List<AppFetcher.AppNode> filtered = new java.util.ArrayList<>();
+            for (AppFetcher.AppNode node : appNodes) {
+                if (pinnedGroupName.equals(node.groupId)) {
+                    filtered.add(node);
+                } else {
+                    if (node.iconTexture != null) node.iconTexture.dispose();
+                }
+            }
+            appNodes = filtered;
+        }
+        
         distributeNodesOnSphere();
         createDecals();
-        buildGroupBackdrops();
+        // if (pinnedGroupName == null) {
+        //     buildGroupBackdrops();
+        // }
 
         // ─── Reload background: custom photo > system wallpaper mirror > gradient ──
         //

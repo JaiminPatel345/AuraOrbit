@@ -70,8 +70,21 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:orientation="horizontal"
-        android:gravity="end">
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_pin_widget"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pin Widget"
+            android:visibility="gone"
+            style="@style/Widget.Material3.Button.TextButton"
+            app:icon="@android:drawable/ic_menu_add" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_cancel"

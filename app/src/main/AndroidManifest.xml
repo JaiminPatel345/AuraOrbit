@@ -111,6 +111,15 @@
                 android:resource="@xml/sphere_widget_info" />
         </receiver>
 
+        <receiver
+            android:name=".WidgetPinnedReceiver"
+            android:exported="false" />
+
+        <activity
+            android:name=".DeletedWidgetActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:exported="false" />
+
     </application>
 
 </manifest>

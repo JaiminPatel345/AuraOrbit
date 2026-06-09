@@ -79,10 +79,13 @@ public class SphereModeActivity extends AndroidApplication {
         config.b = 8;
         config.a = 8;
 
+        // Read group_name extra if opened from a pinned group widget
+        String groupName = getIntent().getStringExtra("group_name");
+
         // Initialize libGDX with activityMode=true so the engine bypasses all
         // wallpaper-specific guards (page isolation, edge exclusion, zoom revert,
         // command gating).
-        sphereEngine = new SphereEngine(this, true);
+        sphereEngine = new SphereEngine(this, true, groupName);
         View glView = initializeForView(sphereEngine, config);
         if (graphics.getView() instanceof android.view.SurfaceView) {
             android.view.SurfaceView surfaceView = (android.view.SurfaceView) graphics.getView();
@@ -157,6 +160,19 @@ public class SphereModeActivity extends AndroidApplication {
      * Re-apply immersive mode when the activity window focus returns
      * (e.g. after returning from Settings or a launched app).
      */
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        
+        // If the activity was already running and another widget was clicked,
+        // update the engine with the new group name!
+        if (sphereEngine != null) {
+            String groupName = intent.getStringExtra("group_name");
+            sphereEngine.setPinnedGroupName(groupName);
+        }
+    }
+
     @Override
     protected void onResume() {
         super.onResume();

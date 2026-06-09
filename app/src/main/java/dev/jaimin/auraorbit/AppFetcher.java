@@ -87,6 +87,9 @@ public class AppFetcher {
      */
     public static final String PREF_SELECTED_APPS = "selected_app_packages";
 
+    /** Cache of loaded app icon Bitmaps to make activity launches instantaneous. */
+    private static final java.util.Map<String, Bitmap> sIconCache = new java.util.concurrent.ConcurrentHashMap<>();
+
     // ═══════════════════════════════════════════════════════════════════════
     //  Data Class — Holds app metadata + texture for a single sphere node
     // ═══════════════════════════════════════════════════════════════════════
@@ -179,15 +182,19 @@ public class AppFetcher {
                 AppNode node = new AppNode(packageName, appName);
 
                 // ─── Extract and convert the app icon ───────────────────
-                Drawable drawable = pm.getApplicationIcon(appInfo);
-                Bitmap bitmap = drawableToBitmap(drawable, ICON_SIZE);
+                Bitmap bitmap = sIconCache.get(packageName);
+                if (bitmap == null) {
+                    Drawable drawable = pm.getApplicationIcon(appInfo);
+                    bitmap = drawableToBitmap(drawable, ICON_SIZE);
+                    if (bitmap != null) {
+                        sIconCache.put(packageName, bitmap);
+                    }
+                }
 
                 if (bitmap != null) {
                     node.iconTexture = bitmapToTexture(bitmap);
                     node.iconRegion = new TextureRegion(node.iconTexture);
-
-                    // Bitmap is now uploaded to GPU — recycle native memory
-                    bitmap.recycle();
+                    // Do NOT recycle the bitmap here anymore! It is cached.
                 }
 
                 // ─── Assign group metadata via GroupStore ────────────────
