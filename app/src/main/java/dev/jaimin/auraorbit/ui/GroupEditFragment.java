@@ -568,8 +568,13 @@ public class GroupEditFragment extends Fragment {
                 R.string.toast_saved,
                 Toast.LENGTH_SHORT).show();
 
-        // Automatically prompt the user to pin the widget to their home screen
-        requestPinWidget(newName);
+        if (originalGroupName == null) {
+            // Automatically prompt the user to pin the widget to their home screen for new groups
+            requestPinWidget(newName);
+        } else {
+            // Update existing widgets when a group is edited
+            SphereWidgetProvider.updateAllWidgets(requireContext());
+        }
 
         // Return to GroupListFragment (or wherever we came from).
         getParentFragmentManager().popBackStack();
