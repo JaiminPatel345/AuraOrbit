@@ -150,6 +150,7 @@ public class GroupListFragment extends Fragment {
                     List<GroupStore.Group> freshGroups = GroupStore.load(prefs);
                     GroupStore.delete(freshGroups, groupName);
                     GroupStore.save(prefs, freshGroups);
+                    dev.jaimin.auraorbit.SphereWidgetProvider.updateAllWidgets(requireContext());
 
                     android.widget.Toast.makeText(requireContext(),
                             R.string.toast_group_deleted,

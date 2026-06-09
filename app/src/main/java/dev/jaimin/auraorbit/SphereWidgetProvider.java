@@ -52,8 +52,11 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                             views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
                         }
                     } else {
-                        views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.WHITE);
+                        views.setTextViewText(R.id.widget_label, "Deleted");
+                        views.setTextColor(R.id.widget_label, android.graphics.Color.RED);
+                        views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.RED);
                         views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
+                        // don't set intent so it doesn't open deleted group
                     }
                 } else {
                     views.setTextViewText(R.id.widget_label, "All");
@@ -76,7 +79,11 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                     context, appWidgetId, intent, 
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
             );
-            views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
+            if (groupName != null && GroupStore.find(groups, groupName) == null) {
+                views.setOnClickPendingIntent(R.id.widget_container, null);
+            } else {
+                views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
+            }
             appWidgetManager.updateAppWidget(appWidgetId, views);
         }
     }
@@ -119,7 +126,9 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                         views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
                     }
                 } else {
-                    views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.WHITE);
+                    views.setTextViewText(R.id.widget_label, "Deleted");
+                    views.setTextColor(R.id.widget_label, android.graphics.Color.RED);
+                    views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.RED);
                     views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
                 }
             } else {
@@ -130,9 +139,23 @@ public class SphereWidgetProvider extends AppWidgetProvider {
             }
             views.setViewVisibility(R.id.widget_label, View.VISIBLE);
             
-            views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
+            if (groupName != null && GroupStore.find(groups, groupName) == null) {
+                views.setOnClickPendingIntent(R.id.widget_container, null);
+            } else {
+                views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
+            }
 
             appWidgetManager.updateAppWidget(appWidgetId, views);
         }
+    }
+
+    public static void updateAllWidgets(Context context) {
+        Intent intent = new Intent(context, SphereWidgetProvider.class);
+        intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+        AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+        android.content.ComponentName thisWidget = new android.content.ComponentName(context, SphereWidgetProvider.class);
+        int[] appWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
+        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
+        context.sendBroadcast(intent);
     }
 }
