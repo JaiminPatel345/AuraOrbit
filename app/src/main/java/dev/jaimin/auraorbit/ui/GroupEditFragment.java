@@ -564,14 +564,14 @@ public class GroupEditFragment extends Fragment {
             prefs.edit().putStringSet(AppFetcher.PREF_SELECTED_APPS, selectedApps).apply();
         }
 
-        Toast.makeText(requireContext(),
-                R.string.toast_saved,
-                Toast.LENGTH_SHORT).show();
-
         if (originalGroupName == null) {
             // Automatically prompt the user to pin the widget to their home screen for new groups
+            // We do not show the "Saved" Toast here so it doesn't conflict with the system popup
             requestPinWidget(newName);
         } else {
+            Toast.makeText(requireContext(),
+                    R.string.toast_saved,
+                    Toast.LENGTH_SHORT).show();
             // Update existing widgets when a group is edited
             SphereWidgetProvider.updateAllWidgets(requireContext());
         }
