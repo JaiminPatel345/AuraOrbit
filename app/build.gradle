@@ -42,6 +42,11 @@ android {
         }
     }
 
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+
     lint {
         checkReleaseBuilds false
         abortOnError false
