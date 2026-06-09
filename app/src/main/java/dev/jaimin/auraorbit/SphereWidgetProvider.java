@@ -29,6 +29,7 @@ public class SphereWidgetProvider extends AppWidgetProvider {
         int[] appWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
         
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        java.util.List<GroupStore.Group> groups = GroupStore.load(prefs);
 
         for (int appWidgetId : appWidgetIds) {
             String groupName = prefs.getString("widget_group_" + appWidgetId, null);
@@ -36,8 +37,23 @@ public class SphereWidgetProvider extends AppWidgetProvider {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_sphere);
             views.setViewVisibility(R.id.widget_icon, visibility);
             
-            if (groupName != null && visibility == View.VISIBLE) {
-                views.setTextViewText(R.id.widget_label, groupName);
+            if (visibility == View.VISIBLE) {
+                if (groupName != null) {
+                    views.setTextViewText(R.id.widget_label, groupName);
+                    GroupStore.Group group = GroupStore.find(groups, groupName);
+                    if (group != null) {
+                        try {
+                            views.setTextColor(R.id.widget_label, android.graphics.Color.parseColor(group.color));
+                        } catch (Exception e) {
+                            views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
+                        }
+                    } else {
+                        views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
+                    }
+                } else {
+                    views.setTextViewText(R.id.widget_label, "All");
+                    views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
+                }
                 views.setViewVisibility(R.id.widget_label, View.VISIBLE);
             } else {
                 views.setViewVisibility(R.id.widget_label, View.GONE);
@@ -60,6 +76,7 @@ public class SphereWidgetProvider extends AppWidgetProvider {
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        java.util.List<GroupStore.Group> groups = GroupStore.load(prefs);
 
         for (int appWidgetId : appWidgetIds) {
             String groupName = prefs.getString("widget_group_" + appWidgetId, null);
@@ -82,10 +99,21 @@ public class SphereWidgetProvider extends AppWidgetProvider {
             
             if (groupName != null) {
                 views.setTextViewText(R.id.widget_label, groupName);
-                views.setViewVisibility(R.id.widget_label, View.VISIBLE);
+                GroupStore.Group group = GroupStore.find(groups, groupName);
+                if (group != null) {
+                    try {
+                        views.setTextColor(R.id.widget_label, android.graphics.Color.parseColor(group.color));
+                    } catch (Exception e) {
+                        views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
+                    }
+                } else {
+                    views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
+                }
             } else {
-                views.setViewVisibility(R.id.widget_label, View.GONE);
+                views.setTextViewText(R.id.widget_label, "All");
+                views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
             }
+            views.setViewVisibility(R.id.widget_label, View.VISIBLE);
             
             views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
 
