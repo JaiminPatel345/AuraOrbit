@@ -81,20 +81,6 @@ public class SphereModeActivity extends AndroidApplication {
 
         // Read group_name extra if opened from a pinned group widget
         String groupName = getIntent().getStringExtra("group_name");
-        boolean groupDeleted = getIntent().getBooleanExtra("group_deleted", false);
-
-        if (groupDeleted) {
-            new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-                .setTitle("Group Deleted")
-                .setMessage("This group has been deleted. Android does not allow apps to delete widgets automatically.\n\nPlease long-press this widget and drag it to the trash to remove it from your home screen.")
-                .setPositiveButton("OK", (dialog, which) -> {
-                    finish();
-                })
-                .setOnDismissListener(dialog -> finish())
-                .setCancelable(false)
-                .show();
-            return;
-        }
 
         // Initialize libGDX with activityMode=true so the engine bypasses all
         // wallpaper-specific guards (page isolation, edge exclusion, zoom revert,

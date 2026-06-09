@@ -76,7 +76,8 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                 intent.putExtra("group_name", groupName);
             }
             if (groupName != null && GroupStore.find(groups, groupName) == null) {
-                intent.putExtra("group_deleted", true);
+                intent = new Intent(context, DeletedWidgetActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             }
             PendingIntent pendingIntent = PendingIntent.getActivity(
                     context, appWidgetId, intent, 
@@ -102,7 +103,8 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                 intent.putExtra("group_name", groupName);
             }
             if (groupName != null && GroupStore.find(groups, groupName) == null) {
-                intent.putExtra("group_deleted", true);
+                intent = new Intent(context, DeletedWidgetActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             }
             
             PendingIntent pendingIntent = PendingIntent.getActivity(
