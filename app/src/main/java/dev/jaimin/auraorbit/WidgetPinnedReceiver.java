@@ -30,6 +30,8 @@ public class WidgetPinnedReceiver extends BroadcastReceiver {
             updateIntent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
             updateIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
             context.sendBroadcast(updateIntent);
+            
+            android.widget.Toast.makeText(context, "Group Saved & Widget Pinned!", android.widget.Toast.LENGTH_SHORT).show();
         }
     }
 }

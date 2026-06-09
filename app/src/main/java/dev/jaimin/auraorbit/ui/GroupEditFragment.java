@@ -226,7 +226,27 @@ public class GroupEditFragment extends Fragment {
         AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(requireContext());
         if (originalGroupName != null && appWidgetManager.isRequestPinAppWidgetSupported()) {
             btnPinWidget.setVisibility(View.VISIBLE);
-            btnPinWidget.setOnClickListener(v -> requestPinWidget(originalGroupName));
+            btnPinWidget.setOnClickListener(v -> {
+                int[] appWidgetIds = appWidgetManager.getAppWidgetIds(new ComponentName(requireContext(), SphereWidgetProvider.class));
+                boolean alreadyPinned = false;
+                for (int id : appWidgetIds) {
+                    if (originalGroupName.equals(prefs.getString("widget_group_" + id, null))) {
+                        alreadyPinned = true;
+                        break;
+                    }
+                }
+                
+                if (alreadyPinned) {
+                    new MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Widget Already Pinned")
+                        .setMessage("A widget for this group is already present on your home screen. Do you want to add another one?")
+                        .setPositiveButton("Add Another", (dialog, which) -> requestPinWidget(originalGroupName))
+                        .setNegativeButton("Cancel", null)
+                        .show();
+                } else {
+                    requestPinWidget(originalGroupName);
+                }
+            });
         }
 
         // ─── Member search ────────────────────────────────────────────────
@@ -564,12 +584,17 @@ public class GroupEditFragment extends Fragment {
             prefs.edit().putStringSet(AppFetcher.PREF_SELECTED_APPS, selectedApps).apply();
         }
 
-        Toast.makeText(requireContext(),
-                R.string.toast_saved,
-                Toast.LENGTH_SHORT).show();
-
-        // Automatically prompt the user to pin the widget to their home screen
-        requestPinWidget(newName);
+        if (originalGroupName == null) {
+            // Automatically prompt the user to pin the widget to their home screen for new groups
+            // We do not show the "Saved" Toast here so it doesn't conflict with the system popup
+            requestPinWidget(newName);
+        } else {
+            Toast.makeText(requireContext(),
+                    R.string.toast_saved,
+                    Toast.LENGTH_SHORT).show();
+            // Update existing widgets when a group is edited
+            SphereWidgetProvider.updateAllWidgets(requireContext());
+        }
 
         // Return to GroupListFragment (or wherever we came from).
         getParentFragmentManager().popBackStack();
