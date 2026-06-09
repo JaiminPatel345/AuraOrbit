@@ -75,15 +75,14 @@ public class SphereWidgetProvider extends AppWidgetProvider {
             if (groupName != null) {
                 intent.putExtra("group_name", groupName);
             }
+            if (groupName != null && GroupStore.find(groups, groupName) == null) {
+                intent.putExtra("group_deleted", true);
+            }
             PendingIntent pendingIntent = PendingIntent.getActivity(
                     context, appWidgetId, intent, 
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
             );
-            if (groupName != null && GroupStore.find(groups, groupName) == null) {
-                views.setOnClickPendingIntent(R.id.widget_container, null);
-            } else {
-                views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
-            }
+            views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
             appWidgetManager.updateAppWidget(appWidgetId, views);
         }
     }
@@ -101,6 +100,9 @@ public class SphereWidgetProvider extends AppWidgetProvider {
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             if (groupName != null) {
                 intent.putExtra("group_name", groupName);
+            }
+            if (groupName != null && GroupStore.find(groups, groupName) == null) {
+                intent.putExtra("group_deleted", true);
             }
             
             PendingIntent pendingIntent = PendingIntent.getActivity(
@@ -139,11 +141,7 @@ public class SphereWidgetProvider extends AppWidgetProvider {
             }
             views.setViewVisibility(R.id.widget_label, View.VISIBLE);
             
-            if (groupName != null && GroupStore.find(groups, groupName) == null) {
-                views.setOnClickPendingIntent(R.id.widget_container, null);
-            } else {
-                views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
-            }
+            views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
 
             appWidgetManager.updateAppWidget(appWidgetId, views);
         }
