@@ -13,24 +13,25 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:layout_gravity="center"
-        android:background="@drawable/rounded_bg">
+        android:background="@drawable/rounded_bg_solid">
 
-        <!-- Border layer for group color -->
+        <!-- Icon Layer 1: White Planet -->
         <ImageView
-            android:id="@+id/widget_border"
+            android:id="@+id/widget_icon_planet"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:src="@drawable/rounded_border_white"
-            android:visibility="gone" />
+            android:contentDescription="AuraOrbit Widget Planet"
+            android:padding="8dp"
+            android:src="@drawable/ic_widget_planet" />
 
-        <!-- Icon -->
+        <!-- Icon Layer 2: Colored Ring -->
         <ImageView
-            android:id="@+id/widget_icon"
+            android:id="@+id/widget_icon_ring"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:contentDescription="AuraOrbit Widget"
-            android:padding="6dp"
-            android:src="@mipmap/ic_launcher" />
+            android:contentDescription="AuraOrbit Widget Ring"
+            android:padding="8dp"
+            android:src="@drawable/ic_widget_ring" />
     </FrameLayout>
 
     <TextView

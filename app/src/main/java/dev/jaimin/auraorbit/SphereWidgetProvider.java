@@ -35,7 +35,7 @@ public class SphereWidgetProvider extends AppWidgetProvider {
             String groupName = prefs.getString("widget_group_" + appWidgetId, null);
             
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_sphere);
-            views.setViewVisibility(R.id.widget_icon, visibility);
+            views.setViewVisibility(R.id.widget_icon_container, visibility);
             
             if (visibility == View.VISIBLE) {
                 if (groupName != null) {
@@ -45,23 +45,26 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                     if (group != null) {
                         try {
                             int color = android.graphics.Color.parseColor(group.color);
-                            views.setInt(R.id.widget_border, "setColorFilter", color);
-                            views.setViewVisibility(R.id.widget_border, View.VISIBLE);
+                            views.setInt(R.id.widget_icon_ring, "setColorFilter", color);
+                            views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
                         } catch (Exception e) {
-                            views.setViewVisibility(R.id.widget_border, View.GONE);
+                            views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.WHITE);
+                            views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
                         }
                     } else {
-                        views.setViewVisibility(R.id.widget_border, View.GONE);
+                        views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.WHITE);
+                        views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
                     }
                 } else {
                     views.setTextViewText(R.id.widget_label, "All");
                     views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
-                    views.setViewVisibility(R.id.widget_border, View.GONE);
+                    views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.WHITE);
+                    views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
                 }
                 views.setViewVisibility(R.id.widget_label, View.VISIBLE);
             } else {
                 views.setViewVisibility(R.id.widget_label, View.GONE);
-                views.setViewVisibility(R.id.widget_border, View.GONE);
+                views.setViewVisibility(R.id.widget_icon_ring, View.GONE);
             }
             
             Intent intent = new Intent(context, SphereModeActivity.class);
@@ -109,18 +112,21 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                 if (group != null) {
                     try {
                         int color = android.graphics.Color.parseColor(group.color);
-                        views.setInt(R.id.widget_border, "setColorFilter", color);
-                        views.setViewVisibility(R.id.widget_border, View.VISIBLE);
+                        views.setInt(R.id.widget_icon_ring, "setColorFilter", color);
+                        views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
                     } catch (Exception e) {
-                        views.setViewVisibility(R.id.widget_border, View.GONE);
+                        views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.WHITE);
+                        views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
                     }
                 } else {
-                    views.setViewVisibility(R.id.widget_border, View.GONE);
+                    views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.WHITE);
+                    views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
                 }
             } else {
                 views.setTextViewText(R.id.widget_label, "All");
                 views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
-                views.setViewVisibility(R.id.widget_border, View.GONE);
+                views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.WHITE);
+                views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
             }
             views.setViewVisibility(R.id.widget_label, View.VISIBLE);
             
