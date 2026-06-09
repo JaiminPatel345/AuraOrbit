@@ -226,7 +226,27 @@ public class GroupEditFragment extends Fragment {
         AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(requireContext());
         if (originalGroupName != null && appWidgetManager.isRequestPinAppWidgetSupported()) {
             btnPinWidget.setVisibility(View.VISIBLE);
-            btnPinWidget.setOnClickListener(v -> requestPinWidget(originalGroupName));
+            btnPinWidget.setOnClickListener(v -> {
+                int[] appWidgetIds = appWidgetManager.getAppWidgetIds(new ComponentName(requireContext(), SphereWidgetProvider.class));
+                boolean alreadyPinned = false;
+                for (int id : appWidgetIds) {
+                    if (originalGroupName.equals(prefs.getString("widget_group_" + id, null))) {
+                        alreadyPinned = true;
+                        break;
+                    }
+                }
+                
+                if (alreadyPinned) {
+                    new MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Widget Already Pinned")
+                        .setMessage("A widget for this group is already present on your home screen. Do you want to add another one?")
+                        .setPositiveButton("Add Another", (dialog, which) -> requestPinWidget(originalGroupName))
+                        .setNegativeButton("Cancel", null)
+                        .show();
+                } else {
+                    requestPinWidget(originalGroupName);
+                }
+            });
         }
 
         // ─── Member search ────────────────────────────────────────────────
