@@ -568,6 +568,9 @@ public class GroupEditFragment extends Fragment {
                 R.string.toast_saved,
                 Toast.LENGTH_SHORT).show();
 
+        // Automatically prompt the user to pin the widget to their home screen
+        requestPinWidget(newName);
+
         // Return to GroupListFragment (or wherever we came from).
         getParentFragmentManager().popBackStack();
     }
