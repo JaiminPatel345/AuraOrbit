@@ -7,16 +7,36 @@
     android:gravity="center"
     android:background="@android:color/transparent">
 
-    <ImageView
-        android:id="@+id/widget_icon"
+    <FrameLayout
+        android:id="@+id/widget_icon_container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_gravity="center"
-        android:background="@drawable/rounded_bg"
-        android:contentDescription="AuraOrbit Widget"
-        android:padding="4dp"
-        android:src="@mipmap/ic_launcher" />
+        android:layout_gravity="center">
+
+        <!-- Default dark background -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/rounded_bg" />
+
+        <!-- Border layer for group color -->
+        <ImageView
+            android:id="@+id/widget_border"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/rounded_border_white"
+            android:visibility="gone" />
+
+        <!-- Icon -->
+        <ImageView
+            android:id="@+id/widget_icon"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="AuraOrbit Widget"
+            android:padding="6dp"
+            android:src="@mipmap/ic_launcher" />
+    </FrameLayout>
 
     <TextView
         android:id="@+id/widget_label"

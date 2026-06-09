@@ -40,23 +40,28 @@ public class SphereWidgetProvider extends AppWidgetProvider {
             if (visibility == View.VISIBLE) {
                 if (groupName != null) {
                     views.setTextViewText(R.id.widget_label, groupName);
+                    views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
                     GroupStore.Group group = GroupStore.find(groups, groupName);
                     if (group != null) {
                         try {
-                            views.setTextColor(R.id.widget_label, android.graphics.Color.parseColor(group.color));
+                            int color = android.graphics.Color.parseColor(group.color);
+                            views.setInt(R.id.widget_border, "setColorFilter", color);
+                            views.setViewVisibility(R.id.widget_border, View.VISIBLE);
                         } catch (Exception e) {
-                            views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
+                            views.setViewVisibility(R.id.widget_border, View.GONE);
                         }
                     } else {
-                        views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
+                        views.setViewVisibility(R.id.widget_border, View.GONE);
                     }
                 } else {
                     views.setTextViewText(R.id.widget_label, "All");
                     views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
+                    views.setViewVisibility(R.id.widget_border, View.GONE);
                 }
                 views.setViewVisibility(R.id.widget_label, View.VISIBLE);
             } else {
                 views.setViewVisibility(R.id.widget_label, View.GONE);
+                views.setViewVisibility(R.id.widget_border, View.GONE);
             }
             
             Intent intent = new Intent(context, SphereModeActivity.class);
@@ -99,19 +104,23 @@ public class SphereWidgetProvider extends AppWidgetProvider {
             
             if (groupName != null) {
                 views.setTextViewText(R.id.widget_label, groupName);
+                views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
                 GroupStore.Group group = GroupStore.find(groups, groupName);
                 if (group != null) {
                     try {
-                        views.setTextColor(R.id.widget_label, android.graphics.Color.parseColor(group.color));
+                        int color = android.graphics.Color.parseColor(group.color);
+                        views.setInt(R.id.widget_border, "setColorFilter", color);
+                        views.setViewVisibility(R.id.widget_border, View.VISIBLE);
                     } catch (Exception e) {
-                        views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
+                        views.setViewVisibility(R.id.widget_border, View.GONE);
                     }
                 } else {
-                    views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
+                    views.setViewVisibility(R.id.widget_border, View.GONE);
                 }
             } else {
                 views.setTextViewText(R.id.widget_label, "All");
                 views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
+                views.setViewVisibility(R.id.widget_border, View.GONE);
             }
             views.setViewVisibility(R.id.widget_label, View.VISIBLE);
             
