@@ -11,3 +11,7 @@ local.properties
 /app/build
 /app/src/main/jniLibs
 gradle-8.9*
+
+# Ignore log files
+*.log
+log.txt
