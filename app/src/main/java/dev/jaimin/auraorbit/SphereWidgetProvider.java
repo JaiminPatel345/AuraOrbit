@@ -8,6 +8,9 @@ import android.content.Intent;
 import android.view.View;
 import android.widget.RemoteViews;
 
+import android.content.SharedPreferences;
+import androidx.preference.PreferenceManager;
+
 public class SphereWidgetProvider extends AppWidgetProvider {
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -25,12 +28,26 @@ public class SphereWidgetProvider extends AppWidgetProvider {
         android.content.ComponentName thisWidget = new android.content.ComponentName(context, SphereWidgetProvider.class);
         int[] appWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
         
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+
         for (int appWidgetId : appWidgetIds) {
+            String groupName = prefs.getString("widget_group_" + appWidgetId, null);
+            
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_sphere);
             views.setViewVisibility(R.id.widget_icon, visibility);
             
+            if (groupName != null && visibility == View.VISIBLE) {
+                views.setTextViewText(R.id.widget_label, groupName);
+                views.setViewVisibility(R.id.widget_label, View.VISIBLE);
+            } else {
+                views.setViewVisibility(R.id.widget_label, View.GONE);
+            }
+            
             Intent intent = new Intent(context, SphereModeActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            if (groupName != null) {
+                intent.putExtra("group_name", groupName);
+            }
             PendingIntent pendingIntent = PendingIntent.getActivity(
                     context, appWidgetId, intent, 
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
@@ -42,10 +59,17 @@ public class SphereWidgetProvider extends AppWidgetProvider {
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+
         for (int appWidgetId : appWidgetIds) {
+            String groupName = prefs.getString("widget_group_" + appWidgetId, null);
+
             Intent intent = new Intent(context, SphereModeActivity.class);
             // Set flags to clear any previous instance of the activity
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            if (groupName != null) {
+                intent.putExtra("group_name", groupName);
+            }
             
             PendingIntent pendingIntent = PendingIntent.getActivity(
                     context, 
@@ -55,6 +79,14 @@ public class SphereWidgetProvider extends AppWidgetProvider {
             );
 
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_sphere);
+            
+            if (groupName != null) {
+                views.setTextViewText(R.id.widget_label, groupName);
+                views.setViewVisibility(R.id.widget_label, View.VISIBLE);
+            } else {
+                views.setViewVisibility(R.id.widget_label, View.GONE);
+            }
+            
             views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
 
             appWidgetManager.updateAppWidget(appWidgetId, views);

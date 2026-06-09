@@ -79,10 +79,13 @@ public class SphereModeActivity extends AndroidApplication {
         config.b = 8;
         config.a = 8;
 
+        // Read group_name extra if opened from a pinned group widget
+        String groupName = getIntent().getStringExtra("group_name");
+
         // Initialize libGDX with activityMode=true so the engine bypasses all
         // wallpaper-specific guards (page isolation, edge exclusion, zoom revert,
         // command gating).
-        sphereEngine = new SphereEngine(this, true);
+        sphereEngine = new SphereEngine(this, true, groupName);
         View glView = initializeForView(sphereEngine, config);
         if (graphics.getView() instanceof android.view.SurfaceView) {
             android.view.SurfaceView surfaceView = (android.view.SurfaceView) graphics.getView();

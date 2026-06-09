@@ -39,6 +39,13 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
+import android.app.PendingIntent;
+import android.content.Intent;
+import dev.jaimin.auraorbit.WidgetPinnedReceiver;
+import dev.jaimin.auraorbit.SphereWidgetProvider;
+
 import dev.jaimin.auraorbit.AppFetcher;
 import dev.jaimin.auraorbit.GroupStore;
 import dev.jaimin.auraorbit.R;
@@ -179,6 +186,7 @@ public class GroupEditFragment extends Fragment {
         RecyclerView      memberList  = root.findViewById(R.id.member_list);
         MaterialButton    btnCancel   = root.findViewById(R.id.btn_cancel);
         MaterialButton    btnSave     = root.findViewById(R.id.btn_save);
+        MaterialButton    btnPinWidget= root.findViewById(R.id.btn_pin_widget);
 
         memberList.setLayoutManager(new LinearLayoutManager(requireContext()));
         memberAdapter = new MemberAdapter();
@@ -214,6 +222,13 @@ public class GroupEditFragment extends Fragment {
         // ─── Save button ──────────────────────────────────────────────────
         btnSave.setOnClickListener(v -> onSaveClicked(nameInput, prefs));
 
+        // ─── Pin Widget button ────────────────────────────────────────────
+        AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(requireContext());
+        if (originalGroupName != null && appWidgetManager.isRequestPinAppWidgetSupported()) {
+            btnPinWidget.setVisibility(View.VISIBLE);
+            btnPinWidget.setOnClickListener(v -> requestPinWidget(originalGroupName));
+        }
+
         // ─── Member search ────────────────────────────────────────────────
         memberSearch.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -243,6 +258,31 @@ public class GroupEditFragment extends Fragment {
         if (executor != null) {
             executor.shutdown();
             executor = null;
+        }
+    }
+
+    private void requestPinWidget(String groupName) {
+        AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(requireContext());
+        ComponentName myProvider = new ComponentName(requireContext(), SphereWidgetProvider.class);
+
+        if (appWidgetManager.isRequestPinAppWidgetSupported()) {
+            Intent callbackIntent = new Intent(requireContext(), WidgetPinnedReceiver.class);
+            callbackIntent.putExtra(WidgetPinnedReceiver.EXTRA_GROUP_NAME, groupName);
+            
+            int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                flags |= PendingIntent.FLAG_IMMUTABLE;
+            }
+            PendingIntent successCallback = PendingIntent.getBroadcast(
+                    requireContext(),
+                    0,
+                    callbackIntent,
+                    flags
+            );
+
+            appWidgetManager.requestPinAppWidget(myProvider, null, successCallback);
+        } else {
+            Toast.makeText(requireContext(), "Pinning widgets is not supported on this device.", Toast.LENGTH_SHORT).show();
         }
     }
 

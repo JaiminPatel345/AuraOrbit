@@ -111,6 +111,10 @@
                 android:resource="@xml/sphere_widget_info" />
         </receiver>
 
+        <receiver
+            android:name=".WidgetPinnedReceiver"
+            android:exported="false" />
+
     </application>
 
 </manifest>
