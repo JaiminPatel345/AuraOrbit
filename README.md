@@ -4,16 +4,15 @@
 
 ![AuraOrbit Logo](app/src/main/res/drawable/ic_launcher_foreground.png)
 
-## 🚀 Features
+## 🚀 Core Features
 
-- **True 3D Interactive Sphere**: Rotate your apps with natural quaternion-based momentum and exponential friction. No gimbal lock, ever.
-- **120Hz Display Unlock**: Designed specifically for flagship displays (like the Galaxy S25 Ultra), AuraOrbit explicitly unlocks your hardware's 120 FPS limit to deliver a buttery-smooth physics experience.
-- **Fibonacci Distribution**: Apps are automatically spaced evenly around the 3D sphere using the golden angle formula (`φ = π(3 - √5)`).
-- **Intelligent Grouping & Backdrops**: Group related apps together (e.g. "Social", "Games", "Work"). Apps are spatially clustered on the sphere, and groups feature translucent, 3D curved colored backdrops that orbit *behind* the icons.
-- **Direct App Launching**: Uses accurate 3D raycasting (`Camera.getPickRay()`) directly on the 3D canvas so you can launch your apps simply by tapping them on the sphere.
-- **Page Isolation**: The sphere seamlessly fades in and out as you swipe across your launcher pages, scaling perfectly with your wallpaper offsets.
-- **Retains Your System Wallpaper**: Peeks at your existing system wallpaper and renders it directly on the canvas behind the 3D scene.
-- **Adaptive Icon Ready**: Ships with a stunning custom adaptive icon tailored for modern Android launchers.
+- **3D Interactive Sphere**: Rotate your apps with natural quaternion-based momentum at 120 FPS.
+- **Intelligent Grouping**: Group related apps together with 3D translucent, color-coded backdrops.
+- **Dynamic Widgets**: Pin customized, group-specific dynamic widgets straight to your home screen.
+- **Standalone Sphere Mode**: Launch AuraOrbit as a standalone, fullscreen immersive app.
+- **Instant Performance**: Advanced memory caching guarantees your sphere loads instantly without delay.
+
+📖 **Want to see everything AuraOrbit can do? Check out the [Comprehensive Features Guide](features.md).**
 
 ## 🛠️ Architecture
 
