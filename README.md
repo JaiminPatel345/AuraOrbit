@@ -3,6 +3,8 @@
 **AuraOrbit** is a next-generation Android Live Wallpaper featuring a fully interactive 3D sphere that orbits your favorite apps right on your home screen. Built on the high-performance libGDX game engine, it leverages a golden angle Fibonacci distribution to plot your apps perfectly in a 3D space, supporting true 120 FPS hardware refresh rates!
 ![AuraOrbit Logo](assets/logo.svg)
 
+[This is video for how to show on mobile](Video/Full%20details.mp4)
+
 ## 🚀 Core Features
 
 - **3D Interactive Sphere**: Rotate your apps with natural quaternion-based momentum at 120 FPS.
