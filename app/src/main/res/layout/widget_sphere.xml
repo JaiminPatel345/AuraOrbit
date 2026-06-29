@@ -9,9 +9,8 @@
 
     <FrameLayout
         android:id="@+id/widget_icon_container"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
         android:layout_gravity="center"
         android:background="@drawable/rounded_bg_solid">
 
@@ -32,6 +31,15 @@
             android:contentDescription="AuraOrbit Widget Ring"
             android:padding="8dp"
             android:src="@drawable/ic_widget_ring" />
+            
+        <!-- Custom Logo Layer -->
+        <ImageView
+            android:id="@+id/widget_custom_logo"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="Custom Widget Logo"
+            android:scaleType="centerCrop"
+            android:visibility="gone" />
     </FrameLayout>
 
     <TextView

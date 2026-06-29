@@ -43,8 +43,14 @@ import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.net.Uri;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.PickVisualMediaRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
 import dev.jaimin.auraorbit.WidgetPinnedReceiver;
 import dev.jaimin.auraorbit.SphereWidgetProvider;
+import dev.jaimin.auraorbit.WidgetLogoStore;
+import java.io.File;
 
 import dev.jaimin.auraorbit.AppFetcher;
 import dev.jaimin.auraorbit.GroupStore;
@@ -112,6 +118,30 @@ public class GroupEditFragment extends Fragment {
      * (create mode).
      */
     private final Set<String> workingMembers = new HashSet<>();
+    
+    // ─── Widget Customization State ──────────────────────────────────────
+    private Uri pendingLogoUri = null;
+    private boolean pendingLogoClear = false;
+    private boolean isHideLogo = false;
+    private boolean isHideText = false;
+    private boolean isTransparent = false;
+    private boolean isUseThemeColor = true;
+    private ActivityResultLauncher<PickVisualMediaRequest> pickMedia;
+
+    // ─── Preview Views ───────────────────────────────────────────────────
+    private View previewIconContainer;
+    private ImageView previewPlanet;
+    private ImageView previewRing;
+    private ImageView previewCustomLogo;
+    private TextView previewLabel;
+    private TextView logoStatusLabel;
+    private View defaultLogoOptionsContainer;
+    private View customLogoOptionsContainer;
+    private MaterialButton btnWidgetLogo;
+    private com.google.android.material.materialswitch.MaterialSwitch hideLogoSwitch;
+    private com.google.android.material.materialswitch.MaterialSwitch hideTextSwitch;
+    private com.google.android.material.materialswitch.MaterialSwitch transparentSwitch;
+    private com.google.android.material.materialswitch.MaterialSwitch themeColorSwitch;
 
     // ─── Color palette (from res/values/colors.xml) ───────────────────────
     // Loaded in onViewCreated; stored as fields so color-circle click lambdas
@@ -156,6 +186,14 @@ public class GroupEditFragment extends Fragment {
         if (getArguments() != null) {
             originalGroupName = getArguments().getString(ARG_GROUP_NAME);
         }
+        
+        pickMedia = registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
+            if (uri != null) {
+                pendingLogoUri = uri;
+                pendingLogoClear = false;
+                updateLivePreview();
+            }
+        });
     }
 
     @Nullable
@@ -191,6 +229,39 @@ public class GroupEditFragment extends Fragment {
         memberList.setLayoutManager(new LinearLayoutManager(requireContext()));
         memberAdapter = new MemberAdapter();
         memberList.setAdapter(memberAdapter);
+        
+        previewIconContainer = root.findViewById(R.id.preview_icon_container);
+        previewPlanet = root.findViewById(R.id.preview_icon_planet);
+        previewRing = root.findViewById(R.id.preview_icon_ring);
+        previewCustomLogo = root.findViewById(R.id.preview_custom_logo);
+        previewLabel = root.findViewById(R.id.preview_label);
+        logoStatusLabel = root.findViewById(R.id.tv_widget_logo_status);
+        defaultLogoOptionsContainer = root.findViewById(R.id.default_logo_options_container);
+        customLogoOptionsContainer = root.findViewById(R.id.custom_logo_options_container);
+        hideLogoSwitch = root.findViewById(R.id.switch_hide_widget_logo);
+        hideTextSwitch = root.findViewById(R.id.switch_hide_widget_text);
+        transparentSwitch = root.findViewById(R.id.switch_transparent_widget);
+        themeColorSwitch = root.findViewById(R.id.switch_use_theme_color);
+        btnWidgetLogo = root.findViewById(R.id.btn_widget_logo);
+        MaterialButton btnReplaceCustomLogo = root.findViewById(R.id.btn_replace_custom_logo);
+        MaterialButton btnRemoveCustomLogo = root.findViewById(R.id.btn_remove_custom_logo);
+
+        // ─── Info Buttons ─────────────────────────────────────────────────
+        root.findViewById(R.id.btn_info_orbit_color).setOnClickListener(v -> 
+            showInfoDialog("Orbit Color", "Sets the color of the widget's ring and the group's color in the sphere.")
+        );
+        root.findViewById(R.id.btn_info_theme_color).setOnClickListener(v -> 
+            showInfoDialog("System Theme Color", "Overrides the custom orbit color to match your Android system's Material You theme.")
+        );
+        root.findViewById(R.id.btn_info_transparent).setOnClickListener(v -> 
+            showInfoDialog("Transparent Widget", "Removes the solid background from the widget so it blends seamlessly into your wallpaper.")
+        );
+        root.findViewById(R.id.btn_info_hide_logo).setOnClickListener(v -> 
+            showInfoDialog("Hide Widget Logo", "Makes the widget fully transparent by hiding the icon. Only the text label will remain visible.")
+        );
+        root.findViewById(R.id.btn_info_hide_text).setOnClickListener(v -> 
+            showInfoDialog("Hide Widget Text", "Removes the group name label displayed beneath the widget.")
+        );
 
         // ─── Load existing group data if editing ──────────────────────────
         List<GroupStore.Group> groups = GroupStore.load(prefs);
@@ -212,6 +283,63 @@ public class GroupEditFragment extends Fragment {
         selectedColor = (existingGroup != null && existingGroup.color != null)
                 ? existingGroup.color
                 : colorHexValues[0];
+                
+        // ─── Widget Customization Init ──────────────────────────────────
+        if (originalGroupName != null) {
+            isHideLogo = prefs.getBoolean("pref_widget_hide_logo_" + originalGroupName, false);
+            isHideText = prefs.getBoolean("pref_widget_hide_text_" + originalGroupName, false);
+            isTransparent = prefs.getBoolean("pref_widget_transparent_" + originalGroupName, false);
+            isUseThemeColor = prefs.getBoolean("pref_widget_use_theme_color_" + originalGroupName, true);
+        }
+        hideLogoSwitch.setChecked(isHideLogo);
+        hideLogoSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            isHideLogo = isChecked;
+            updateLivePreview();
+        });
+        
+        hideTextSwitch.setChecked(isHideText);
+        hideTextSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            isHideText = isChecked;
+            updateLivePreview();
+        });
+
+        transparentSwitch.setChecked(isTransparent);
+        transparentSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            isTransparent = isChecked;
+            updateLivePreview();
+        });
+
+        themeColorSwitch.setChecked(isUseThemeColor);
+        themeColorSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            isUseThemeColor = isChecked;
+            updateLivePreview();
+        });
+        
+        btnWidgetLogo.setOnClickListener(v -> {
+            pickMedia.launch(new PickVisualMediaRequest.Builder()
+                .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                .build());
+        });
+
+        btnReplaceCustomLogo.setOnClickListener(v -> {
+            pickMedia.launch(new PickVisualMediaRequest.Builder()
+                .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                .build());
+        });
+
+        btnRemoveCustomLogo.setOnClickListener(v -> {
+            pendingLogoClear = true;
+            pendingLogoUri = null;
+            updateLivePreview();
+        });
+        
+        nameInput.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override public void afterTextChanged(Editable s) {
+                updateLivePreview();
+            }
+        });
 
         // ─── Color circles ────────────────────────────────────────────────
         buildColorRow(colorRow);
@@ -261,6 +389,95 @@ public class GroupEditFragment extends Fragment {
 
         // ─── Load members asynchronously ──────────────────────────────────
         loadMembersAsync(prefs, groups);
+        
+        // Initial preview update
+        updateLivePreview();
+    }
+    
+    private void updateLivePreview() {
+        if (!isAdded()) return;
+        
+        TextInputEditText nameInput = requireView().findViewById(R.id.group_name_input);
+        String name = nameInput.getText().toString();
+        if (name.isEmpty()) name = "Group Name";
+        previewLabel.setText(name);
+        previewLabel.setVisibility(isHideText ? View.GONE : View.VISIBLE);
+        
+        if (isTransparent || isHideLogo) {
+            previewIconContainer.setBackground(null);
+        } else {
+            previewIconContainer.setBackgroundResource(R.drawable.rounded_bg_solid);
+        }
+        
+        previewIconContainer.setVisibility(View.VISIBLE);
+
+        boolean hasCustom = false;
+        if (pendingLogoUri != null) {
+            hasCustom = true;
+        } else if (!pendingLogoClear && originalGroupName != null && WidgetLogoStore.exists(requireContext(), originalGroupName)) {
+            hasCustom = true;
+        }
+
+        if (hasCustom) {
+            defaultLogoOptionsContainer.setVisibility(View.GONE);
+            customLogoOptionsContainer.setVisibility(View.VISIBLE);
+            btnWidgetLogo.setVisibility(View.GONE);
+            logoStatusLabel.setText("Custom Image");
+        } else {
+            defaultLogoOptionsContainer.setVisibility(View.VISIBLE);
+            customLogoOptionsContainer.setVisibility(View.GONE);
+            btnWidgetLogo.setVisibility(View.VISIBLE);
+            btnWidgetLogo.setText("Upload");
+            logoStatusLabel.setText("Default");
+        }
+
+        if (isHideLogo) {
+            previewPlanet.setVisibility(View.GONE);
+            previewRing.setVisibility(View.GONE);
+            previewCustomLogo.setVisibility(View.GONE);
+        } else {
+            if (hasCustom) {
+                previewPlanet.setVisibility(View.GONE);
+                previewRing.setVisibility(View.GONE);
+                previewCustomLogo.setVisibility(View.VISIBLE);
+                if (pendingLogoUri != null) {
+                    previewCustomLogo.setImageURI(null);
+                    previewCustomLogo.setImageURI(pendingLogoUri);
+                } else {
+                    android.graphics.Bitmap b = android.graphics.BitmapFactory.decodeFile(WidgetLogoStore.file(requireContext(), originalGroupName).getAbsolutePath());
+                    if (b != null) {
+                        previewCustomLogo.setImageBitmap(b);
+                    }
+                }
+            } else {
+                previewPlanet.setVisibility(View.VISIBLE);
+                previewCustomLogo.setVisibility(View.GONE);
+                try {
+                    if (isUseThemeColor) {
+                        previewRing.setColorFilter(requireContext().getColor(R.color.widget_theme_color));
+                    } else {
+                        previewRing.setColorFilter(Color.parseColor(selectedColor));
+                    }
+                    previewRing.setVisibility(View.VISIBLE);
+                } catch (Exception e) {
+                    previewRing.setColorFilter(Color.WHITE);
+                    previewRing.setVisibility(View.VISIBLE);
+                }
+            }
+        }
+
+        View orbitColorHeader = requireView().findViewById(R.id.orbit_color_header);
+        View colorRowScroll = (View) requireView().findViewById(R.id.color_row).getParent();
+        if (orbitColorHeader != null) orbitColorHeader.setVisibility(isUseThemeColor ? View.GONE : View.VISIBLE);
+        if (colorRowScroll != null) colorRowScroll.setVisibility(isUseThemeColor ? View.GONE : View.VISIBLE);
+    }
+    
+    private void showInfoDialog(String title, String message) {
+        new MaterialAlertDialogBuilder(requireContext())
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("Got it", null)
+            .show();
     }
 
     @Override
@@ -354,6 +571,7 @@ public class GroupEditFragment extends Fragment {
             circle.setOnClickListener(v -> {
                 selectedColor = hex;
                 buildColorRow(colorRow);
+                updateLivePreview();
             });
         }
 
@@ -444,6 +662,7 @@ public class GroupEditFragment extends Fragment {
                 if (colorRow instanceof LinearLayout) {
                     buildColorRow((LinearLayout) colorRow);
                 }
+                updateLivePreview();
             })
             .setNegativeButton("Cancel", null)
             .show();
@@ -577,6 +796,46 @@ public class GroupEditFragment extends Fragment {
 
         // Persist the mutated list.
         GroupStore.save(prefs, groups);
+
+        // Migrate widget preferences if name changed
+        if (originalGroupName != null && !originalGroupName.equals(newName)) {
+            // Rename hide logo preference
+            boolean oldHide = prefs.getBoolean("pref_widget_hide_logo_" + originalGroupName, false);
+            boolean oldHideText = prefs.getBoolean("pref_widget_hide_text_" + originalGroupName, false);
+            boolean oldTransparent = prefs.getBoolean("pref_widget_transparent_" + originalGroupName, false);
+            boolean oldUseTheme = prefs.getBoolean("pref_widget_use_theme_color_" + originalGroupName, true);
+            prefs.edit()
+                .remove("pref_widget_hide_logo_" + originalGroupName)
+                .remove("pref_widget_hide_text_" + originalGroupName)
+                .remove("pref_widget_transparent_" + originalGroupName)
+                .remove("pref_widget_use_theme_color_" + originalGroupName)
+                .putBoolean("pref_widget_hide_logo_" + newName, oldHide)
+                .putBoolean("pref_widget_hide_text_" + newName, oldHideText)
+                .putBoolean("pref_widget_transparent_" + newName, oldTransparent)
+                .putBoolean("pref_widget_use_theme_color_" + newName, oldUseTheme)
+                .apply();
+                
+            // Rename logo file
+            File oldFile = WidgetLogoStore.file(requireContext(), originalGroupName);
+            if (oldFile.exists()) {
+                File newFile = WidgetLogoStore.file(requireContext(), newName);
+                oldFile.renameTo(newFile);
+            }
+        }
+        
+        // Apply pending widget logo changes
+        prefs.edit()
+            .putBoolean("pref_widget_hide_logo_" + newName, isHideLogo)
+            .putBoolean("pref_widget_hide_text_" + newName, isHideText)
+            .putBoolean("pref_widget_transparent_" + newName, isTransparent)
+            .putBoolean("pref_widget_use_theme_color_" + newName, isUseThemeColor)
+            .apply();
+        
+        if (pendingLogoClear) {
+            WidgetLogoStore.clear(requireContext(), newName);
+        } else if (pendingLogoUri != null) {
+            WidgetLogoStore.saveFromUri(requireContext(), pendingLogoUri, newName);
+        }
 
         // Ensure apps added to this group are also visible on the sphere
         Set<String> selectedApps = new HashSet<>(prefs.getStringSet(AppFetcher.PREF_SELECTED_APPS, new HashSet<>()));
