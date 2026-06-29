@@ -201,6 +201,16 @@
                     android:textColor="?android:attr/textColorPrimary"
                     android:textSize="16sp"
                     android:layout_marginTop="16dp"/>
+
+                <!-- Hide Text Toggle -->
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_hide_widget_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Hide Widget Text"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:textSize="16sp"
+                    android:layout_marginTop="8dp"/>
                     
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

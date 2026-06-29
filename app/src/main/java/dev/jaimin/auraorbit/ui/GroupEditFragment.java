@@ -123,6 +123,7 @@ public class GroupEditFragment extends Fragment {
     private Uri pendingLogoUri = null;
     private boolean pendingLogoClear = false;
     private boolean isHideLogo = false;
+    private boolean isHideText = false;
     private ActivityResultLauncher<PickVisualMediaRequest> pickMedia;
 
     // ─── Preview Views ───────────────────────────────────────────────────
@@ -132,6 +133,7 @@ public class GroupEditFragment extends Fragment {
     private TextView previewLabel;
     private TextView logoStatusLabel;
     private com.google.android.material.materialswitch.MaterialSwitch hideLogoSwitch;
+    private com.google.android.material.materialswitch.MaterialSwitch hideTextSwitch;
 
     // ─── Color palette (from res/values/colors.xml) ───────────────────────
     // Loaded in onViewCreated; stored as fields so color-circle click lambdas
@@ -226,6 +228,7 @@ public class GroupEditFragment extends Fragment {
         previewLabel = root.findViewById(R.id.preview_label);
         logoStatusLabel = root.findViewById(R.id.tv_widget_logo_status);
         hideLogoSwitch = root.findViewById(R.id.switch_hide_widget_logo);
+        hideTextSwitch = root.findViewById(R.id.switch_hide_widget_text);
         MaterialButton btnWidgetLogo = root.findViewById(R.id.btn_widget_logo);
 
         // ─── Load existing group data if editing ──────────────────────────
@@ -252,10 +255,17 @@ public class GroupEditFragment extends Fragment {
         // ─── Widget Customization Init ──────────────────────────────────
         if (originalGroupName != null) {
             isHideLogo = prefs.getBoolean("pref_widget_hide_logo_" + originalGroupName, false);
+            isHideText = prefs.getBoolean("pref_widget_hide_text_" + originalGroupName, false);
         }
         hideLogoSwitch.setChecked(isHideLogo);
         hideLogoSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             isHideLogo = isChecked;
+            updateLivePreview();
+        });
+        
+        hideTextSwitch.setChecked(isHideText);
+        hideTextSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            isHideText = isChecked;
             updateLivePreview();
         });
         
@@ -350,6 +360,7 @@ public class GroupEditFragment extends Fragment {
         String name = nameInput.getText().toString();
         if (name.isEmpty()) name = "Group Name";
         previewLabel.setText(name);
+        previewLabel.setVisibility(isHideText ? View.GONE : View.VISIBLE);
         
         if (isHideLogo) {
             previewPlanet.setVisibility(View.GONE);
@@ -710,9 +721,12 @@ public class GroupEditFragment extends Fragment {
         if (originalGroupName != null && !originalGroupName.equals(newName)) {
             // Rename hide logo preference
             boolean oldHide = prefs.getBoolean("pref_widget_hide_logo_" + originalGroupName, false);
+            boolean oldHideText = prefs.getBoolean("pref_widget_hide_text_" + originalGroupName, false);
             prefs.edit()
                 .remove("pref_widget_hide_logo_" + originalGroupName)
+                .remove("pref_widget_hide_text_" + originalGroupName)
                 .putBoolean("pref_widget_hide_logo_" + newName, oldHide)
+                .putBoolean("pref_widget_hide_text_" + newName, oldHideText)
                 .apply();
                 
             // Rename logo file
@@ -724,7 +738,10 @@ public class GroupEditFragment extends Fragment {
         }
         
         // Apply pending widget logo changes
-        prefs.edit().putBoolean("pref_widget_hide_logo_" + newName, isHideLogo).apply();
+        prefs.edit()
+            .putBoolean("pref_widget_hide_logo_" + newName, isHideLogo)
+            .putBoolean("pref_widget_hide_text_" + newName, isHideText)
+            .apply();
         
         if (pendingLogoClear) {
             WidgetLogoStore.clear(requireContext(), newName);

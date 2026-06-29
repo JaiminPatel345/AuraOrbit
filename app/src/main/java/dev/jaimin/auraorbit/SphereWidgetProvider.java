@@ -43,6 +43,11 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                     views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
                     boolean hideLogo = prefs.getBoolean("pref_widget_hide_logo_" + groupName, false);
                     if (hideLogo) {
+                        views.setInt(R.id.widget_icon_container, "setBackgroundColor", android.graphics.Color.TRANSPARENT);
+                    } else {
+                        views.setInt(R.id.widget_icon_container, "setBackgroundResource", R.drawable.rounded_bg_solid);
+                    }
+                    if (hideLogo) {
                         views.setViewVisibility(R.id.widget_icon_planet, View.GONE);
                         views.setViewVisibility(R.id.widget_icon_ring, View.GONE);
                         views.setViewVisibility(R.id.widget_custom_logo, View.GONE);
@@ -120,7 +125,12 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                 }
                 
                 if (groupName != null) {
-                    views.setViewVisibility(R.id.widget_label, View.VISIBLE);
+                    boolean hideGroupText = prefs.getBoolean("pref_widget_hide_text_" + groupName, false);
+                    if (hideGroupText) {
+                        views.setViewVisibility(R.id.widget_label, View.GONE);
+                    } else {
+                        views.setViewVisibility(R.id.widget_label, View.VISIBLE);
+                    }
                 }
             } else {
                 views.setViewVisibility(R.id.widget_label, View.GONE);
@@ -178,6 +188,11 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                 views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
                 boolean hideLogo = prefs.getBoolean("pref_widget_hide_logo_" + groupName, false);
                 if (hideLogo) {
+                    views.setInt(R.id.widget_icon_container, "setBackgroundColor", android.graphics.Color.TRANSPARENT);
+                } else {
+                    views.setInt(R.id.widget_icon_container, "setBackgroundResource", R.drawable.rounded_bg_solid);
+                }
+                if (hideLogo) {
                     views.setViewVisibility(R.id.widget_icon_planet, View.GONE);
                     views.setViewVisibility(R.id.widget_icon_ring, View.GONE);
                     views.setViewVisibility(R.id.widget_custom_logo, View.GONE);
@@ -209,7 +224,12 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                         views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
                     }
                 }
-                views.setViewVisibility(R.id.widget_label, View.VISIBLE);
+                boolean hideGroupText = prefs.getBoolean("pref_widget_hide_text_" + groupName, false);
+                if (hideGroupText) {
+                    views.setViewVisibility(R.id.widget_label, View.GONE);
+                } else {
+                    views.setViewVisibility(R.id.widget_label, View.VISIBLE);
+                }
             } else {
                 String widgetName = prefs.getString("pref_widget_name", "All");
                 boolean transparent = prefs.getBoolean("pref_widget_transparent", false);

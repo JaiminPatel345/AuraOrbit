@@ -74,7 +74,7 @@ public class GroupListFragment extends Fragment {
 
         recyclerView = root.findViewById(R.id.group_list);
         emptyView    = root.findViewById(R.id.empty_view);
-        FloatingActionButton fab = root.findViewById(R.id.fab_add);
+        com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton fab = root.findViewById(R.id.fab_add);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
 
