@@ -2460,7 +2460,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
         // ─── Layer 1: Background ─────────────────────────────────────────
         // Always draws: user photo if available; gradient texture otherwise.
-        if (!activityMode) {
+        if (!activityMode || backgroundTexture != null) {
             renderBackground();
         }
 

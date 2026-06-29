@@ -46,6 +46,7 @@ public class DashboardFragment extends Fragment {
     private View customLogoOptionsContainer;
     private com.google.android.material.button.MaterialButton btnWidgetLogo;
     private String selectedColor;
+    private boolean isPickingDeviceWallpaper = false;
 
     private final ActivityResultLauncher<PickVisualMediaRequest> pickMedia =
             registerForActivityResult(
@@ -102,6 +103,15 @@ public class DashboardFragment extends Fragment {
             if (fromUser) prefs.edit().putInt("pref_rotation_speed", (int) value).apply();
         });
 
+        // Blur Background
+        MaterialSwitch switchBlurBackground = view.findViewById(R.id.switch_blur_background);
+        if (switchBlurBackground != null) {
+            switchBlurBackground.setChecked(prefs.getBoolean("pref_blur_background", false));
+            switchBlurBackground.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                prefs.edit().putBoolean("pref_blur_background", isChecked).apply();
+            });
+        }
+
         // FPS
         TextView tvFpsValue = view.findViewById(R.id.tv_fps_value);
         String fpsStr = prefs.getString("pref_target_fps", "120");
@@ -132,11 +142,12 @@ public class DashboardFragment extends Fragment {
         tvBackgroundStatus = view.findViewById(R.id.tv_background_status);
         updateBackgroundStatus();
 
-        view.findViewById(R.id.btn_background).setOnClickListener(v -> {
+        view.findViewById(R.id.btn_app_background).setOnClickListener(v -> {
             if (BackgroundStore.exists(requireContext())) {
                 new MaterialAlertDialogBuilder(requireContext())
                         .setItems(new CharSequence[]{"Choose new photo", "Remove photo", "Cancel"}, (dialog, which) -> {
                             if (which == 0) {
+                                isPickingDeviceWallpaper = false;
                                 launchPicker();
                             } else if (which == 1) {
                                 BackgroundStore.clear(requireContext());
@@ -145,8 +156,14 @@ public class DashboardFragment extends Fragment {
                         })
                         .show();
             } else {
+                isPickingDeviceWallpaper = false;
                 launchPicker();
             }
+        });
+
+        view.findViewById(R.id.btn_set_device_wallpaper).setOnClickListener(v -> {
+            isPickingDeviceWallpaper = true;
+            launchPicker();
         });
 
         // GitHub link
@@ -283,6 +300,20 @@ public class DashboardFragment extends Fragment {
 
     private void saveBackground(@Nullable Uri uri) {
         if (uri == null) return;
+        if (isPickingDeviceWallpaper) {
+            try {
+                android.app.WallpaperManager wm = android.app.WallpaperManager.getInstance(requireContext());
+                java.io.InputStream is = requireContext().getContentResolver().openInputStream(uri);
+                wm.setStream(is);
+                if (is != null) is.close();
+                Toast.makeText(requireContext(), "Device wallpaper updated!", Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                e.printStackTrace();
+                Toast.makeText(requireContext(), "Failed to set wallpaper", Toast.LENGTH_SHORT).show();
+            }
+            return;
+        }
+        
         Context appCtx = requireContext().getApplicationContext();
         Handler mainThread = new Handler(Looper.getMainLooper());
         executor.execute(() -> {
