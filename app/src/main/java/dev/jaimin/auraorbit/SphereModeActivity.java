@@ -56,6 +56,12 @@ public class SphereModeActivity extends AndroidApplication {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        android.content.SharedPreferences prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
+        if (prefs.getBoolean("pref_blur_background", false) && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND);
+            getWindow().getAttributes().setBlurBehindRadius(100);
+        }
+
         // ─── Fullscreen / edge-to-edge ──────────────────────────────────
         // Tell the decor not to fit system windows so the GL surface reaches
         // every pixel including display cutouts.
@@ -114,7 +120,6 @@ public class SphereModeActivity extends AndroidApplication {
         hideSystemBars();
 
         // ─── Empty state popup ────────────────────────────────────────────
-        android.content.SharedPreferences prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
         java.util.Set<String> selectedApps = prefs.getStringSet(AppFetcher.PREF_SELECTED_APPS, new java.util.HashSet<>());
         if (selectedApps.isEmpty()) {
             new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)

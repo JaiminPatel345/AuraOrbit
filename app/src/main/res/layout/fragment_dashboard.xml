@@ -22,7 +22,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="24dp" />
-            
+
         <!-- Apps Card -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/card_apps"
@@ -132,18 +132,46 @@
                 android:orientation="vertical"
                 android:padding="20dp">
 
-                <!-- Background -->
-                <RelativeLayout
+                <!-- Wallpaper & Background Section Title -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Background &amp; Wallpaper"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="16dp"/>
+
+                <!-- App Background (Sphere Mode) -->
+                <LinearLayout
+                    android:id="@+id/btn_app_background"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+                    
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/ic_widget_planet" 
+                        android:padding="8dp"
+                        android:background="@drawable/rounded_bg_solid"
+                        app:tint="?attr/colorPrimary"/>
+                        
                     <LinearLayout
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:layout_marginStart="16dp">
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Background Image"
+                            android:text="Sphere Background"
                             android:textColor="?android:attr/textColorPrimary"
                             android:textSize="16sp"/>
                         <TextView
@@ -151,18 +179,104 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Default"
-                            android:textColor="?android:attr/textColorSecondary"
-                            android:layout_marginTop="4dp"/>
+                            android:textSize="14sp"
+                            android:textColor="?android:attr/textColorSecondary"/>
                     </LinearLayout>
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_background"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
+                    
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@android:drawable/ic_menu_edit"
+                        app:tint="?attr/colorOnSurfaceVariant"/>
+                </LinearLayout>
+
+                <!-- Set Device Wallpaper -->
+                <LinearLayout
+                    android:id="@+id/btn_set_device_wallpaper"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="20dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+                    
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@android:drawable/ic_menu_gallery" 
+                        android:padding="8dp"
+                        android:background="@drawable/rounded_bg_solid"
+                        app:tint="?attr/colorPrimary"/>
+                        
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
                         android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:text="Change" />
-                </RelativeLayout>
+                        android:orientation="vertical"
+                        android:layout_marginStart="16dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Device Wallpaper"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:textSize="16sp"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Set home screen wallpaper"
+                            android:textSize="14sp"
+                            android:textColor="?android:attr/textColorSecondary"/>
+                    </LinearLayout>
+                    
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@android:drawable/ic_menu_add"
+                        app:tint="?attr/colorOnSurfaceVariant"/>
+                </LinearLayout>
+
+                <!-- Blur Background Switch -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="20dp">
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@android:drawable/ic_menu_view" 
+                        android:padding="8dp"
+                        android:background="@drawable/rounded_bg_solid"
+                        app:tint="?attr/colorPrimary"/>
+                        
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginStart="16dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Blur Home Screen"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:textSize="16sp"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="When Sphere is open"
+                            android:textSize="14sp"
+                            android:textColor="?android:attr/textColorSecondary"/>
+                    </LinearLayout>
+                    
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switch_blur_background"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
 
                 <View
                     android:layout_width="match_parent"
