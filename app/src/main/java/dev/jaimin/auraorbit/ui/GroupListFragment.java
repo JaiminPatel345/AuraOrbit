@@ -206,6 +206,28 @@ public class GroupListFragment extends Fragment {
                 oval.setColor(Color.WHITE);
             }
             holder.colorDot.setBackground(oval);
+            
+            // ─── Custom Logo Preview ───────────────────────────────────────
+            boolean hideLogo = PreferenceManager.getDefaultSharedPreferences(requireContext())
+                    .getBoolean("pref_widget_hide_logo_" + group.name, false);
+                    
+            if (hideLogo) {
+                holder.planetIcon.setVisibility(View.GONE);
+                holder.colorDot.setVisibility(View.GONE);
+                holder.customLogo.setVisibility(View.GONE);
+            } else if (dev.jaimin.auraorbit.WidgetLogoStore.exists(requireContext(), group.name)) {
+                holder.planetIcon.setVisibility(View.GONE);
+                holder.colorDot.setVisibility(View.GONE);
+                holder.customLogo.setVisibility(View.VISIBLE);
+                android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeFile(dev.jaimin.auraorbit.WidgetLogoStore.file(requireContext(), group.name).getAbsolutePath());
+                if (bitmap != null) {
+                    holder.customLogo.setImageBitmap(bitmap);
+                }
+            } else {
+                holder.planetIcon.setVisibility(View.VISIBLE);
+                holder.colorDot.setVisibility(View.VISIBLE);
+                holder.customLogo.setVisibility(View.GONE);
+            }
 
             holder.name.setText(group.name);
             holder.count.setText(getString(R.string.group_member_count,
@@ -227,6 +249,8 @@ public class GroupListFragment extends Fragment {
 
         final class VH extends RecyclerView.ViewHolder {
             final View     colorDot;
+            final android.widget.ImageView planetIcon;
+            final android.widget.ImageView customLogo;
             final TextView name;
             final TextView count;
             final android.widget.ImageView btnDelete;
@@ -234,6 +258,8 @@ public class GroupListFragment extends Fragment {
             VH(@NonNull View itemView) {
                 super(itemView);
                 colorDot  = itemView.findViewById(R.id.group_color_dot);
+                planetIcon = itemView.findViewById(R.id.group_icon_planet);
+                customLogo = itemView.findViewById(R.id.group_custom_logo);
                 name      = itemView.findViewById(R.id.group_name);
                 count     = itemView.findViewById(R.id.group_count);
                 btnDelete = itemView.findViewById(R.id.btn_delete_group);

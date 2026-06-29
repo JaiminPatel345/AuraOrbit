@@ -43,8 +43,14 @@ import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.net.Uri;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.PickVisualMediaRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
 import dev.jaimin.auraorbit.WidgetPinnedReceiver;
 import dev.jaimin.auraorbit.SphereWidgetProvider;
+import dev.jaimin.auraorbit.WidgetLogoStore;
+import java.io.File;
 
 import dev.jaimin.auraorbit.AppFetcher;
 import dev.jaimin.auraorbit.GroupStore;
@@ -112,6 +118,20 @@ public class GroupEditFragment extends Fragment {
      * (create mode).
      */
     private final Set<String> workingMembers = new HashSet<>();
+    
+    // ─── Widget Customization State ──────────────────────────────────────
+    private Uri pendingLogoUri = null;
+    private boolean pendingLogoClear = false;
+    private boolean isHideLogo = false;
+    private ActivityResultLauncher<PickVisualMediaRequest> pickMedia;
+
+    // ─── Preview Views ───────────────────────────────────────────────────
+    private ImageView previewPlanet;
+    private ImageView previewRing;
+    private ImageView previewCustomLogo;
+    private TextView previewLabel;
+    private TextView logoStatusLabel;
+    private com.google.android.material.materialswitch.MaterialSwitch hideLogoSwitch;
 
     // ─── Color palette (from res/values/colors.xml) ───────────────────────
     // Loaded in onViewCreated; stored as fields so color-circle click lambdas
@@ -156,6 +176,14 @@ public class GroupEditFragment extends Fragment {
         if (getArguments() != null) {
             originalGroupName = getArguments().getString(ARG_GROUP_NAME);
         }
+        
+        pickMedia = registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
+            if (uri != null) {
+                pendingLogoUri = uri;
+                pendingLogoClear = false;
+                updateLivePreview();
+            }
+        });
     }
 
     @Nullable
@@ -191,6 +219,14 @@ public class GroupEditFragment extends Fragment {
         memberList.setLayoutManager(new LinearLayoutManager(requireContext()));
         memberAdapter = new MemberAdapter();
         memberList.setAdapter(memberAdapter);
+        
+        previewPlanet = root.findViewById(R.id.preview_icon_planet);
+        previewRing = root.findViewById(R.id.preview_icon_ring);
+        previewCustomLogo = root.findViewById(R.id.preview_custom_logo);
+        previewLabel = root.findViewById(R.id.preview_label);
+        logoStatusLabel = root.findViewById(R.id.tv_widget_logo_status);
+        hideLogoSwitch = root.findViewById(R.id.switch_hide_widget_logo);
+        MaterialButton btnWidgetLogo = root.findViewById(R.id.btn_widget_logo);
 
         // ─── Load existing group data if editing ──────────────────────────
         List<GroupStore.Group> groups = GroupStore.load(prefs);
@@ -212,6 +248,47 @@ public class GroupEditFragment extends Fragment {
         selectedColor = (existingGroup != null && existingGroup.color != null)
                 ? existingGroup.color
                 : colorHexValues[0];
+                
+        // ─── Widget Customization Init ──────────────────────────────────
+        if (originalGroupName != null) {
+            isHideLogo = prefs.getBoolean("pref_widget_hide_logo_" + originalGroupName, false);
+        }
+        hideLogoSwitch.setChecked(isHideLogo);
+        hideLogoSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            isHideLogo = isChecked;
+            updateLivePreview();
+        });
+        
+        btnWidgetLogo.setOnClickListener(v -> {
+            if ((originalGroupName != null && WidgetLogoStore.exists(requireContext(), originalGroupName) && !pendingLogoClear) || pendingLogoUri != null) {
+                // Currently has a custom logo, ask to remove or change
+                new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Widget Logo")
+                    .setItems(new CharSequence[]{"Choose new logo", "Remove logo"}, (dialog, which) -> {
+                        if (which == 0) {
+                            pickMedia.launch(new PickVisualMediaRequest.Builder()
+                                .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                                .build());
+                        } else {
+                            pendingLogoClear = true;
+                            pendingLogoUri = null;
+                            updateLivePreview();
+                        }
+                    }).show();
+            } else {
+                pickMedia.launch(new PickVisualMediaRequest.Builder()
+                    .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                    .build());
+            }
+        });
+        
+        nameInput.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override public void afterTextChanged(Editable s) {
+                updateLivePreview();
+            }
+        });
 
         // ─── Color circles ────────────────────────────────────────────────
         buildColorRow(colorRow);
@@ -261,6 +338,55 @@ public class GroupEditFragment extends Fragment {
 
         // ─── Load members asynchronously ──────────────────────────────────
         loadMembersAsync(prefs, groups);
+        
+        // Initial preview update
+        updateLivePreview();
+    }
+    
+    private void updateLivePreview() {
+        if (!isAdded()) return;
+        
+        TextInputEditText nameInput = requireView().findViewById(R.id.group_name_input);
+        String name = nameInput.getText().toString();
+        if (name.isEmpty()) name = "Group Name";
+        previewLabel.setText(name);
+        
+        if (isHideLogo) {
+            previewPlanet.setVisibility(View.GONE);
+            previewRing.setVisibility(View.GONE);
+            previewCustomLogo.setVisibility(View.GONE);
+        } else {
+            boolean hasCustom = false;
+            if (pendingLogoUri != null) {
+                previewCustomLogo.setImageURI(null);
+                previewCustomLogo.setImageURI(pendingLogoUri);
+                hasCustom = true;
+            } else if (!pendingLogoClear && originalGroupName != null && WidgetLogoStore.exists(requireContext(), originalGroupName)) {
+                android.graphics.Bitmap b = android.graphics.BitmapFactory.decodeFile(WidgetLogoStore.file(requireContext(), originalGroupName).getAbsolutePath());
+                if (b != null) {
+                    previewCustomLogo.setImageBitmap(b);
+                    hasCustom = true;
+                }
+            }
+            
+            if (hasCustom) {
+                previewPlanet.setVisibility(View.GONE);
+                previewRing.setVisibility(View.GONE);
+                previewCustomLogo.setVisibility(View.VISIBLE);
+                logoStatusLabel.setText("Custom Image");
+            } else {
+                previewPlanet.setVisibility(View.VISIBLE);
+                previewCustomLogo.setVisibility(View.GONE);
+                logoStatusLabel.setText("Default");
+                try {
+                    previewRing.setColorFilter(Color.parseColor(selectedColor));
+                    previewRing.setVisibility(View.VISIBLE);
+                } catch (Exception e) {
+                    previewRing.setColorFilter(Color.WHITE);
+                    previewRing.setVisibility(View.VISIBLE);
+                }
+            }
+        }
     }
 
     @Override
@@ -354,6 +480,7 @@ public class GroupEditFragment extends Fragment {
             circle.setOnClickListener(v -> {
                 selectedColor = hex;
                 buildColorRow(colorRow);
+                updateLivePreview();
             });
         }
 
@@ -444,6 +571,7 @@ public class GroupEditFragment extends Fragment {
                 if (colorRow instanceof LinearLayout) {
                     buildColorRow((LinearLayout) colorRow);
                 }
+                updateLivePreview();
             })
             .setNegativeButton("Cancel", null)
             .show();
@@ -577,6 +705,32 @@ public class GroupEditFragment extends Fragment {
 
         // Persist the mutated list.
         GroupStore.save(prefs, groups);
+
+        // Migrate widget preferences if name changed
+        if (originalGroupName != null && !originalGroupName.equals(newName)) {
+            // Rename hide logo preference
+            boolean oldHide = prefs.getBoolean("pref_widget_hide_logo_" + originalGroupName, false);
+            prefs.edit()
+                .remove("pref_widget_hide_logo_" + originalGroupName)
+                .putBoolean("pref_widget_hide_logo_" + newName, oldHide)
+                .apply();
+                
+            // Rename logo file
+            File oldFile = WidgetLogoStore.file(requireContext(), originalGroupName);
+            if (oldFile.exists()) {
+                File newFile = WidgetLogoStore.file(requireContext(), newName);
+                oldFile.renameTo(newFile);
+            }
+        }
+        
+        // Apply pending widget logo changes
+        prefs.edit().putBoolean("pref_widget_hide_logo_" + newName, isHideLogo).apply();
+        
+        if (pendingLogoClear) {
+            WidgetLogoStore.clear(requireContext(), newName);
+        } else if (pendingLogoUri != null) {
+            WidgetLogoStore.saveFromUri(requireContext(), pendingLogoUri, newName);
+        }
 
         // Ensure apps added to this group are also visible on the sphere
         Set<String> selectedApps = new HashSet<>(prefs.getStringSet(AppFetcher.PREF_SELECTED_APPS, new HashSet<>()));

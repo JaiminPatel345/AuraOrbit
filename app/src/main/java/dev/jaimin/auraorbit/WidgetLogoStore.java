@@ -9,20 +9,28 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 
 public class WidgetLogoStore {
-    private static final String FILE_NAME = "widget_logo.png";
+    private static final String DEFAULT_FILE_NAME = "widget_logo.png";
 
+    public static boolean exists(Context context, String groupName) {
+        return file(context, groupName).exists();
+    }
+    
     public static boolean exists(Context context) {
-        return file(context).exists();
+        return exists(context, null);
     }
 
-    public static void clear(Context context) {
-        File f = file(context);
+    public static void clear(Context context, String groupName) {
+        File f = file(context, groupName);
         if (f.exists()) {
             f.delete();
         }
     }
+    
+    public static void clear(Context context) {
+        clear(context, null);
+    }
 
-    public static boolean saveFromUri(Context context, Uri uri) {
+    public static boolean saveFromUri(Context context, Uri uri, String groupName) {
         try {
             InputStream in = context.getContentResolver().openInputStream(uri);
             if (in == null) return false;
@@ -58,7 +66,7 @@ public class WidgetLogoStore {
                 }
             }
 
-            File f = file(context);
+            File f = file(context, groupName);
             FileOutputStream out = new FileOutputStream(f);
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
             out.flush();
@@ -71,8 +79,19 @@ public class WidgetLogoStore {
             return false;
         }
     }
+    
+    public static boolean saveFromUri(Context context, Uri uri) {
+        return saveFromUri(context, uri, null);
+    }
 
+    public static File file(Context context, String groupName) {
+        String fileName = (groupName == null || groupName.isEmpty()) 
+                ? DEFAULT_FILE_NAME 
+                : "widget_logo_" + groupName.replaceAll("[^a-zA-Z0-9_-]", "") + ".png";
+        return new File(context.getFilesDir(), fileName);
+    }
+    
     public static File file(Context context) {
-        return new File(context.getFilesDir(), FILE_NAME);
+        return file(context, null);
     }
 }

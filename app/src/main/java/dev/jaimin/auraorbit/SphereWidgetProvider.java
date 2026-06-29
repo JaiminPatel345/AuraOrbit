@@ -41,22 +41,39 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                 if (groupName != null) {
                     views.setTextViewText(R.id.widget_label, groupName);
                     views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
-                    GroupStore.Group group = GroupStore.find(groups, groupName);
-                    if (group != null) {
-                        try {
-                            int color = android.graphics.Color.parseColor(group.color);
-                            views.setInt(R.id.widget_icon_ring, "setColorFilter", color);
-                            views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
-                        } catch (Exception e) {
-                            views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.WHITE);
-                            views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
+                    boolean hideLogo = prefs.getBoolean("pref_widget_hide_logo_" + groupName, false);
+                    if (hideLogo) {
+                        views.setViewVisibility(R.id.widget_icon_planet, View.GONE);
+                        views.setViewVisibility(R.id.widget_icon_ring, View.GONE);
+                        views.setViewVisibility(R.id.widget_custom_logo, View.GONE);
+                    } else if (WidgetLogoStore.exists(context, groupName)) {
+                        views.setViewVisibility(R.id.widget_icon_planet, View.GONE);
+                        views.setViewVisibility(R.id.widget_icon_ring, View.GONE);
+                        views.setViewVisibility(R.id.widget_custom_logo, View.VISIBLE);
+                        android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeFile(WidgetLogoStore.file(context, groupName).getAbsolutePath());
+                        if (bitmap != null) {
+                            views.setImageViewBitmap(R.id.widget_custom_logo, bitmap);
                         }
                     } else {
-                        views.setTextViewText(R.id.widget_label, "Deleted");
-                        views.setTextColor(R.id.widget_label, android.graphics.Color.RED);
-                        views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.RED);
-                        views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
-                        // don't set intent so it doesn't open deleted group
+                        views.setViewVisibility(R.id.widget_icon_planet, View.VISIBLE);
+                        views.setViewVisibility(R.id.widget_custom_logo, View.GONE);
+                        GroupStore.Group group = GroupStore.find(groups, groupName);
+                        if (group != null) {
+                            try {
+                                int color = android.graphics.Color.parseColor(group.color);
+                                views.setInt(R.id.widget_icon_ring, "setColorFilter", color);
+                                views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
+                            } catch (Exception e) {
+                                views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.WHITE);
+                                views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
+                            }
+                        } else {
+                            views.setTextViewText(R.id.widget_label, "Deleted");
+                            views.setTextColor(R.id.widget_label, android.graphics.Color.RED);
+                            views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.RED);
+                            views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
+                            // don't set intent so it doesn't open deleted group
+                        }
                     }
                 } else {
                     String widgetName = prefs.getString("pref_widget_name", "All");
@@ -159,21 +176,38 @@ public class SphereWidgetProvider extends AppWidgetProvider {
             if (groupName != null) {
                 views.setTextViewText(R.id.widget_label, groupName);
                 views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
-                GroupStore.Group group = GroupStore.find(groups, groupName);
-                if (group != null) {
-                    try {
-                        int color = android.graphics.Color.parseColor(group.color);
-                        views.setInt(R.id.widget_icon_ring, "setColorFilter", color);
-                        views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
-                    } catch (Exception e) {
-                        views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.WHITE);
-                        views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
+                boolean hideLogo = prefs.getBoolean("pref_widget_hide_logo_" + groupName, false);
+                if (hideLogo) {
+                    views.setViewVisibility(R.id.widget_icon_planet, View.GONE);
+                    views.setViewVisibility(R.id.widget_icon_ring, View.GONE);
+                    views.setViewVisibility(R.id.widget_custom_logo, View.GONE);
+                } else if (WidgetLogoStore.exists(context, groupName)) {
+                    views.setViewVisibility(R.id.widget_icon_planet, View.GONE);
+                    views.setViewVisibility(R.id.widget_icon_ring, View.GONE);
+                    views.setViewVisibility(R.id.widget_custom_logo, View.VISIBLE);
+                    android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeFile(WidgetLogoStore.file(context, groupName).getAbsolutePath());
+                    if (bitmap != null) {
+                        views.setImageViewBitmap(R.id.widget_custom_logo, bitmap);
                     }
                 } else {
-                    views.setTextViewText(R.id.widget_label, "Deleted");
-                    views.setTextColor(R.id.widget_label, android.graphics.Color.RED);
-                    views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.RED);
-                    views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
+                    views.setViewVisibility(R.id.widget_icon_planet, View.VISIBLE);
+                    views.setViewVisibility(R.id.widget_custom_logo, View.GONE);
+                    GroupStore.Group group = GroupStore.find(groups, groupName);
+                    if (group != null) {
+                        try {
+                            int color = android.graphics.Color.parseColor(group.color);
+                            views.setInt(R.id.widget_icon_ring, "setColorFilter", color);
+                            views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
+                        } catch (Exception e) {
+                            views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.WHITE);
+                            views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
+                        }
+                    } else {
+                        views.setTextViewText(R.id.widget_label, "Deleted");
+                        views.setTextColor(R.id.widget_label, android.graphics.Color.RED);
+                        views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.RED);
+                        views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
+                    }
                 }
                 views.setViewVisibility(R.id.widget_label, View.VISIBLE);
             } else {
