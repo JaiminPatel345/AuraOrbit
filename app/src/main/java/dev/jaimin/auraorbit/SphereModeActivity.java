@@ -107,9 +107,28 @@ public class SphereModeActivity extends AndroidApplication {
         android.util.DisplayMetrics metrics = getResources().getDisplayMetrics();
         int screenWidth = metrics.widthPixels;
         WindowManager.LayoutParams params = getWindow().getAttributes();
-        params.width = screenWidth;
-        params.height = screenWidth;
-        params.gravity = android.view.Gravity.CENTER;
+        
+        prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
+        String pos = prefs.getString("pref_sphere_position", "center");
+        float scale = prefs.getFloat("pref_sphere_scale", 1.0f);
+        
+        params.width = (int) (screenWidth * scale);
+        params.height = (int) (screenWidth * scale);
+        
+        if ("top".equals(pos)) {
+            params.gravity = android.view.Gravity.TOP | android.view.Gravity.CENTER_HORIZONTAL;
+            params.y = 100;
+        } else if ("bottom".equals(pos)) {
+            params.gravity = android.view.Gravity.BOTTOM | android.view.Gravity.CENTER_HORIZONTAL;
+            params.y = 100;
+        } else if ("custom".equals(pos)) {
+            params.gravity = android.view.Gravity.TOP | android.view.Gravity.LEFT;
+            params.x = (int) prefs.getFloat("pref_sphere_x", 0);
+            params.y = (int) prefs.getFloat("pref_sphere_y", (metrics.heightPixels - params.height) / 2f);
+        } else {
+            params.gravity = android.view.Gravity.CENTER;
+        }
+        
         params.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
         params.flags |= WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
         getWindow().setAttributes(params);

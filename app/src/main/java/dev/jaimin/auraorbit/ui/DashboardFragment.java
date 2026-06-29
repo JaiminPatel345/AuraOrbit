@@ -26,8 +26,10 @@ import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.slider.Slider;
 import android.widget.EditText;
 import android.text.InputType;
+import dev.jaimin.auraorbit.AppFetcher;
 import dev.jaimin.auraorbit.WidgetLogoStore;
 import dev.jaimin.auraorbit.SphereWidgetProvider;
+import dev.jaimin.auraorbit.SpherePositionEditorActivity;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -59,6 +61,21 @@ public class DashboardFragment extends Fragment {
                     new ActivityResultContracts.PickVisualMedia(),
                     this::saveWidgetLogo
             );
+
+    public static final String PREF_SPHERE_POSITION = "pref_sphere_position";
+    private TextView tvSpherePositionStatus;
+
+    private void updateSpherePositionStatus() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        String position = prefs.getString(PREF_SPHERE_POSITION, "center");
+        String display = "Center";
+        if ("top".equals(position)) display = "Top";
+        else if ("bottom".equals(position)) display = "Bottom";
+        else if ("custom".equals(position)) display = "Custom";
+        if (tvSpherePositionStatus != null) {
+            tvSpherePositionStatus.setText(display);
+        }
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -136,6 +153,14 @@ public class DashboardFragment extends Fragment {
                     })
                     .setNegativeButton("Cancel", null)
                     .show();
+        });
+
+        // Sphere Position handler
+        tvSpherePositionStatus = view.findViewById(R.id.tv_sphere_position_status);
+        updateSpherePositionStatus();
+
+        view.findViewById(R.id.btn_sphere_position).setOnClickListener(v -> {
+            startActivity(new android.content.Intent(requireContext(), SpherePositionEditorActivity.class));
         });
 
         // Background handler
@@ -269,6 +294,7 @@ public class DashboardFragment extends Fragment {
         requireActivity().setTitle(R.string.settings_title);
         updateBackgroundStatus();
         updateWidgetLogoStatus();
+        updateSpherePositionStatus();
     }
 
     @Override
