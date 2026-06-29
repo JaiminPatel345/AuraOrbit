@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/rounded_bg_solid">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Customize Widget Logo"
+        android:textColor="@android:color/white"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Preview -->
+    <FrameLayout
+        android:id="@+id/dialog_preview_container"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/rounded_bg_solid"
+        android:layout_marginBottom="24dp">
+
+        <ImageView
+            android:id="@+id/dialog_preview_planet"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="16dp"
+            android:src="@drawable/ic_widget_planet" />
+
+        <ImageView
+            android:id="@+id/dialog_preview_ring"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="16dp"
+            android:src="@drawable/ic_widget_ring" />
+            
+        <ImageView
+            android:id="@+id/dialog_preview_custom"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <!-- Orbit Color Options -->
+    <TextView
+        android:id="@+id/dialog_color_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Orbit Color"
+        android:textColor="@android:color/white"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp" />
+
+    <HorizontalScrollView
+        android:id="@+id/dialog_color_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:layout_marginBottom="24dp">
+
+        <LinearLayout
+            android:id="@+id/dialog_color_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingVertical="4dp" />
+    </HorizontalScrollView>
+
+    <!-- Buttons -->
+    <Button
+        android:id="@+id/dialog_btn_upload"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Upload Custom Logo"
+        android:backgroundTint="#333333"
+        android:textColor="@android:color/white"
+        android:layout_marginBottom="8dp" />
+
+    <Button
+        android:id="@+id/dialog_btn_remove_custom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Remove Custom Logo"
+        android:backgroundTint="#E53935"
+        android:textColor="@android:color/white"
+        android:visibility="gone"
+        android:layout_marginBottom="16dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <Button
+            android:id="@+id/dialog_btn_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancel"
+            style="?android:attr/buttonBarButtonStyle"
+            android:textColor="#AAAAAA" />
+
+        <Button
+            android:id="@+id/dialog_btn_save"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Save"
+            style="?android:attr/buttonBarButtonStyle"
+            android:textColor="#2196F3" />
+    </LinearLayout>
+
+</LinearLayout>

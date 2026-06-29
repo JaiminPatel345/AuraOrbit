@@ -218,6 +218,145 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Widget Settings -->
+        <TextView
+            android:id="@+id/tv_widget_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Default Widget"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="?android:attr/textColorPrimary"
+            app:layout_constraintTop_toBottomOf="@id/card_sphere"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="32dp"/>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_widget"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="?attr/colorSurfaceVariant"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:layout_constraintTop_toBottomOf="@id/tv_widget_title">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <!-- Widget Name -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Widget Name"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:textSize="16sp"/>
+                        <TextView
+                            android:id="@+id/tv_widget_name"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="All"
+                            android:textColor="?android:attr/textColorSecondary"
+                            android:layout_marginTop="4dp"/>
+                    </LinearLayout>
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_widget_name"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:text="Change" />
+                </RelativeLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="?attr/colorOutlineVariant"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="16dp"/>
+
+                <!-- Widget Logo -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Widget Logo"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:textSize="16sp"/>
+                        <TextView
+                            android:id="@+id/tv_widget_logo_status"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Default"
+                            android:textColor="?android:attr/textColorSecondary"
+                            android:layout_marginTop="4dp"/>
+                    </LinearLayout>
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_widget_logo"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:text="Change" />
+                </RelativeLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="?attr/colorOutlineVariant"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="16dp"/>
+
+                <!-- Transparent Widget -->
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_transparent_widget"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Transparent Widget"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:textSize="16sp"/>
+
+                <!-- Hide Text -->
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_hide_widget_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Hide Widget Text"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:textSize="16sp"
+                    android:layout_marginTop="8dp"/>
+
+                <!-- Hide Logo -->
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_hide_widget_logo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Hide Widget Logo"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:textSize="16sp"
+                    android:layout_marginTop="8dp"/>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- Advanced -->
         <TextView
             android:id="@+id/tv_advanced_title"
@@ -227,7 +366,7 @@
             android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="?android:attr/textColorPrimary"
-            app:layout_constraintTop_toBottomOf="@id/card_sphere"
+            app:layout_constraintTop_toBottomOf="@id/card_widget"
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="32dp"/>
 

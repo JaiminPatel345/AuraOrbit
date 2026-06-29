@@ -22,7 +22,12 @@ import androidx.preference.PreferenceManager;
 
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.slider.Slider;
+import android.widget.EditText;
+import android.text.InputType;
+import dev.jaimin.auraorbit.WidgetLogoStore;
+import dev.jaimin.auraorbit.SphereWidgetProvider;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -35,11 +40,19 @@ public class DashboardFragment extends Fragment {
     private SharedPreferences prefs;
     private ExecutorService executor;
     private TextView tvBackgroundStatus;
+    private TextView tvWidgetLogoStatus;
+    private TextView tvWidgetName;
 
     private final ActivityResultLauncher<PickVisualMediaRequest> pickMedia =
             registerForActivityResult(
                     new ActivityResultContracts.PickVisualMedia(),
                     this::saveBackground
+            );
+
+    private final ActivityResultLauncher<PickVisualMediaRequest> pickWidgetLogoMedia =
+            registerForActivityResult(
+                    new ActivityResultContracts.PickVisualMedia(),
+                    this::saveWidgetLogo
             );
 
     @Override
@@ -137,6 +150,53 @@ public class DashboardFragment extends Fragment {
             android.content.Intent browserIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/JaiminPatel345/AuraOrbit"));
             startActivity(browserIntent);
         });
+
+        // Widget Settings
+        tvWidgetName = view.findViewById(R.id.tv_widget_name);
+        tvWidgetName.setText(prefs.getString("pref_widget_name", "All"));
+        view.findViewById(R.id.btn_widget_name).setOnClickListener(v -> {
+            final EditText input = new EditText(requireContext());
+            input.setInputType(InputType.TYPE_CLASS_TEXT);
+            input.setText(prefs.getString("pref_widget_name", "All"));
+            new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Widget Name")
+                    .setView(input)
+                    .setPositiveButton("Save", (dialog, which) -> {
+                        String newName = input.getText().toString();
+                        prefs.edit().putString("pref_widget_name", newName).apply();
+                        tvWidgetName.setText(newName);
+                        SphereWidgetProvider.updateAllWidgets(requireContext());
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        });
+
+        tvWidgetLogoStatus = view.findViewById(R.id.tv_widget_logo_status);
+        updateWidgetLogoStatus();
+        view.findViewById(R.id.btn_widget_logo).setOnClickListener(v -> {
+            showWidgetLogoDialog();
+        });
+
+        MaterialSwitch switchTransparent = view.findViewById(R.id.switch_transparent_widget);
+        switchTransparent.setChecked(prefs.getBoolean("pref_widget_transparent", false));
+        switchTransparent.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            prefs.edit().putBoolean("pref_widget_transparent", isChecked).apply();
+            SphereWidgetProvider.updateAllWidgets(requireContext());
+        });
+
+        MaterialSwitch switchHideText = view.findViewById(R.id.switch_hide_widget_text);
+        switchHideText.setChecked(prefs.getBoolean("pref_widget_hide_text", false));
+        switchHideText.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            prefs.edit().putBoolean("pref_widget_hide_text", isChecked).apply();
+            SphereWidgetProvider.updateAllWidgets(requireContext());
+        });
+
+        MaterialSwitch switchHideLogo = view.findViewById(R.id.switch_hide_widget_logo);
+        switchHideLogo.setChecked(prefs.getBoolean("pref_widget_hide_logo", false));
+        switchHideLogo.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            prefs.edit().putBoolean("pref_widget_hide_logo", isChecked).apply();
+            SphereWidgetProvider.updateAllWidgets(requireContext());
+        });
     }
 
     @Override
@@ -144,6 +204,7 @@ public class DashboardFragment extends Fragment {
         super.onResume();
         requireActivity().setTitle(R.string.settings_title);
         updateBackgroundStatus();
+        updateWidgetLogoStatus();
     }
 
     @Override
@@ -184,11 +245,122 @@ public class DashboardFragment extends Fragment {
         });
     }
 
+    private void updateWidgetLogoStatus() {
+        if (tvWidgetLogoStatus != null) {
+            tvWidgetLogoStatus.setText(WidgetLogoStore.exists(requireContext()) ? "Custom image set" : "Default");
+        }
+    }
+
+    private void saveWidgetLogo(@Nullable Uri uri) {
+        if (uri == null) return;
+        Context appCtx = requireContext().getApplicationContext();
+        Handler mainThread = new Handler(Looper.getMainLooper());
+        executor.execute(() -> {
+            boolean ok = WidgetLogoStore.saveFromUri(appCtx, uri);
+            mainThread.post(() -> {
+                if (!isAdded()) return;
+                if (ok) {
+                    updateWidgetLogoStatus();
+                    SphereWidgetProvider.updateAllWidgets(requireContext());
+                } else {
+                    Toast.makeText(requireContext(), "Failed to save logo. Please try another one.", Toast.LENGTH_LONG).show();
+                }
+            });
+        });
+    }
+
     private void navigateTo(@NonNull Fragment fragment) {
         getParentFragmentManager()
                 .beginTransaction()
                 .replace(R.id.settings_container, fragment)
                 .addToBackStack(null)
                 .commit();
+    }
+
+    private void showWidgetLogoDialog() {
+        android.app.Dialog dialog = new android.app.Dialog(requireContext());
+        dialog.setContentView(R.layout.dialog_widget_logo);
+        dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+
+        android.widget.ImageView previewPlanet = dialog.findViewById(R.id.dialog_preview_planet);
+        android.widget.ImageView previewRing = dialog.findViewById(R.id.dialog_preview_ring);
+        android.widget.ImageView previewCustom = dialog.findViewById(R.id.dialog_preview_custom);
+        
+        final String[] selectedColor = {prefs.getString("pref_widget_orbit_color", "#FFFFFF")};
+
+        Runnable updatePreview = () -> {
+            if (WidgetLogoStore.exists(requireContext())) {
+                previewPlanet.setVisibility(View.GONE);
+                previewRing.setVisibility(View.GONE);
+                previewCustom.setVisibility(View.VISIBLE);
+                android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeFile(WidgetLogoStore.file(requireContext()).getAbsolutePath());
+                if (bitmap != null) {
+                    previewCustom.setImageBitmap(bitmap);
+                }
+            } else {
+                previewPlanet.setVisibility(View.VISIBLE);
+                previewRing.setVisibility(View.VISIBLE);
+                previewCustom.setVisibility(View.GONE);
+                try {
+                    previewRing.setColorFilter(android.graphics.Color.parseColor(selectedColor[0]));
+                } catch (Exception e) {}
+            }
+        };
+        updatePreview.run();
+
+        android.widget.LinearLayout colorContainer = dialog.findViewById(R.id.dialog_color_container);
+        String[] colors = {"#FFFFFF", "#F44336", "#E91E63", "#9C27B0", "#673AB7", "#3F51B5", "#2196F3", "#03A9F4", "#00BCD4", "#009688", "#4CAF50", "#8BC34A", "#CDDC39", "#FFEB3B", "#FFC107", "#FF9800", "#FF5722"};
+        for (String colorHex : colors) {
+            View colorView = new View(requireContext());
+            android.widget.LinearLayout.LayoutParams params = new android.widget.LinearLayout.LayoutParams(
+                    (int)(40 * getResources().getDisplayMetrics().density),
+                    (int)(40 * getResources().getDisplayMetrics().density)
+            );
+            params.setMargins((int)(4 * getResources().getDisplayMetrics().density), 0, (int)(4 * getResources().getDisplayMetrics().density), 0);
+            colorView.setLayoutParams(params);
+            
+            android.graphics.drawable.GradientDrawable gd = new android.graphics.drawable.GradientDrawable();
+            gd.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+            try {
+                gd.setColor(android.graphics.Color.parseColor(colorHex));
+            } catch(Exception e){}
+            colorView.setBackground(gd);
+            
+            colorView.setOnClickListener(v -> {
+                selectedColor[0] = colorHex;
+                updatePreview.run();
+            });
+            colorContainer.addView(colorView);
+        }
+
+        android.widget.Button btnUpload = dialog.findViewById(R.id.dialog_btn_upload);
+        btnUpload.setOnClickListener(v -> {
+            dialog.dismiss();
+            pickWidgetLogoMedia.launch(new PickVisualMediaRequest.Builder()
+                    .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                    .build());
+        });
+
+        android.widget.Button btnRemove = dialog.findViewById(R.id.dialog_btn_remove_custom);
+        if (WidgetLogoStore.exists(requireContext())) {
+            btnRemove.setVisibility(View.VISIBLE);
+        }
+        btnRemove.setOnClickListener(v -> {
+            WidgetLogoStore.clear(requireContext());
+            updateWidgetLogoStatus();
+            SphereWidgetProvider.updateAllWidgets(requireContext());
+            updatePreview.run();
+            btnRemove.setVisibility(View.GONE);
+        });
+
+        dialog.findViewById(R.id.dialog_btn_cancel).setOnClickListener(v -> dialog.dismiss());
+        dialog.findViewById(R.id.dialog_btn_save).setOnClickListener(v -> {
+            prefs.edit().putString("pref_widget_orbit_color", selectedColor[0]).apply();
+            SphereWidgetProvider.updateAllWidgets(requireContext());
+            dialog.dismiss();
+        });
+
+        dialog.show();
     }
 }

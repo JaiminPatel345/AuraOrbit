@@ -59,12 +59,52 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                         // don't set intent so it doesn't open deleted group
                     }
                 } else {
-                    views.setTextViewText(R.id.widget_label, "All");
-                    views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
-                    views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.WHITE);
-                    views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
+                    String widgetName = prefs.getString("pref_widget_name", "All");
+                    boolean transparent = prefs.getBoolean("pref_widget_transparent", false);
+                    boolean hideText = prefs.getBoolean("pref_widget_hide_text", false);
+
+                    if (transparent) {
+                        views.setInt(R.id.widget_icon_container, "setBackgroundColor", android.graphics.Color.TRANSPARENT);
+                    } else {
+                        views.setInt(R.id.widget_icon_container, "setBackgroundResource", R.drawable.rounded_bg_solid);
+                    }
+
+                    if (prefs.getBoolean("pref_widget_hide_logo", false)) {
+                        views.setViewVisibility(R.id.widget_icon_planet, View.GONE);
+                        views.setViewVisibility(R.id.widget_icon_ring, View.GONE);
+                        views.setViewVisibility(R.id.widget_custom_logo, View.GONE);
+                    } else if (WidgetLogoStore.exists(context)) {
+                        views.setViewVisibility(R.id.widget_icon_planet, View.GONE);
+                        views.setViewVisibility(R.id.widget_icon_ring, View.GONE);
+                        views.setViewVisibility(R.id.widget_custom_logo, View.VISIBLE);
+                        android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeFile(WidgetLogoStore.file(context).getAbsolutePath());
+                        if (bitmap != null) {
+                            views.setImageViewBitmap(R.id.widget_custom_logo, bitmap);
+                        }
+                    } else {
+                        views.setViewVisibility(R.id.widget_icon_planet, View.VISIBLE);
+                        views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
+                        views.setViewVisibility(R.id.widget_custom_logo, View.GONE);
+                        String orbitColor = prefs.getString("pref_widget_orbit_color", "#FFFFFF");
+                        try {
+                            views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.parseColor(orbitColor));
+                        } catch (Exception e) {
+                            views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.WHITE);
+                        }
+                    }
+
+                    if (hideText) {
+                        views.setViewVisibility(R.id.widget_label, View.GONE);
+                    } else {
+                        views.setTextViewText(R.id.widget_label, widgetName);
+                        views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
+                        views.setViewVisibility(R.id.widget_label, View.VISIBLE);
+                    }
                 }
-                views.setViewVisibility(R.id.widget_label, View.VISIBLE);
+                
+                if (groupName != null) {
+                    views.setViewVisibility(R.id.widget_label, View.VISIBLE);
+                }
             } else {
                 views.setViewVisibility(R.id.widget_label, View.GONE);
                 views.setViewVisibility(R.id.widget_icon_ring, View.GONE);
@@ -135,13 +175,50 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                     views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.RED);
                     views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
                 }
+                views.setViewVisibility(R.id.widget_label, View.VISIBLE);
             } else {
-                views.setTextViewText(R.id.widget_label, "All");
-                views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
-                views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.WHITE);
-                views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
+                String widgetName = prefs.getString("pref_widget_name", "All");
+                boolean transparent = prefs.getBoolean("pref_widget_transparent", false);
+                boolean hideText = prefs.getBoolean("pref_widget_hide_text", false);
+
+                if (transparent) {
+                    views.setInt(R.id.widget_icon_container, "setBackgroundColor", android.graphics.Color.TRANSPARENT);
+                } else {
+                    views.setInt(R.id.widget_icon_container, "setBackgroundResource", R.drawable.rounded_bg_solid);
+                }
+
+                if (prefs.getBoolean("pref_widget_hide_logo", false)) {
+                    views.setViewVisibility(R.id.widget_icon_planet, View.GONE);
+                    views.setViewVisibility(R.id.widget_icon_ring, View.GONE);
+                    views.setViewVisibility(R.id.widget_custom_logo, View.GONE);
+                } else if (WidgetLogoStore.exists(context)) {
+                    views.setViewVisibility(R.id.widget_icon_planet, View.GONE);
+                    views.setViewVisibility(R.id.widget_icon_ring, View.GONE);
+                    views.setViewVisibility(R.id.widget_custom_logo, View.VISIBLE);
+                    android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeFile(WidgetLogoStore.file(context).getAbsolutePath());
+                    if (bitmap != null) {
+                        views.setImageViewBitmap(R.id.widget_custom_logo, bitmap);
+                    }
+                } else {
+                    views.setViewVisibility(R.id.widget_icon_planet, View.VISIBLE);
+                    views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
+                    views.setViewVisibility(R.id.widget_custom_logo, View.GONE);
+                    String orbitColor = prefs.getString("pref_widget_orbit_color", "#FFFFFF");
+                    try {
+                        views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.parseColor(orbitColor));
+                    } catch (Exception e) {
+                        views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.WHITE);
+                    }
+                }
+
+                if (hideText) {
+                    views.setViewVisibility(R.id.widget_label, View.GONE);
+                } else {
+                    views.setTextViewText(R.id.widget_label, widgetName);
+                    views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
+                    views.setViewVisibility(R.id.widget_label, View.VISIBLE);
+                }
             }
-            views.setViewVisibility(R.id.widget_label, View.VISIBLE);
             
             views.setOnClickPendingIntent(R.id.widget_container, pendingIntent);
 
