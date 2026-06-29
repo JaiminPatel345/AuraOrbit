@@ -42,6 +42,10 @@ public class DashboardFragment extends Fragment {
     private TextView tvBackgroundStatus;
     private TextView tvWidgetLogoStatus;
     private TextView tvWidgetName;
+    private View defaultLogoOptionsContainer;
+    private View customLogoOptionsContainer;
+    private com.google.android.material.button.MaterialButton btnWidgetLogo;
+    private String selectedColor;
 
     private final ActivityResultLauncher<PickVisualMediaRequest> pickMedia =
             registerForActivityResult(
@@ -172,16 +176,55 @@ public class DashboardFragment extends Fragment {
         });
 
         tvWidgetLogoStatus = view.findViewById(R.id.tv_widget_logo_status);
+        defaultLogoOptionsContainer = view.findViewById(R.id.default_logo_options_container);
+        customLogoOptionsContainer = view.findViewById(R.id.custom_logo_options_container);
+        btnWidgetLogo = view.findViewById(R.id.btn_widget_logo);
+
         updateWidgetLogoStatus();
-        view.findViewById(R.id.btn_widget_logo).setOnClickListener(v -> {
-            showWidgetLogoDialog();
+        btnWidgetLogo.setOnClickListener(v -> launchWidgetLogoPicker());
+
+        view.findViewById(R.id.btn_replace_custom_logo).setOnClickListener(v -> launchWidgetLogoPicker());
+        view.findViewById(R.id.btn_remove_custom_logo).setOnClickListener(v -> {
+            WidgetLogoStore.clear(requireContext());
+            updateWidgetLogoStatus();
+            SphereWidgetProvider.updateAllWidgets(requireContext());
+            updateLivePreview();
         });
+
+        // ─── Info Buttons ─────────────────────────────────────────────────
+        view.findViewById(R.id.btn_info_orbit_color).setOnClickListener(v -> 
+            showInfoDialog("Orbit Color", "Sets the color of the widget's ring.")
+        );
+        view.findViewById(R.id.btn_info_theme_color).setOnClickListener(v -> 
+            showInfoDialog("System Theme Color", "Overrides the custom orbit color to match your Android system's Material You theme.")
+        );
+        view.findViewById(R.id.btn_info_transparent).setOnClickListener(v -> 
+            showInfoDialog("Transparent Widget", "Removes the solid background from the widget so it blends seamlessly into your wallpaper.")
+        );
+        view.findViewById(R.id.btn_info_hide_logo).setOnClickListener(v -> 
+            showInfoDialog("Hide Widget Logo", "Makes the widget fully transparent by hiding the icon. Only the text label will remain visible.")
+        );
+        view.findViewById(R.id.btn_info_hide_text).setOnClickListener(v -> 
+            showInfoDialog("Hide Widget Text", "Removes the group name label displayed beneath the widget.")
+        );
+
+        selectedColor = prefs.getString("pref_widget_orbit_color", "#FFFFFF");
+        buildColorRow((android.widget.LinearLayout) view.findViewById(R.id.color_row));
 
         MaterialSwitch switchTransparent = view.findViewById(R.id.switch_transparent_widget);
         switchTransparent.setChecked(prefs.getBoolean("pref_widget_transparent", false));
         switchTransparent.setOnCheckedChangeListener((buttonView, isChecked) -> {
             prefs.edit().putBoolean("pref_widget_transparent", isChecked).apply();
             SphereWidgetProvider.updateAllWidgets(requireContext());
+            updateLivePreview();
+        });
+
+        MaterialSwitch switchThemeColor = view.findViewById(R.id.switch_use_theme_color);
+        switchThemeColor.setChecked(prefs.getBoolean("pref_widget_use_theme_color", true));
+        switchThemeColor.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            prefs.edit().putBoolean("pref_widget_use_theme_color", isChecked).apply();
+            SphereWidgetProvider.updateAllWidgets(requireContext());
+            updateLivePreview();
         });
 
         MaterialSwitch switchHideText = view.findViewById(R.id.switch_hide_widget_text);
@@ -196,7 +239,11 @@ public class DashboardFragment extends Fragment {
         switchHideLogo.setOnCheckedChangeListener((buttonView, isChecked) -> {
             prefs.edit().putBoolean("pref_widget_hide_logo", isChecked).apply();
             SphereWidgetProvider.updateAllWidgets(requireContext());
+            updateLivePreview();
         });
+        
+        // Initial preview update
+        updateLivePreview();
     }
 
     @Override
@@ -224,6 +271,12 @@ public class DashboardFragment extends Fragment {
 
     private void launchPicker() {
         pickMedia.launch(new PickVisualMediaRequest.Builder()
+                .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                .build());
+    }
+
+    private void launchWidgetLogoPicker() {
+        pickWidgetLogoMedia.launch(new PickVisualMediaRequest.Builder()
                 .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
                 .build());
     }
@@ -262,6 +315,7 @@ public class DashboardFragment extends Fragment {
                 if (ok) {
                     updateWidgetLogoStatus();
                     SphereWidgetProvider.updateAllWidgets(requireContext());
+                    updateLivePreview();
                 } else {
                     Toast.makeText(requireContext(), "Failed to save logo. Please try another one.", Toast.LENGTH_LONG).show();
                 }
@@ -277,90 +331,185 @@ public class DashboardFragment extends Fragment {
                 .commit();
     }
 
-    private void showWidgetLogoDialog() {
-        android.app.Dialog dialog = new android.app.Dialog(requireContext());
-        dialog.setContentView(R.layout.dialog_widget_logo);
-        dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
-        dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+    private void showInfoDialog(String title, String message) {
+        new MaterialAlertDialogBuilder(requireContext())
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("Got it", null)
+            .show();
+    }
 
-        android.widget.ImageView previewPlanet = dialog.findViewById(R.id.dialog_preview_planet);
-        android.widget.ImageView previewRing = dialog.findViewById(R.id.dialog_preview_ring);
-        android.widget.ImageView previewCustom = dialog.findViewById(R.id.dialog_preview_custom);
+    private void buildColorRow(@NonNull android.widget.LinearLayout colorRow) {
+        colorRow.removeAllViews();
+
+        int circleSizePx = (int)(40 * getResources().getDisplayMetrics().density);
+        int marginEndPx  = (int)(8 * getResources().getDisplayMetrics().density);
+
+        String[] colorHexValues = requireContext().getResources().getStringArray(R.array.group_color_hex);
+        String[] colorNames = requireContext().getResources().getStringArray(R.array.group_color_names);
+
+        boolean isCustomSelected = true;
+        for (String hex : colorHexValues) {
+            if (hex.equalsIgnoreCase(selectedColor)) {
+                isCustomSelected = false;
+                break;
+            }
+        }
+
+        for (int i = 0; i < colorHexValues.length; i++) {
+            final String hex = colorHexValues[i];
+
+            View circle = new View(requireContext());
+            android.widget.LinearLayout.LayoutParams lp =
+                    new android.widget.LinearLayout.LayoutParams(circleSizePx, circleSizePx);
+            lp.setMarginEnd(marginEndPx);
+            circle.setLayoutParams(lp);
+            circle.setContentDescription(colorNames[i]);
+
+            android.graphics.drawable.GradientDrawable d = new android.graphics.drawable.GradientDrawable();
+            d.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+            try { d.setColor(android.graphics.Color.parseColor(hex)); } catch (Exception e) {}
+            if (hex.equalsIgnoreCase(selectedColor)) {
+                d.setStroke((int)(3 * getResources().getDisplayMetrics().density), android.graphics.Color.WHITE);
+            }
+            circle.setBackground(d);
+
+            circle.setOnClickListener(v -> {
+                selectedColor = hex;
+                prefs.edit().putString("pref_widget_orbit_color", selectedColor).apply();
+                SphereWidgetProvider.updateAllWidgets(requireContext());
+                buildColorRow(colorRow);
+                updateLivePreview();
+            });
+
+            colorRow.addView(circle);
+        }
         
-        final String[] selectedColor = {prefs.getString("pref_widget_orbit_color", "#FFFFFF")};
+        // Add Custom Color Circle
+        View customCircle = new View(requireContext());
+        android.widget.LinearLayout.LayoutParams customLp =
+                new android.widget.LinearLayout.LayoutParams(circleSizePx, circleSizePx);
+        customCircle.setLayoutParams(customLp);
+        customCircle.setContentDescription("Custom Color");
 
-        Runnable updatePreview = () -> {
-            if (WidgetLogoStore.exists(requireContext())) {
-                previewPlanet.setVisibility(View.GONE);
-                previewRing.setVisibility(View.GONE);
-                previewCustom.setVisibility(View.VISIBLE);
+        if (isCustomSelected) {
+            android.graphics.drawable.GradientDrawable d = new android.graphics.drawable.GradientDrawable();
+            d.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+            try { d.setColor(android.graphics.Color.parseColor(selectedColor)); } catch (Exception e) {}
+            d.setStroke((int)(3 * getResources().getDisplayMetrics().density), android.graphics.Color.WHITE);
+            customCircle.setBackground(d);
+        } else {
+            android.graphics.drawable.ShapeDrawable rainbow = new android.graphics.drawable.ShapeDrawable(new android.graphics.drawable.shapes.OvalShape());
+            rainbow.getPaint().setShader(new android.graphics.SweepGradient(
+                    circleSizePx / 2f, circleSizePx / 2f,
+                    new int[]{android.graphics.Color.RED, android.graphics.Color.YELLOW, android.graphics.Color.GREEN, android.graphics.Color.CYAN, android.graphics.Color.BLUE, android.graphics.Color.MAGENTA, android.graphics.Color.RED},
+                    null));
+            customCircle.setBackground(rainbow);
+        }
+
+        customCircle.setOnClickListener(v -> {
+            final android.widget.EditText input = new android.widget.EditText(requireContext());
+            input.setInputType(InputType.TYPE_CLASS_TEXT);
+            input.setText(selectedColor);
+            input.setHint("#RRGGBB");
+            new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Custom Color (Hex)")
+                    .setView(input)
+                    .setPositiveButton("Save", (dialog, which) -> {
+                        selectedColor = input.getText().toString();
+                        prefs.edit().putString("pref_widget_orbit_color", selectedColor).apply();
+                        SphereWidgetProvider.updateAllWidgets(requireContext());
+                        buildColorRow(colorRow);
+                        updateLivePreview();
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        });
+        colorRow.addView(customCircle);
+    }
+
+    private void updateLivePreview() {
+        if (!isAdded()) return;
+
+        boolean transparent = prefs.getBoolean("pref_widget_transparent", false);
+        boolean useThemeColor = prefs.getBoolean("pref_widget_use_theme_color", true);
+        boolean hideLogo = prefs.getBoolean("pref_widget_hide_logo", false);
+        boolean hideText = prefs.getBoolean("pref_widget_hide_text", false);
+        String name = prefs.getString("pref_widget_name", "All");
+        String orbitColor = prefs.getString("pref_widget_orbit_color", "#FFFFFF");
+
+        View previewIconContainer = getView().findViewById(R.id.preview_icon_container);
+        android.widget.ImageView previewIconPlanet = getView().findViewById(R.id.preview_icon_planet);
+        android.widget.ImageView previewIconRing = getView().findViewById(R.id.preview_icon_ring);
+        android.widget.ImageView previewCustomLogo = getView().findViewById(R.id.preview_custom_logo);
+        TextView previewLabel = getView().findViewById(R.id.preview_label);
+
+        if (previewIconContainer == null) return;
+
+        // Transparent Widget Check
+        if (transparent || hideLogo) {
+            previewIconContainer.setBackground(null);
+        } else {
+            previewIconContainer.setBackgroundResource(R.drawable.rounded_bg_solid);
+        }
+
+        // Hide Text Check
+        if (hideText) {
+            previewLabel.setVisibility(View.GONE);
+        } else {
+            previewLabel.setVisibility(View.VISIBLE);
+            previewLabel.setText(name);
+        }
+
+        previewIconContainer.setVisibility(View.VISIBLE);
+
+        boolean hasCustom = WidgetLogoStore.exists(requireContext());
+
+        if (hasCustom) {
+            if (tvWidgetLogoStatus != null) tvWidgetLogoStatus.setText("Custom Image");
+            if (defaultLogoOptionsContainer != null) defaultLogoOptionsContainer.setVisibility(View.GONE);
+            if (customLogoOptionsContainer != null) customLogoOptionsContainer.setVisibility(View.VISIBLE);
+            if (btnWidgetLogo != null) btnWidgetLogo.setVisibility(View.GONE);
+        } else {
+            if (tvWidgetLogoStatus != null) tvWidgetLogoStatus.setText("Default");
+            if (defaultLogoOptionsContainer != null) defaultLogoOptionsContainer.setVisibility(View.VISIBLE);
+            if (customLogoOptionsContainer != null) customLogoOptionsContainer.setVisibility(View.GONE);
+            if (btnWidgetLogo != null) {
+                btnWidgetLogo.setVisibility(View.VISIBLE);
+                btnWidgetLogo.setText("Upload");
+            }
+        }
+
+        if (hideLogo) {
+            previewIconPlanet.setVisibility(View.GONE);
+            previewIconRing.setVisibility(View.GONE);
+            previewCustomLogo.setVisibility(View.GONE);
+        } else {
+            if (hasCustom) {
+                previewIconPlanet.setVisibility(View.GONE);
+                previewIconRing.setVisibility(View.GONE);
+                previewCustomLogo.setVisibility(View.VISIBLE);
                 android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeFile(WidgetLogoStore.file(requireContext()).getAbsolutePath());
                 if (bitmap != null) {
-                    previewCustom.setImageBitmap(bitmap);
+                    previewCustomLogo.setImageBitmap(bitmap);
                 }
             } else {
-                previewPlanet.setVisibility(View.VISIBLE);
-                previewRing.setVisibility(View.VISIBLE);
-                previewCustom.setVisibility(View.GONE);
+                previewIconPlanet.setVisibility(View.VISIBLE);
+                previewIconRing.setVisibility(View.VISIBLE);
+                previewCustomLogo.setVisibility(View.GONE);
                 try {
-                    previewRing.setColorFilter(android.graphics.Color.parseColor(selectedColor[0]));
+                    if (useThemeColor) {
+                        previewIconRing.setColorFilter(requireContext().getColor(R.color.widget_theme_color));
+                    } else {
+                        previewIconRing.setColorFilter(android.graphics.Color.parseColor(orbitColor));
+                    }
                 } catch (Exception e) {}
             }
-        };
-        updatePreview.run();
-
-        android.widget.LinearLayout colorContainer = dialog.findViewById(R.id.dialog_color_container);
-        String[] colors = {"#FFFFFF", "#F44336", "#E91E63", "#9C27B0", "#673AB7", "#3F51B5", "#2196F3", "#03A9F4", "#00BCD4", "#009688", "#4CAF50", "#8BC34A", "#CDDC39", "#FFEB3B", "#FFC107", "#FF9800", "#FF5722"};
-        for (String colorHex : colors) {
-            View colorView = new View(requireContext());
-            android.widget.LinearLayout.LayoutParams params = new android.widget.LinearLayout.LayoutParams(
-                    (int)(40 * getResources().getDisplayMetrics().density),
-                    (int)(40 * getResources().getDisplayMetrics().density)
-            );
-            params.setMargins((int)(4 * getResources().getDisplayMetrics().density), 0, (int)(4 * getResources().getDisplayMetrics().density), 0);
-            colorView.setLayoutParams(params);
-            
-            android.graphics.drawable.GradientDrawable gd = new android.graphics.drawable.GradientDrawable();
-            gd.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-            try {
-                gd.setColor(android.graphics.Color.parseColor(colorHex));
-            } catch(Exception e){}
-            colorView.setBackground(gd);
-            
-            colorView.setOnClickListener(v -> {
-                selectedColor[0] = colorHex;
-                updatePreview.run();
-            });
-            colorContainer.addView(colorView);
         }
 
-        android.widget.Button btnUpload = dialog.findViewById(R.id.dialog_btn_upload);
-        btnUpload.setOnClickListener(v -> {
-            dialog.dismiss();
-            pickWidgetLogoMedia.launch(new PickVisualMediaRequest.Builder()
-                    .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
-                    .build());
-        });
-
-        android.widget.Button btnRemove = dialog.findViewById(R.id.dialog_btn_remove_custom);
-        if (WidgetLogoStore.exists(requireContext())) {
-            btnRemove.setVisibility(View.VISIBLE);
-        }
-        btnRemove.setOnClickListener(v -> {
-            WidgetLogoStore.clear(requireContext());
-            updateWidgetLogoStatus();
-            SphereWidgetProvider.updateAllWidgets(requireContext());
-            updatePreview.run();
-            btnRemove.setVisibility(View.GONE);
-        });
-
-        dialog.findViewById(R.id.dialog_btn_cancel).setOnClickListener(v -> dialog.dismiss());
-        dialog.findViewById(R.id.dialog_btn_save).setOnClickListener(v -> {
-            prefs.edit().putString("pref_widget_orbit_color", selectedColor[0]).apply();
-            SphereWidgetProvider.updateAllWidgets(requireContext());
-            dialog.dismiss();
-        });
-
-        dialog.show();
+        View orbitColorHeader = getView().findViewById(R.id.orbit_color_header);
+        View colorRowScroll = getView().findViewById(R.id.color_row).getParent() instanceof View ? (View) getView().findViewById(R.id.color_row).getParent() : getView().findViewById(R.id.color_row);
+        if (orbitColorHeader != null) orbitColorHeader.setVisibility(useThemeColor ? View.GONE : View.VISIBLE);
+        if (colorRowScroll != null) colorRowScroll.setVisibility(useThemeColor ? View.GONE : View.VISIBLE);
     }
 }

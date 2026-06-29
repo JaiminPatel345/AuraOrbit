@@ -42,7 +42,8 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                     views.setTextViewText(R.id.widget_label, groupName);
                     views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
                     boolean hideLogo = prefs.getBoolean("pref_widget_hide_logo_" + groupName, false);
-                    if (hideLogo) {
+                    boolean transparent = prefs.getBoolean("pref_widget_transparent_" + groupName, false);
+                    if (transparent || hideLogo) {
                         views.setInt(R.id.widget_icon_container, "setBackgroundColor", android.graphics.Color.TRANSPARENT);
                     } else {
                         views.setInt(R.id.widget_icon_container, "setBackgroundResource", R.drawable.rounded_bg_solid);
@@ -64,9 +65,13 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                         views.setViewVisibility(R.id.widget_custom_logo, View.GONE);
                         GroupStore.Group group = GroupStore.find(groups, groupName);
                         if (group != null) {
+                            boolean useThemeColor = prefs.getBoolean("pref_widget_use_theme_color_" + groupName, true);
                             try {
-                                int color = android.graphics.Color.parseColor(group.color);
-                                views.setInt(R.id.widget_icon_ring, "setColorFilter", color);
+                                if (useThemeColor) {
+                                    views.setInt(R.id.widget_icon_ring, "setColorFilter", context.getColor(R.color.widget_theme_color));
+                                } else {
+                                    views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.parseColor(group.color));
+                                }
                                 views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
                             } catch (Exception e) {
                                 views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.WHITE);
@@ -108,8 +113,13 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                         views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
                         views.setViewVisibility(R.id.widget_custom_logo, View.GONE);
                         String orbitColor = prefs.getString("pref_widget_orbit_color", "#FFFFFF");
+                        boolean useThemeColor = prefs.getBoolean("pref_widget_use_theme_color", true);
                         try {
-                            views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.parseColor(orbitColor));
+                            if (useThemeColor) {
+                                views.setInt(R.id.widget_icon_ring, "setColorFilter", context.getColor(R.color.widget_theme_color));
+                            } else {
+                                views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.parseColor(orbitColor));
+                            }
                         } catch (Exception e) {
                             views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.WHITE);
                         }
@@ -187,7 +197,8 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                 views.setTextViewText(R.id.widget_label, groupName);
                 views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
                 boolean hideLogo = prefs.getBoolean("pref_widget_hide_logo_" + groupName, false);
-                if (hideLogo) {
+                boolean transparent = prefs.getBoolean("pref_widget_transparent_" + groupName, false);
+                if (transparent || hideLogo) {
                     views.setInt(R.id.widget_icon_container, "setBackgroundColor", android.graphics.Color.TRANSPARENT);
                 } else {
                     views.setInt(R.id.widget_icon_container, "setBackgroundResource", R.drawable.rounded_bg_solid);
@@ -209,9 +220,13 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                     views.setViewVisibility(R.id.widget_custom_logo, View.GONE);
                     GroupStore.Group group = GroupStore.find(groups, groupName);
                     if (group != null) {
+                        boolean useThemeColor = prefs.getBoolean("pref_widget_use_theme_color_" + groupName, true);
                         try {
-                            int color = android.graphics.Color.parseColor(group.color);
-                            views.setInt(R.id.widget_icon_ring, "setColorFilter", color);
+                            if (useThemeColor) {
+                                views.setInt(R.id.widget_icon_ring, "setColorFilter", context.getColor(R.color.widget_theme_color));
+                            } else {
+                                views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.parseColor(group.color));
+                            }
                             views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
                         } catch (Exception e) {
                             views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.WHITE);
@@ -258,8 +273,13 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                     views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
                     views.setViewVisibility(R.id.widget_custom_logo, View.GONE);
                     String orbitColor = prefs.getString("pref_widget_orbit_color", "#FFFFFF");
+                    boolean useThemeColor = prefs.getBoolean("pref_widget_use_theme_color", true);
                     try {
-                        views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.parseColor(orbitColor));
+                        if (useThemeColor) {
+                            views.setInt(R.id.widget_icon_ring, "setColorFilter", context.getColor(R.color.widget_theme_color));
+                        } else {
+                            views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.parseColor(orbitColor));
+                        }
                     } catch (Exception e) {
                         views.setInt(R.id.widget_icon_ring, "setColorFilter", android.graphics.Color.WHITE);
                     }

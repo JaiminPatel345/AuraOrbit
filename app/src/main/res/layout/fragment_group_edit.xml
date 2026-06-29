@@ -131,35 +131,6 @@
                     android:layout_marginTop="20dp"
                     android:layout_marginBottom="20dp"/>
 
-                <!-- Orbit Color Options -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Orbit Color"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:textSize="14sp"
-                    android:layout_marginBottom="8dp" />
-
-                <HorizontalScrollView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:scrollbars="none">
-
-                    <LinearLayout
-                        android:id="@+id/color_row"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:paddingVertical="4dp" />
-                </HorizontalScrollView>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="?attr/colorOutlineVariant"
-                    android:layout_marginTop="20dp"
-                    android:layout_marginBottom="16dp"/>
-
                 <!-- Widget Logo -->
                 <RelativeLayout
                     android:layout_width="match_parent"
@@ -171,7 +142,8 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Custom Widget Logo"
+                            android:text="Widget Icon"
+                            android:textStyle="bold"
                             android:textColor="?android:attr/textColorPrimary"
                             android:textSize="16sp"/>
                         <TextView
@@ -192,26 +164,218 @@
                         android:text="Change" />
                 </RelativeLayout>
 
-                <!-- Hide Logo Toggle -->
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switch_hide_widget_logo"
+                <!-- Options shown when using DEFAULT LOGO -->
+                <LinearLayout
+                    android:id="@+id/default_logo_options_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Hide Widget Logo"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:textSize="16sp"
-                    android:layout_marginTop="16dp"/>
+                    android:orientation="vertical"
+                    android:layout_marginTop="16dp">
 
-                <!-- Hide Text Toggle -->
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switch_hide_widget_text"
+                    <LinearLayout
+                        android:id="@+id/orbit_color_header"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Orbit Color"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:textSize="16sp"/>
+                        <ImageButton
+                            android:id="@+id/btn_info_orbit_color"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@android:drawable/ic_dialog_info"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:scaleType="fitCenter"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
+
+                    <HorizontalScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:scrollbars="none">
+
+                        <LinearLayout
+                            android:id="@+id/color_row"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:paddingVertical="4dp" />
+                    </HorizontalScrollView>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginTop="8dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Use System Theme Color"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:textSize="16sp"/>
+                        <ImageButton
+                            android:id="@+id/btn_info_theme_color"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@android:drawable/ic_dialog_info"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:scaleType="fitCenter"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"/>
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switch_use_theme_color"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginTop="8dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Transparent Widget"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:textSize="16sp"/>
+                        <ImageButton
+                            android:id="@+id/btn_info_transparent"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@android:drawable/ic_dialog_info"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:scaleType="fitCenter"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"/>
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switch_transparent_widget"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginTop="8dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Hide Widget Logo"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:textSize="16sp"/>
+                        <ImageButton
+                            android:id="@+id/btn_info_hide_logo"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@android:drawable/ic_dialog_info"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:scaleType="fitCenter"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"/>
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switch_hide_widget_logo"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"/>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Options shown when using CUSTOM LOGO -->
+                <LinearLayout
+                    android:id="@+id/custom_logo_options_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Hide Widget Text"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:textSize="16sp"
-                    android:layout_marginTop="8dp"/>
-                    
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:layout_marginTop="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_replace_custom_logo"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:text="Replace Logo" />
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_remove_custom_logo"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:textColor="#E53935"
+                            app:strokeColor="#E53935"
+                            android:layout_marginStart="8dp"
+                            android:text="Remove Logo" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="?attr/colorOutlineVariant"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="16dp"/>
+
+                <!-- Hide Text Toggle (Always shown) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Hide Widget Text"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="16sp"/>
+                    <ImageButton
+                        android:id="@+id/btn_info_hide_text"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginStart="8dp"
+                        android:src="@android:drawable/ic_dialog_info"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:scaleType="fitCenter"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"/>
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switch_hide_widget_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
