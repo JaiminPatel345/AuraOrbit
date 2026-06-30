@@ -91,6 +91,7 @@ public class SphereModeActivity extends AndroidApplication {
         // command gating).
         sphereEngine = new SphereEngine(this, true, groupName);
         View glView = initializeForView(sphereEngine, config);
+        glView.setClickable(true); // Ensure glView consumes clicks
         if (graphics.getView() instanceof android.view.SurfaceView) {
             android.view.SurfaceView surfaceView = (android.view.SurfaceView) graphics.getView();
             surfaceView.getHolder().setFormat(android.graphics.PixelFormat.TRANSLUCENT);
@@ -118,6 +119,9 @@ public class SphereModeActivity extends AndroidApplication {
         android.widget.FrameLayout.LayoutParams glParams = new android.widget.FrameLayout.LayoutParams(
                 sphereSize, sphereSize, android.view.Gravity.CENTER);
         container.addView(glView, glParams);
+        
+        // Close the activity if the user touches the blurred background outside the sphere
+        container.setOnClickListener(v -> finish());
         
         setContentView(container);
 
