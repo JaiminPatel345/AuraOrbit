@@ -39,6 +39,14 @@ jobs:
         id: version
         run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
 
+      - name: Get release notes from tag message
+        id: tag_notes
+        run: |
+          NOTES=$(git tag -l --format='%(contents)' "${GITHUB_REF_NAME}")
+          echo "NOTES<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Rename APK to match F-Droid Binaries URL pattern
         run: cp app/build/outputs/apk/release/app-release.apk AuraOrbit-${{ steps.version.outputs.VERSION }}.apk
 
@@ -46,5 +54,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: AuraOrbit-${{ steps.version.outputs.VERSION }}.apk
-          generate_release_notes: true
+          body: ${{ steps.tag_notes.outputs.NOTES }}
           fail_on_unmatched_files: true
