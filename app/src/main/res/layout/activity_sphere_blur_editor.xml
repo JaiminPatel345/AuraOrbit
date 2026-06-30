@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#88000000">
+
+    <!-- Sphere Mock -->
+    <View
+        android:id="@+id/sphere_mock"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:background="@drawable/circle_mock"
+        android:layout_gravity="top|start" />
+
+    <!-- Bottom Controls Panel -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:background="#222222"
+        android:padding="20dp"
+        android:elevation="16dp">
+
+        <!-- Header Controls -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_cancel"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start|center_vertical"
+                android:text="Cancel"
+                android:textColor="#CCCCCC"/>
+                
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_save"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end|center_vertical"
+                android:text="Save"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"/>
+        </FrameLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Background Blur Amount"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"/>
+            
+        <TextView
+            android:id="@+id/tv_blur_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No Blur"
+            android:textColor="#CCCCCC"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="4dp"/>
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/slider_blur"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:valueFrom="0"
+            android:valueTo="100"
+            android:value="0"
+            android:stepSize="1"
+            app:thumbColor="#FFFFFF"
+            app:trackColorActive="#FFFFFF"
+            app:trackColorInactive="#88FFFFFF"/>
+    </LinearLayout>
+
+</FrameLayout>

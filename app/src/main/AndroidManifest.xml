@@ -118,6 +118,13 @@
             android:name=".WidgetPinnedReceiver"
             android:exported="false" />
 
+
+        <activity
+            android:name=".SphereBlurEditorActivity"
+            android:theme="@style/Theme.AuraOrbit.TransparentFullscreen"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+
         <activity
             android:name=".DeletedWidgetActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"

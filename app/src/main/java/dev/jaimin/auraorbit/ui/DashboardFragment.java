@@ -77,6 +77,15 @@ public class DashboardFragment extends Fragment {
         }
     }
 
+    private void updateBlurStatusText(TextView tv, int amount) {
+        if (tv == null) return;
+        if (amount == 0) tv.setText("No Blur");
+        else if (amount <= 33) tv.setText("Sphere Background Only");
+        else if (amount <= 66) tv.setText("Nearby Area");
+        else if (amount < 100) tv.setText("Almost Full Screen");
+        else tv.setText("Full Screen Blur");
+    }
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -121,11 +130,12 @@ public class DashboardFragment extends Fragment {
         });
 
         // Blur Background
-        MaterialSwitch switchBlurBackground = view.findViewById(R.id.switch_blur_background);
-        if (switchBlurBackground != null) {
-            switchBlurBackground.setChecked(prefs.getBoolean("pref_blur_background", false));
-            switchBlurBackground.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                prefs.edit().putBoolean("pref_blur_background", isChecked).apply();
+        View btnSphereBlur = view.findViewById(R.id.btn_sphere_blur);
+        TextView tvBlurStatus = view.findViewById(R.id.tv_blur_status);
+        if (btnSphereBlur != null) {
+            updateBlurStatusText(tvBlurStatus, prefs.getInt("pref_blur_amount", 0));
+            btnSphereBlur.setOnClickListener(v -> {
+                startActivity(new android.content.Intent(requireContext(), dev.jaimin.auraorbit.SphereBlurEditorActivity.class));
             });
         }
 
@@ -295,6 +305,14 @@ public class DashboardFragment extends Fragment {
         updateBackgroundStatus();
         updateWidgetLogoStatus();
         updateSpherePositionStatus();
+        
+        View view = getView();
+        if (view != null) {
+            TextView tvBlurStatus = view.findViewById(R.id.tv_blur_status);
+            if (tvBlurStatus != null) {
+                updateBlurStatusText(tvBlurStatus, androidx.preference.PreferenceManager.getDefaultSharedPreferences(requireContext()).getInt("pref_blur_amount", 0));
+            }
+        }
     }
 
     @Override
