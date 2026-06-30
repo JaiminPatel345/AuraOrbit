@@ -94,7 +94,7 @@ public class SphereModeActivity extends AndroidApplication {
         if (graphics.getView() instanceof android.view.SurfaceView) {
             android.view.SurfaceView surfaceView = (android.view.SurfaceView) graphics.getView();
             surfaceView.getHolder().setFormat(android.graphics.PixelFormat.TRANSLUCENT);
-            surfaceView.setZOrderMediaOverlay(true);
+            surfaceView.setZOrderOnTop(true);
         }
         float scale = prefs.getFloat("pref_sphere_scale", 1.0f);
         String pos = prefs.getString("pref_sphere_position", "center");
@@ -151,21 +151,13 @@ public class SphereModeActivity extends AndroidApplication {
         
         params.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
         params.flags |= WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
+        params.flags |= WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
         
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && blurRadiusPref > 0 && blurStrengthPref > 0) {
             int radius = Math.min(blurStrengthPref * 2, 150);
             if (radius == 0) radius = 1;
             getWindow().setBackgroundBlurRadius(radius);
         }
-        
-        // Force the window to clip to a circle so the blur is circular
-        getWindow().getDecorView().setOutlineProvider(new android.view.ViewOutlineProvider() {
-            @Override
-            public void getOutline(android.view.View view, android.graphics.Outline outline) {
-                outline.setOval(0, 0, view.getWidth(), view.getHeight());
-            }
-        });
-        getWindow().getDecorView().setClipToOutline(true);
         
         android.graphics.drawable.GradientDrawable circle = new android.graphics.drawable.GradientDrawable();
         circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);

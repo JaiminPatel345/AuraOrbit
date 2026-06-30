@@ -96,18 +96,6 @@ public class SphereBlurEditorActivity extends AppCompatActivity {
         mockParams.gravity = android.view.Gravity.CENTER;
         sphereMock.setLayoutParams(mockParams);
         
-        View root = blurDialog.findViewById(android.R.id.content);
-        if (root != null) {
-            // Force the view to clip to a circular outline
-            root.setOutlineProvider(new ViewOutlineProvider() {
-                @Override
-                public void getOutline(View view, Outline outline) {
-                    outline.setOval(0, 0, view.getWidth(), view.getHeight());
-                }
-            });
-            root.setClipToOutline(true);
-        }
-        
         Window window = blurDialog.getWindow();
         if (window != null) {
             GradientDrawable circle = new GradientDrawable();
