@@ -21,23 +21,43 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
+      - name: Compute version name and code from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          if [ "$PATCH" -gt 99 ] || [ "$MINOR" -gt 99 ]; then
+            echo "ERROR: version component exceeds 99 — versionCode will collide" >&2
+            exit 1
+          fi
+          VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_OUTPUT
+
       - name: Decode keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > ${{ github.workspace }}/keystore.jks
+        run: printf '%s' "${{ secrets.KEYSTORE_BASE64 }}" | base64 --ignore-garbage -d > "$RUNNER_TEMP/keystore.jks"
 
       - name: Grant execute permission to gradlew
         run: chmod +x gradlew
 
       - name: Build signed release APK
         env:
-          KEYSTORE_PATH: ${{ github.workspace }}/keystore.jks
+          KEYSTORE_PATH: ${{ runner.temp }}/keystore.jks
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew assembleRelease
+          KEY_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          ./gradlew assembleRelease \
+            -PversionName="${{ steps.version.outputs.VERSION }}" \
+            -PversionCode="${{ steps.version.outputs.VERSION_CODE }}"
 
-      - name: Get version from tag
-        id: version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+      - name: Get release notes from tag message
+        id: tag_notes
+        run: |
+          NOTES=$(git tag -l --format='%(contents)' "${GITHUB_REF_NAME}")
+          echo "NOTES<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Rename APK to match F-Droid Binaries URL pattern
         run: cp app/build/outputs/apk/release/app-release.apk AuraOrbit-${{ steps.version.outputs.VERSION }}.apk
@@ -46,5 +66,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: AuraOrbit-${{ steps.version.outputs.VERSION }}.apk
-          generate_release_notes: true
+          body: "${{ steps.tag_notes.outputs.NOTES }}"
           fail_on_unmatched_files: true
+
+      - name: Remove keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/keystore.jks"

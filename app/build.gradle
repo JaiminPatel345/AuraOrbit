@@ -10,8 +10,8 @@ android {
         applicationId "dev.jaimin.auraorbit"
         minSdk rootProject.ext.androidMinSdk
         targetSdk rootProject.ext.androidTargetSdk
-        versionCode 2
-        versionName "1.0.1"
+        versionCode project.hasProperty('versionCode') ? project.versionCode.toInteger() : 2
+        versionName project.hasProperty('versionName') ? project.versionName : "1.0.1"
     }
 
     signingConfigs {

@@ -37,10 +37,7 @@ public class BackgroundStore {
             in.close();
             
             int maxSize = 2048;
-            int scale = 1;
-            while ((options.outWidth / scale) > maxSize || (options.outHeight / scale) > maxSize) {
-                scale *= 2;
-            }
+            int scale = computeSampleSize(options.outWidth, options.outHeight, maxSize);
 
             BitmapFactory.Options options2 = new BitmapFactory.Options();
             options2.inSampleSize = scale;
@@ -75,6 +72,14 @@ public class BackgroundStore {
             e.printStackTrace();
             return false;
         }
+    }
+    
+    public static int computeSampleSize(int width, int height, int maxSize) {
+        int scale = 1;
+        while ((width / scale) > maxSize || (height / scale) > maxSize) {
+            scale *= 2;
+        }
+        return scale;
     }
     
     private static void bumpVersion(Context context) {
