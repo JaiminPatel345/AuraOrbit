@@ -95,7 +95,10 @@
             </intent-filter>
         </activity>
 
-        
+        <activity
+            android:name=".SpherePositionEditorActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Material3.Light.NoActionBar" />
 
         <!-- ═══════════════════════════════════════════════════════════════
              4. WIDGET PROVIDER (Transparent Popup Architecture)
@@ -113,6 +116,13 @@
 
         <receiver
             android:name=".WidgetPinnedReceiver"
+            android:exported="false" />
+
+
+        <activity
+            android:name=".SphereBlurEditorActivity"
+            android:theme="@style/Theme.AuraOrbit.TransparentFullscreen"
+            android:screenOrientation="portrait"
             android:exported="false" />
 
         <activity

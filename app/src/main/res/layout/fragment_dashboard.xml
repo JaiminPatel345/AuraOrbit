@@ -132,6 +132,70 @@
                 android:orientation="vertical"
                 android:padding="20dp">
 
+                <!-- Layout & Position Section Title -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Layout &amp; Position"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="16dp"/>
+
+                <!-- Sphere Position Menu -->
+                <LinearLayout
+                    android:id="@+id/btn_sphere_position"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+                    
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@android:drawable/ic_menu_sort_by_size" 
+                        android:padding="8dp"
+                        android:background="@drawable/rounded_bg_solid"
+                        app:tint="?attr/colorPrimary"/>
+                        
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginStart="16dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Sphere Position"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:textSize="16sp"/>
+                        <TextView
+                            android:id="@+id/tv_sphere_position_status"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Center"
+                            android:textSize="14sp"
+                            android:textColor="?android:attr/textColorSecondary"/>
+                    </LinearLayout>
+                    
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@android:drawable/ic_menu_edit"
+                        app:tint="?attr/colorOnSurfaceVariant"/>
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="?android:attr/listDivider"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="16dp"/>
+
                 <!-- Wallpaper & Background Section Title -->
                 <TextView
                     android:layout_width="wrap_content"
@@ -237,13 +301,18 @@
                         app:tint="?attr/colorOnSurfaceVariant"/>
                 </LinearLayout>
 
-                <!-- Blur Background Switch -->
+                <!-- Blur Background Button -->
                 <LinearLayout
+                    android:id="@+id/btn_sphere_blur"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginTop="20dp">
+                    android:layout_marginTop="20dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+                    
                     <ImageView
                         android:layout_width="40dp"
                         android:layout_height="40dp"
@@ -261,21 +330,23 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Blur Home Screen"
+                            android:text="Background Blur"
                             android:textColor="?android:attr/textColorPrimary"
                             android:textSize="16sp"/>
                         <TextView
+                            android:id="@+id/tv_blur_status"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="When Sphere is open"
+                            android:text="No Blur"
                             android:textSize="14sp"
                             android:textColor="?android:attr/textColorSecondary"/>
                     </LinearLayout>
                     
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switch_blur_background"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"/>
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@android:drawable/ic_menu_edit"
+                        app:tint="?attr/colorOnSurfaceVariant"/>
                 </LinearLayout>
 
                 <View

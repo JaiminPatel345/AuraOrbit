@@ -26,8 +26,10 @@ import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.slider.Slider;
 import android.widget.EditText;
 import android.text.InputType;
+import dev.jaimin.auraorbit.AppFetcher;
 import dev.jaimin.auraorbit.WidgetLogoStore;
 import dev.jaimin.auraorbit.SphereWidgetProvider;
+import dev.jaimin.auraorbit.SpherePositionEditorActivity;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -59,6 +61,30 @@ public class DashboardFragment extends Fragment {
                     new ActivityResultContracts.PickVisualMedia(),
                     this::saveWidgetLogo
             );
+
+    public static final String PREF_SPHERE_POSITION = "pref_sphere_position";
+    private TextView tvSpherePositionStatus;
+
+    private void updateSpherePositionStatus() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        String position = prefs.getString(PREF_SPHERE_POSITION, "center");
+        String display = "Center";
+        if ("top".equals(position)) display = "Top";
+        else if ("bottom".equals(position)) display = "Bottom";
+        else if ("custom".equals(position)) display = "Custom";
+        if (tvSpherePositionStatus != null) {
+            tvSpherePositionStatus.setText(display);
+        }
+    }
+
+    private void updateBlurStatusText(TextView tv, int amount) {
+        if (tv == null) return;
+        if (amount == 0) tv.setText("No Blur");
+        else if (amount <= 33) tv.setText("Sphere Background Only");
+        else if (amount <= 66) tv.setText("Nearby Area");
+        else if (amount < 100) tv.setText("Almost Full Screen");
+        else tv.setText("Full Screen Blur");
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -104,11 +130,12 @@ public class DashboardFragment extends Fragment {
         });
 
         // Blur Background
-        MaterialSwitch switchBlurBackground = view.findViewById(R.id.switch_blur_background);
-        if (switchBlurBackground != null) {
-            switchBlurBackground.setChecked(prefs.getBoolean("pref_blur_background", false));
-            switchBlurBackground.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                prefs.edit().putBoolean("pref_blur_background", isChecked).apply();
+        View btnSphereBlur = view.findViewById(R.id.btn_sphere_blur);
+        TextView tvBlurStatus = view.findViewById(R.id.tv_blur_status);
+        if (btnSphereBlur != null) {
+            updateBlurStatusText(tvBlurStatus, prefs.getInt("pref_blur_amount", 0));
+            btnSphereBlur.setOnClickListener(v -> {
+                startActivity(new android.content.Intent(requireContext(), dev.jaimin.auraorbit.SphereBlurEditorActivity.class));
             });
         }
 
@@ -136,6 +163,14 @@ public class DashboardFragment extends Fragment {
                     })
                     .setNegativeButton("Cancel", null)
                     .show();
+        });
+
+        // Sphere Position handler
+        tvSpherePositionStatus = view.findViewById(R.id.tv_sphere_position_status);
+        updateSpherePositionStatus();
+
+        view.findViewById(R.id.btn_sphere_position).setOnClickListener(v -> {
+            startActivity(new android.content.Intent(requireContext(), SpherePositionEditorActivity.class));
         });
 
         // Background handler
@@ -269,6 +304,15 @@ public class DashboardFragment extends Fragment {
         requireActivity().setTitle(R.string.settings_title);
         updateBackgroundStatus();
         updateWidgetLogoStatus();
+        updateSpherePositionStatus();
+        
+        View view = getView();
+        if (view != null) {
+            TextView tvBlurStatus = view.findViewById(R.id.tv_blur_status);
+            if (tvBlurStatus != null) {
+                updateBlurStatusText(tvBlurStatus, androidx.preference.PreferenceManager.getDefaultSharedPreferences(requireContext()).getInt("pref_blur_amount", 0));
+            }
+        }
     }
 
     @Override

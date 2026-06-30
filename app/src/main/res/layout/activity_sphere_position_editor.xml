@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#88000000">
+
+    <!-- Sphere Mock -->
+    <View
+        android:id="@+id/sphere_mock"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:background="@drawable/circle_mock"
+        android:layout_gravity="top|start" />
+
+    <!-- Top Bar (Buttons) -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:paddingTop="32dp"
+        android:paddingBottom="16dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:background="#AA000000">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_cancel"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#FFFFFF"
+            android:text="Cancel"
+            android:layout_gravity="start|center_vertical" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_save"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Save"
+            android:layout_gravity="end|center_vertical" />
+    </FrameLayout>
+
+    <!-- Bottom Bar (Text and Slider) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_gravity="bottom"
+        android:background="#AA000000"
+        android:padding="24dp">
+        
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Drag the circle to position it."
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_gravity="center_horizontal"/>
+            
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Size"
+            android:textColor="#CCCCCC"
+            android:layout_marginTop="16dp"
+            android:layout_gravity="center_horizontal"/>
+            
+        <com.google.android.material.slider.Slider
+            android:id="@+id/slider_scale"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:valueFrom="0.3"
+            android:valueTo="2.0"
+            android:value="1.0"
+            android:stepSize="0.1"
+            app:thumbColor="#FFFFFF"
+            app:trackColorActive="#FFFFFF"
+            app:trackColorInactive="#88FFFFFF"/>
+    </LinearLayout>
+
+</FrameLayout>
