@@ -14,8 +14,18 @@ android {
         versionName "1.0.1"
     }
 
+    signingConfigs {
+        release {
+            storeFile System.getenv("KEYSTORE_PATH") ? file(System.getenv("KEYSTORE_PATH")) : null
+            storePassword System.getenv("KEYSTORE_PASSWORD")
+            keyAlias System.getenv("KEY_ALIAS")
+            keyPassword System.getenv("KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig System.getenv("KEYSTORE_PATH") ? signingConfigs.release : null
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
