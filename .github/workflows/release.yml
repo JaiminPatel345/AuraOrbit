@@ -35,7 +35,7 @@ jobs:
           echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_OUTPUT
 
       - name: Decode keystore
-        run: printf '%s' "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/keystore.jks"
+        run: printf '%s' "${{ secrets.KEYSTORE_BASE64 }}" | base64 --ignore-garbage -d > "$RUNNER_TEMP/keystore.jks"
 
       - name: Grant execute permission to gradlew
         run: chmod +x gradlew
