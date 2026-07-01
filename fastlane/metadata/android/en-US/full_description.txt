@@ -1,10 +1,35 @@
 AuraOrbit is a next-generation Android Live Wallpaper featuring a fully interactive 3D sphere that orbits your favorite apps right on your home screen. Built on the high-performance libGDX game engine, it leverages a golden angle Fibonacci distribution to plot your apps perfectly in a 3D space, supporting true 120 FPS hardware refresh rates!
 
-<b>Core Features:</b>
+<b>3D Sphere:</b>
 <ul>
-<li><b>Seamless 3D Rotation:</b> Touch and drag anywhere on your home screen to rotate the sphere along multiple axes.</li>
-<li><b>Instant App Launching:</b> Tap any orbiting app icon to launch it immediately without delay.</li>
-<li><b>Smart Dynamic Widgets:</b> Color-coded widgets bound to custom app groups that update in real-time.</li>
-<li><b>Deep Personalization:</b> Set target framerates (60/90/120), toggle system backgrounds, and adjust sphere radii and icon scaling.</li>
-<li><b>FOSS &amp; Privacy First:</b> Entirely open source and requests zero unnecessary permissions.</li>
+<li>Rotate apps with natural quaternion-based momentum at up to 120 FPS.</li>
+<li>Drag-and-drop sphere positioning — center, top, bottom, or anywhere via a custom editor.</li>
+<li>Adjustable sphere size, icon size, and rotation speed.</li>
+</ul>
+
+<b>Background &amp; Blur:</b>
+<ul>
+<li>Upload a custom background image or use the default gradient.</li>
+<li>Dual blur controls: independent Blur Radius (area) and Blur Strength (intensity) with real-time preview.</li>
+<li>Five blur levels from no blur to full-screen blur.</li>
+</ul>
+
+<b>App Groups &amp; Widgets:</b>
+<ul>
+<li>Create color-coded app groups with 8 presets plus a custom RGB color picker.</li>
+<li>Per-group home screen widgets with live previews and custom logo upload.</li>
+<li>Toggle transparent background, hide logo, hide text, or use Material You system colors per widget.</li>
+<li>Pin multiple widgets for different groups simultaneously.</li>
+</ul>
+
+<b>Standalone Sphere Mode:</b>
+<ul>
+<li>Launch AuraOrbit as a fullscreen immersive app from any group widget.</li>
+<li>Tap apps to launch them; tap outside to return home.</li>
+</ul>
+
+<b>FOSS &amp; Privacy First:</b>
+<ul>
+<li>Entirely open source under GPLv3.</li>
+<li>Zero unnecessary permissions and no tracking whatsoever.</li>
 </ul>
