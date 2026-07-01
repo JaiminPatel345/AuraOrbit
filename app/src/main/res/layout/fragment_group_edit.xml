@@ -11,6 +11,120 @@
         android:layout_height="wrap_content"
         android:padding="20dp">
 
+        <!-- Actions -->
+        <LinearLayout
+            android:id="@+id/actions_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:orientation="horizontal"
+            android:gravity="center"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_delete"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/btn_delete_group"
+                app:icon="@android:drawable/ic_menu_delete"
+                app:iconTint="#E53935"
+                android:textColor="#E53935"
+                android:visibility="gone" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_edit_apps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Edit Apps"
+                android:visibility="gone"
+                style="@style/Widget.Material3.Button.TonalButton"
+                app:icon="@android:drawable/ic_menu_edit" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_pin_widget"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pin Widget"
+                android:visibility="gone"
+                style="@style/Widget.Material3.Button.TextButton"
+                app:icon="@android:drawable/ic_menu_add" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_cancel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:text="@string/btn_cancel" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_save"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="@string/btn_save" />
+
+        </LinearLayout>
+
+        <!-- Add Apps Card -->
+        <TextView
+            android:id="@+id/tv_apps_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Select Apps"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="?android:attr/textColorPrimary"
+            app:layout_constraintTop_toBottomOf="@id/actions_container"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"/>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_apps"
+            android:layout_width="match_parent"
+            android:layout_height="400dp"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="?attr/colorSurfaceVariant"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:layout_constraintTop_toBottomOf="@id/tv_apps_title">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/member_search_input"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/search_apps_hint"
+                        android:singleLine="true"
+                        android:inputType="text" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/member_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:layout_marginTop="8dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- Widget Preview Card -->
         <TextView
             android:id="@+id/tv_preview_title"
@@ -20,7 +134,8 @@
             android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="?android:attr/textColorPrimary"
-            app:layout_constraintTop_toTopOf="parent"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@id/card_apps"
             app:layout_constraintStart_toStartOf="parent" />
 
         <com.google.android.material.card.MaterialCardView
@@ -208,99 +323,6 @@
                             android:orientation="horizontal"
                             android:paddingVertical="4dp" />
                     </HorizontalScrollView>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="8dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Use System Theme Color"
-                            android:textColor="?android:attr/textColorPrimary"
-                            android:textSize="16sp"/>
-                        <ImageButton
-                            android:id="@+id/btn_info_theme_color"
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:layout_marginStart="8dp"
-                            android:src="@android:drawable/ic_dialog_info"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:scaleType="fitCenter"
-                            app:tint="?attr/colorOnSurfaceVariant" />
-                        <View
-                            android:layout_width="0dp"
-                            android:layout_height="0dp"
-                            android:layout_weight="1"/>
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/switch_use_theme_color"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"/>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="8dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Transparent Widget"
-                            android:textColor="?android:attr/textColorPrimary"
-                            android:textSize="16sp"/>
-                        <ImageButton
-                            android:id="@+id/btn_info_transparent"
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:layout_marginStart="8dp"
-                            android:src="@android:drawable/ic_dialog_info"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:scaleType="fitCenter"
-                            app:tint="?attr/colorOnSurfaceVariant" />
-                        <View
-                            android:layout_width="0dp"
-                            android:layout_height="0dp"
-                            android:layout_weight="1"/>
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/switch_transparent_widget"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"/>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="8dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Hide Widget Logo"
-                            android:textColor="?android:attr/textColorPrimary"
-                            android:textSize="16sp"/>
-                        <ImageButton
-                            android:id="@+id/btn_info_hide_logo"
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:layout_marginStart="8dp"
-                            android:src="@android:drawable/ic_dialog_info"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:scaleType="fitCenter"
-                            app:tint="?attr/colorOnSurfaceVariant" />
-                        <View
-                            android:layout_width="0dp"
-                            android:layout_height="0dp"
-                            android:layout_weight="1"/>
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/switch_hide_widget_logo"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"/>
-                    </LinearLayout>
                 </LinearLayout>
 
                 <!-- Options shown when using CUSTOM LOGO -->
@@ -342,14 +364,45 @@
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:background="?attr/colorOutlineVariant"
-                    android:layout_marginTop="20dp"
+                    android:layout_marginTop="16dp"
                     android:layout_marginBottom="16dp"/>
 
-                <!-- Hide Text Toggle (Always shown) -->
+                <!-- Global Widget Settings -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Hide Widget Logo"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="16sp"/>
+                    <ImageButton
+                        android:id="@+id/btn_info_hide_logo"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginStart="8dp"
+                        android:src="@android:drawable/ic_dialog_info"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:scaleType="fitCenter"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"/>
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switch_hide_widget_logo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp"
                     android:gravity="center_vertical">
                     <TextView
                         android:layout_width="wrap_content"
@@ -376,110 +429,330 @@
                         android:layout_height="wrap_content"/>
                 </LinearLayout>
 
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Add Apps Card -->
-        <TextView
-            android:id="@+id/tv_apps_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Select Apps"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="?android:attr/textColorPrimary"
-            app:layout_constraintTop_toBottomOf="@id/card_general"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="32dp"/>
-
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/card_apps"
-            android:layout_width="match_parent"
-            android:layout_height="400dp"
-            android:layout_marginTop="16dp"
-            app:cardBackgroundColor="?attr/colorSurfaceVariant"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            app:layout_constraintTop_toBottomOf="@id/tv_apps_title">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <com.google.android.material.textfield.TextInputLayout
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="8dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Use System Theme Color"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="16sp"/>
+                    <ImageButton
+                        android:id="@+id/btn_info_theme_color"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginStart="8dp"
+                        android:src="@android:drawable/ic_dialog_info"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:scaleType="fitCenter"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"/>
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switch_use_theme_color"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/member_search_input"
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="8dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Transparent Widget"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="16sp"/>
+                    <ImageButton
+                        android:id="@+id/btn_info_transparent"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginStart="8dp"
+                        android:src="@android:drawable/ic_dialog_info"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:scaleType="fitCenter"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"/>
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switch_transparent_widget"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="?attr/colorOutlineVariant"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="16dp"/>
+
+                <!-- Custom Sphere Configuration -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Sphere Configuration"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="16sp"
+                        android:textStyle="bold"/>
+                    <ImageButton
+                        android:id="@+id/btn_info_custom_config"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginStart="8dp"
+                        android:src="@android:drawable/ic_dialog_info"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:scaleType="fitCenter"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/custom_config_container"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="@string/search_apps_hint"
-                        android:singleLine="true"
-                        android:inputType="text" />
-                </com.google.android.material.textfield.TextInputLayout>
+                        android:orientation="vertical"
+                        android:layout_marginTop="16dp">
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/member_list"
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"
-                    android:layout_marginTop="8dp" />
+                        <!-- Sphere Position Menu -->
+                        <LinearLayout
+                            android:id="@+id/btn_sphere_position"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:focusable="true">
+                            
+                            <ImageView
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:src="@android:drawable/ic_menu_mylocation" 
+                                android:padding="8dp"
+                                android:background="@drawable/rounded_bg_solid"
+                                app:tint="?attr/colorPrimary"/>
+                                
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:layout_marginStart="16dp">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Sphere Position"
+                                    android:textColor="?android:attr/textColorPrimary"
+                                    android:textSize="16sp"/>
+                                <TextView
+                                    android:id="@+id/tv_sphere_position_status"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Center"
+                                    android:textSize="14sp"
+                                    android:textColor="?android:attr/textColorSecondary"/>
+                            </LinearLayout>
+                            
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@android:drawable/ic_menu_edit"
+                                app:tint="?attr/colorOnSurfaceVariant"/>
+                        </LinearLayout>
+
+                        <!-- Blur Background Button -->
+                        <LinearLayout
+                            android:id="@+id/btn_sphere_blur"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginTop="20dp"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:focusable="true">
+                            
+                            <ImageView
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:src="@android:drawable/ic_menu_view" 
+                                android:padding="8dp"
+                                android:background="@drawable/rounded_bg_solid"
+                                app:tint="?attr/colorPrimary"/>
+                                
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:layout_marginStart="16dp">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Background Blur"
+                                    android:textColor="?android:attr/textColorPrimary"
+                                    android:textSize="16sp"/>
+                                <TextView
+                                    android:id="@+id/tv_blur_status"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="No Blur"
+                                    android:textSize="14sp"
+                                    android:textColor="?android:attr/textColorSecondary"/>
+                            </LinearLayout>
+                            
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@android:drawable/ic_menu_edit"
+                                app:tint="?attr/colorOnSurfaceVariant"/>
+                        </LinearLayout>
+
+                        <!-- App Background (Sphere Mode) -->
+                        <LinearLayout
+                            android:id="@+id/btn_app_background"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginTop="20dp"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:focusable="true">
+                            
+                            <ImageView
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:src="@drawable/ic_widget_planet" 
+                                android:padding="8dp"
+                                android:background="@drawable/rounded_bg_solid"
+                                app:tint="?attr/colorPrimary"/>
+                                
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:layout_marginStart="16dp">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Sphere Background"
+                                    android:textColor="?android:attr/textColorPrimary"
+                                    android:textSize="16sp"/>
+                                <TextView
+                                    android:id="@+id/tv_background_status"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Default"
+                                    android:textSize="14sp"
+                                    android:textColor="?android:attr/textColorSecondary"/>
+                            </LinearLayout>
+                            
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@android:drawable/ic_menu_edit"
+                                app:tint="?attr/colorOnSurfaceVariant"/>
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="?attr/colorOutlineVariant"
+                            android:layout_marginTop="20dp"
+                            android:layout_marginBottom="20dp"/>
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Icon Size"
+                        android:textColor="?android:attr/textColorPrimary" />
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/slider_icon_size"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:valueFrom="20"
+                        android:valueTo="200"
+                        android:stepSize="1" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Rotation Speed"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:layout_marginTop="16dp"/>
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/slider_speed"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:valueFrom="10"
+                        android:valueTo="300"
+                        android:stepSize="1" />
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp">
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Target FPS"
+                                android:textColor="?android:attr/textColorPrimary"
+                                android:textSize="14sp"/>
+                            <TextView
+                                android:id="@+id/tv_fps_value"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="120 FPS"
+                                android:textColor="?android:attr/textColorSecondary"
+                                android:layout_marginTop="4dp"/>
+                        </LinearLayout>
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_fps"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:text="Change" />
+                    </RelativeLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_reset_config"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="16dp"
+                        android:text="Reset to Global Config"
+                        android:textColor="?attr/colorPrimary" />
+                </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Actions -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:orientation="horizontal"
-            android:gravity="center"
-            app:layout_constraintTop_toBottomOf="@id/card_apps">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_delete"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/btn_delete_group"
-                app:icon="@android:drawable/ic_menu_delete"
-                app:iconTint="#E53935"
-                android:textColor="#E53935"
-                android:visibility="gone" />
 
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_pin_widget"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Pin Widget"
-                android:visibility="gone"
-                style="@style/Widget.Material3.Button.TextButton"
-                app:icon="@android:drawable/ic_menu_add" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_cancel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:text="@string/btn_cancel" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_save"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="@string/btn_save" />
-
-        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.core.widget.NestedScrollView>

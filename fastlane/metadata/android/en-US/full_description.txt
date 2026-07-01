@@ -3,8 +3,8 @@ AuraOrbit is a next-generation Android Live Wallpaper featuring a fully interact
 <b>3D Sphere:</b>
 <ul>
 <li>Rotate apps with natural quaternion-based momentum at up to 120 FPS.</li>
-<li>Drag-and-drop sphere positioning — center, top, bottom, or anywhere via a custom editor.</li>
-<li>Adjustable sphere size, icon size, and rotation speed.</li>
+<li>Drag-and-drop sphere positioning — center, top, bottom, or anywhere via a custom editor (which also scales the sphere radius!)</li>
+<li>Adjustable icon size and rotation speed (sphere maintains full radius regardless of icon size).</li>
 </ul>
 
 <b>Background &amp; Blur:</b>
@@ -17,6 +17,8 @@ AuraOrbit is a next-generation Android Live Wallpaper featuring a fully interact
 <b>App Groups &amp; Widgets:</b>
 <ul>
 <li>Create color-coded app groups with 8 presets plus a custom RGB color picker.</li>
+<li><b>Individual Group Overrides:</b> Configure unique Sphere Position, Background Image, and Blur settings exclusively for each group.</li>
+<li>Intuitive Edit Apps popup dialog for seamless bulk-selection.</li>
 <li>Per-group home screen widgets with live previews and custom logo upload.</li>
 <li>Toggle transparent background, hide logo, hide text, or use Material You system colors per widget.</li>
 <li>Pin multiple widgets for different groups simultaneously.</li>
@@ -25,6 +27,7 @@ AuraOrbit is a next-generation Android Live Wallpaper featuring a fully interact
 <b>Standalone Sphere Mode:</b>
 <ul>
 <li>Launch AuraOrbit as a fullscreen immersive app from any group widget.</li>
+<li>Floats seamlessly over your home screen with zero black dimming!</li>
 <li>Tap apps to launch them; tap outside to return home.</li>
 </ul>
 

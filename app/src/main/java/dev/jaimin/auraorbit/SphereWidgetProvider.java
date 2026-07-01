@@ -127,6 +127,7 @@ public class SphereWidgetProvider extends AppWidgetProvider {
 
                     if (hideText) {
                         views.setViewVisibility(R.id.widget_label, View.GONE);
+                        views.setTextViewText(R.id.widget_label, "");
                     } else {
                         views.setTextViewText(R.id.widget_label, widgetName);
                         views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
@@ -138,6 +139,7 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                     boolean hideGroupText = prefs.getBoolean("pref_widget_hide_text_" + groupName, false);
                     if (hideGroupText) {
                         views.setViewVisibility(R.id.widget_label, View.GONE);
+                        views.setTextViewText(R.id.widget_label, "");
                     } else {
                         views.setViewVisibility(R.id.widget_label, View.VISIBLE);
                     }
@@ -242,7 +244,10 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                 boolean hideGroupText = prefs.getBoolean("pref_widget_hide_text_" + groupName, false);
                 if (hideGroupText) {
                     views.setViewVisibility(R.id.widget_label, View.GONE);
+                    views.setTextViewText(R.id.widget_label, "");
                 } else {
+                    views.setTextViewText(R.id.widget_label, groupName);
+                    views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
                     views.setViewVisibility(R.id.widget_label, View.VISIBLE);
                 }
             } else {
@@ -287,6 +292,7 @@ public class SphereWidgetProvider extends AppWidgetProvider {
 
                 if (hideText) {
                     views.setViewVisibility(R.id.widget_label, View.GONE);
+                    views.setTextViewText(R.id.widget_label, "");
                 } else {
                     views.setTextViewText(R.id.widget_label, widgetName);
                     views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);

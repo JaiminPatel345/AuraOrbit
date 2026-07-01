@@ -52,20 +52,28 @@ public class SphereBlurEditorActivity extends AppCompatActivity {
         screenWidth = metrics.widthPixels;
         screenHeight = metrics.heightPixels;
 
+        String groupName = getIntent().getStringExtra("group_name");
+        String scalePref = groupName != null ? "pref_sphere_scale_" + groupName : "pref_sphere_scale";
+        String radiusPref = groupName != null ? "pref_blur_radius_" + groupName : "pref_blur_radius";
+        String strengthPref = groupName != null ? "pref_blur_strength_" + groupName : "pref_blur_strength";
+        String posPref = groupName != null ? "pref_sphere_position_" + groupName : "pref_sphere_position";
+        String xPref = groupName != null ? "pref_sphere_x_" + groupName : "pref_sphere_x";
+        String yPref = groupName != null ? "pref_sphere_y_" + groupName : "pref_sphere_y";
+
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        currentScale = prefs.getFloat("pref_sphere_scale", 1.0f);
+        currentScale = prefs.getFloat(scalePref, 1.0f);
         // We now have two preferences
-        currentBlurRadius = prefs.getInt("pref_blur_radius", 0);
-        currentBlurStrength = prefs.getInt("pref_blur_strength", 0);
+        currentBlurRadius = prefs.getInt(radiusPref, 0);
+        currentBlurStrength = prefs.getInt(strengthPref, 0);
         
         // Migrate old pref_blur_amount if the new ones don't exist
-        if (!prefs.contains("pref_blur_radius") && prefs.contains("pref_blur_amount")) {
+        if (!prefs.contains(radiusPref) && groupName == null && prefs.contains("pref_blur_amount")) {
             int oldAmount = prefs.getInt("pref_blur_amount", 0);
             currentBlurRadius = oldAmount;
             currentBlurStrength = oldAmount > 0 ? 50 : 0;
         }
 
-        String pos = prefs.getString("pref_sphere_position", "center");
+        String pos = prefs.getString(posPref, "center");
 
         int sphereSize = (int) (screenWidth * currentScale);
         sphereX = (screenWidth - sphereSize) / 2;
@@ -76,8 +84,8 @@ public class SphereBlurEditorActivity extends AppCompatActivity {
         } else if ("bottom".equals(pos)) {
             sphereY = screenHeight - sphereSize - 100;
         } else if ("custom".equals(pos)) {
-            sphereX = (int) prefs.getFloat("pref_sphere_x", sphereX);
-            sphereY = (int) prefs.getFloat("pref_sphere_y", sphereY);
+            sphereX = (int) prefs.getFloat(xPref, sphereX);
+            sphereY = (int) prefs.getFloat(yPref, sphereY);
         }
 
         setupBlurDialog();
@@ -155,9 +163,12 @@ public class SphereBlurEditorActivity extends AppCompatActivity {
         });
         
         controlDialog.findViewById(R.id.btn_save).setOnClickListener(v -> {
+            String groupName = getIntent().getStringExtra("group_name");
+            String saveRadiusPref = groupName != null ? "pref_blur_radius_" + groupName : "pref_blur_radius";
+            String saveStrengthPref = groupName != null ? "pref_blur_strength_" + groupName : "pref_blur_strength";
             prefs.edit()
-                .putInt("pref_blur_radius", currentBlurRadius)
-                .putInt("pref_blur_strength", currentBlurStrength)
+                .putInt(saveRadiusPref, currentBlurRadius)
+                .putInt(saveStrengthPref, currentBlurStrength)
                 .apply();
             controlDialog.dismiss();
             finish();

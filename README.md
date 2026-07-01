@@ -9,8 +9,8 @@
 
 **3D Sphere**
 - Rotate apps with natural quaternion-based momentum at up to 120 FPS (30/60/90/120 selectable)
-- Drag-and-drop sphere positioning — center, top, bottom, or anywhere via a custom editor
-- Adjustable sphere size, icon size, and rotation speed
+- Drag-and-drop sphere positioning — center, top, bottom, or anywhere via a custom editor (which also scales the sphere radius!)
+- Adjustable icon size and rotation speed
 
 **Background & Blur**
 - Upload a custom background image or use the default gradient
@@ -20,7 +20,8 @@
 **App Groups**
 - Create color-coded groups with 8 presets + custom RGB color picker
 - Assign apps to groups; groups appear as 3D translucent backdrops on the sphere
-- Search and bulk-select apps in the picker
+- **Individual Group Overrides**: Configure Sphere Position, Background Image, and Blur explicitly for each group!
+- Search and bulk-select apps in the picker with an intuitive Edit Apps popup dialog
 
 **Home Screen Widgets**
 - Per-group widgets with live color-coded previews
@@ -31,6 +32,7 @@
 
 **Standalone Sphere Mode**
 - Launch AuraOrbit as a fullscreen immersive app from any group widget
+- Floats perfectly over your home screen seamlessly with zero black dimming!
 - Swipe-from-edge to reveal system bars; screen stays on
 - Tap apps to launch; tap outside to return home
 
@@ -85,9 +87,10 @@ Hit the **Settings ⚙️** icon in the preview window to open the AuraOrbit das
 - Create color-coded app groups with custom names and colors.
 - Drag and scale the sphere to any position on your screen.
 - Upload a custom background image and tune blur radius + strength.
+- Override backgrounds, blur, and positioning for individual app groups!
 - Customize each group's widget: logo, ring color, transparency, text visibility.
 - Set the target framerate (30/60/90/120 FPS).
-- Adjust sphere size, icon size, and rotation speed.
+- Adjust icon size and rotation speed.
 
 ## 📄 License
 

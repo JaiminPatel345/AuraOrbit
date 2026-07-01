@@ -110,12 +110,6 @@ public class DashboardFragment extends Fragment {
         MaterialCardView cardGroups = view.findViewById(R.id.card_groups);
         cardGroups.setOnClickListener(v -> navigateTo(new GroupListFragment()));
 
-        // Sliders
-        Slider sliderRadius = view.findViewById(R.id.slider_radius);
-        sliderRadius.setValue(prefs.getInt("pref_sphere_radius", 50));
-        sliderRadius.addOnChangeListener((slider, value, fromUser) -> {
-            if (fromUser) prefs.edit().putInt("pref_sphere_radius", (int) value).apply();
-        });
 
         Slider sliderIconSize = view.findViewById(R.id.slider_icon_size);
         sliderIconSize.setValue(prefs.getInt("pref_icon_size", 50));
@@ -284,6 +278,7 @@ public class DashboardFragment extends Fragment {
         switchHideText.setOnCheckedChangeListener((buttonView, isChecked) -> {
             prefs.edit().putBoolean("pref_widget_hide_text", isChecked).apply();
             SphereWidgetProvider.updateAllWidgets(requireContext());
+            updateLivePreview();
         });
 
         MaterialSwitch switchHideLogo = view.findViewById(R.id.switch_hide_widget_logo);
