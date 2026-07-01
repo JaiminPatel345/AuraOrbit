@@ -49,7 +49,7 @@
                 <ImageView
                     android:layout_width="32dp"
                     android:layout_height="32dp"
-                    android:src="@android:drawable/ic_menu_agenda"
+                    android:src="@android:drawable/ic_menu_manage"
                     app:tint="?attr/colorOnSurfaceVariant"
                     android:layout_marginBottom="12dp"/>
                     
@@ -89,7 +89,7 @@
                 <ImageView
                     android:layout_width="32dp"
                     android:layout_height="32dp"
-                    android:src="@android:drawable/ic_menu_sort_by_size"
+                    android:src="@android:drawable/ic_menu_agenda"
                     app:tint="?attr/colorOnSurfaceVariant"
                     android:layout_marginBottom="12dp"/>
                     
@@ -156,7 +156,7 @@
                     <ImageView
                         android:layout_width="40dp"
                         android:layout_height="40dp"
-                        android:src="@android:drawable/ic_menu_sort_by_size" 
+                        android:src="@android:drawable/ic_menu_mylocation" 
                         android:padding="8dp"
                         android:background="@drawable/rounded_bg_solid"
                         app:tint="?attr/colorPrimary"/>
