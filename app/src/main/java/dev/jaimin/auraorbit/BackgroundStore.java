@@ -14,19 +14,27 @@ public class BackgroundStore {
     public static final String PREF_BACKGROUND_VERSION = "bg_ver";
     private static final String DEFAULT_FILE_NAME = "background.png";
 
-    public static boolean exists(Context c) {
-        return file(c).exists();
+    public static boolean exists(Context c, String groupName) {
+        return file(c, groupName).exists();
     }
     
-    public static void clear(Context c) {
-        File f = file(c);
+    public static boolean exists(Context c) {
+        return exists(c, null);
+    }
+    
+    public static void clear(Context c, String groupName) {
+        File f = file(c, groupName);
         if (f.exists()) {
             f.delete();
         }
         bumpVersion(c);
     }
+
+    public static void clear(Context c) {
+        clear(c, null);
+    }
     
-    public static boolean saveFromUri(Context context, Uri uri) {
+    public static boolean saveFromUri(Context context, Uri uri, String groupName) {
         try {
             InputStream in = context.getContentResolver().openInputStream(uri);
             if (in == null) return false;
@@ -59,7 +67,7 @@ public class BackgroundStore {
                 }
             }
 
-            File f = file(context);
+            File f = file(context, groupName);
             FileOutputStream out = new FileOutputStream(f);
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
             out.flush();
@@ -72,6 +80,10 @@ public class BackgroundStore {
             e.printStackTrace();
             return false;
         }
+    }
+    
+    public static boolean saveFromUri(Context context, Uri uri) {
+        return saveFromUri(context, uri, null);
     }
     
     public static int computeSampleSize(int width, int height, int maxSize) {
@@ -88,7 +100,14 @@ public class BackgroundStore {
         prefs.edit().putInt(PREF_BACKGROUND_VERSION, v + 1).apply();
     }
     
+    public static File file(Context context, String groupName) {
+        String fileName = (groupName == null || groupName.isEmpty()) 
+                ? DEFAULT_FILE_NAME 
+                : "background_" + groupName.replaceAll("[^a-zA-Z0-9_-]", "") + ".png";
+        return new File(context.getFilesDir(), fileName);
+    }
+
     public static File file(Context context) {
-        return new File(context.getFilesDir(), DEFAULT_FILE_NAME);
+        return file(context, null);
     }
 }

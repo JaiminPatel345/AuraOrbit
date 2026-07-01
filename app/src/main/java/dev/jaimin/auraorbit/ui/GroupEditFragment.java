@@ -130,6 +130,9 @@ public class GroupEditFragment extends Fragment {
     private int customSpeed = 100;
     private String customFps = "120";
     private ActivityResultLauncher<PickVisualMediaRequest> pickMedia;
+    private ActivityResultLauncher<PickVisualMediaRequest> pickBackgroundMedia;
+    private Uri pendingBackgroundUri = null;
+    private boolean pendingBackgroundClear = false;
 
     // ─── Preview Views ───────────────────────────────────────────────────
     private View previewIconContainer;
@@ -145,6 +148,10 @@ public class GroupEditFragment extends Fragment {
     private com.google.android.material.materialswitch.MaterialSwitch hideTextSwitch;
     private com.google.android.material.materialswitch.MaterialSwitch transparentSwitch;
     private com.google.android.material.materialswitch.MaterialSwitch themeColorSwitch;
+    
+    private TextView tvSpherePositionStatus;
+    private TextView tvBlurStatus;
+    private TextView tvBackgroundStatus;
 
     // ─── Color palette (from res/values/colors.xml) ───────────────────────
     // Loaded in onViewCreated; stored as fields so color-circle click lambdas
@@ -195,6 +202,14 @@ public class GroupEditFragment extends Fragment {
                 pendingLogoUri = uri;
                 pendingLogoClear = false;
                 updateLivePreview();
+            }
+        });
+        
+        pickBackgroundMedia = registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
+            if (uri != null) {
+                pendingBackgroundUri = uri;
+                pendingBackgroundClear = false;
+                updateBackgroundStatus();
             }
         });
     }
@@ -440,7 +455,6 @@ public class GroupEditFragment extends Fragment {
         memberSearch.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void afterTextChanged(Editable s) {}
-            @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 memberAdapter.filter(s == null ? "" : s.toString());
             }
@@ -449,8 +463,54 @@ public class GroupEditFragment extends Fragment {
         // ─── Load members asynchronously ──────────────────────────────────
         loadMembersAsync(prefs, groups);
         
-        // Initial preview update
+        // --- Widget Customization UI Setup ---
         updateLivePreview();
+        
+        tvSpherePositionStatus = root.findViewById(R.id.tv_sphere_position_status);
+        tvBlurStatus = root.findViewById(R.id.tv_blur_status);
+        tvBackgroundStatus = root.findViewById(R.id.tv_background_status);
+        
+        updateSpherePositionStatus();
+        updateBlurStatusText(prefs);
+        updateBackgroundStatus();
+        
+        root.findViewById(R.id.btn_sphere_position).setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), dev.jaimin.auraorbit.SpherePositionEditorActivity.class);
+            if (originalGroupName != null) intent.putExtra("group_name", originalGroupName);
+            else intent.putExtra("group_name", nameInput.getText().toString());
+            startActivity(intent);
+        });
+        
+        root.findViewById(R.id.btn_sphere_blur).setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), dev.jaimin.auraorbit.SphereBlurEditorActivity.class);
+            if (originalGroupName != null) intent.putExtra("group_name", originalGroupName);
+            else intent.putExtra("group_name", nameInput.getText().toString());
+            startActivity(intent);
+        });
+        
+        root.findViewById(R.id.btn_app_background).setOnClickListener(v -> {
+            String gName = originalGroupName != null ? originalGroupName : nameInput.getText().toString();
+            boolean exists = pendingBackgroundUri != null || (pendingBackgroundClear == false && dev.jaimin.auraorbit.BackgroundStore.exists(requireContext(), gName));
+            if (exists) {
+                new MaterialAlertDialogBuilder(requireContext())
+                        .setItems(new CharSequence[]{"Choose new photo", "Remove photo", "Cancel"}, (dialog, which) -> {
+                            if (which == 0) {
+                                pickBackgroundMedia.launch(new PickVisualMediaRequest.Builder()
+                                    .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                                    .build());
+                            } else if (which == 1) {
+                                pendingBackgroundUri = null;
+                                pendingBackgroundClear = true;
+                                updateBackgroundStatus();
+                            }
+                        })
+                        .show();
+            } else {
+                pickBackgroundMedia.launch(new PickVisualMediaRequest.Builder()
+                    .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                    .build());
+            }
+        });
     }
     
     private void updateLivePreview() {
@@ -533,10 +593,47 @@ public class GroupEditFragment extends Fragment {
     
     private void showInfoDialog(String title, String message) {
         new MaterialAlertDialogBuilder(requireContext())
-            .setTitle(title)
-            .setMessage(message)
-            .setPositiveButton("Got it", null)
-            .show();
+                .setTitle(title)
+                .setMessage(message)
+                .setPositiveButton("Got it", null)
+                .show();
+    }
+    
+    private void updateSpherePositionStatus() {
+        if (tvSpherePositionStatus == null) return;
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        String position = prefs.getString("pref_sphere_position_" + originalGroupName, "center");
+        if (originalGroupName == null && !prefs.contains("pref_sphere_position_" + originalGroupName)) {
+             position = prefs.getString("pref_sphere_position", "center");
+        }
+        String display = "Center";
+        if ("top".equals(position)) display = "Top";
+        else if ("bottom".equals(position)) display = "Bottom";
+        else if ("custom".equals(position)) display = "Custom";
+        tvSpherePositionStatus.setText(display);
+    }
+
+    private void updateBlurStatusText(SharedPreferences prefs) {
+        if (tvBlurStatus == null) return;
+        int amount = prefs.getInt("pref_blur_radius_" + originalGroupName, 0);
+        if (originalGroupName == null && !prefs.contains("pref_blur_radius_" + originalGroupName)) {
+            amount = prefs.getInt("pref_blur_radius", 0);
+        }
+        if (amount == 0) tvBlurStatus.setText("No Blur");
+        else if (amount <= 33) tvBlurStatus.setText("Sphere Background Only");
+        else if (amount <= 66) tvBlurStatus.setText("Nearby Area");
+        else if (amount < 100) tvBlurStatus.setText("Almost Full Screen");
+        else tvBlurStatus.setText("Full Screen Blur");
+    }
+
+    private void updateBackgroundStatus() {
+        if (tvBackgroundStatus == null) return;
+        boolean hasBackground = pendingBackgroundUri != null || (!pendingBackgroundClear && dev.jaimin.auraorbit.BackgroundStore.exists(requireContext(), originalGroupName));
+        if (hasBackground) {
+            tvBackgroundStatus.setText("Custom Image");
+        } else {
+            tvBackgroundStatus.setText("Default");
+        }
     }
 
     @Override
@@ -866,6 +963,14 @@ public class GroupEditFragment extends Fragment {
             int oldIconSize = prefs.getInt("pref_icon_size_" + originalGroupName, prefs.getInt("pref_icon_size", 50));
             int oldSpeed = prefs.getInt("pref_rotation_speed_" + originalGroupName, prefs.getInt("pref_rotation_speed", 100));
             String oldFps = prefs.getString("pref_target_fps_" + originalGroupName, prefs.getString("pref_target_fps", "120"));
+            
+            String oldPos = prefs.getString("pref_sphere_position_" + originalGroupName, prefs.getString("pref_sphere_position", "center"));
+            float oldX = prefs.getFloat("pref_sphere_x_" + originalGroupName, prefs.getFloat("pref_sphere_x", 0f));
+            float oldY = prefs.getFloat("pref_sphere_y_" + originalGroupName, prefs.getFloat("pref_sphere_y", 0f));
+            float oldScale = prefs.getFloat("pref_sphere_scale_" + originalGroupName, prefs.getFloat("pref_sphere_scale", 1f));
+            int oldBlurRadius = prefs.getInt("pref_blur_radius_" + originalGroupName, prefs.getInt("pref_blur_radius", 0));
+            int oldBlurStrength = prefs.getInt("pref_blur_strength_" + originalGroupName, prefs.getInt("pref_blur_strength", 0));
+            
             prefs.edit()
                 .remove("pref_widget_hide_logo_" + originalGroupName)
                 .remove("pref_widget_hide_text_" + originalGroupName)
@@ -874,6 +979,12 @@ public class GroupEditFragment extends Fragment {
                 .remove("pref_icon_size_" + originalGroupName)
                 .remove("pref_rotation_speed_" + originalGroupName)
                 .remove("pref_target_fps_" + originalGroupName)
+                .remove("pref_sphere_position_" + originalGroupName)
+                .remove("pref_sphere_x_" + originalGroupName)
+                .remove("pref_sphere_y_" + originalGroupName)
+                .remove("pref_sphere_scale_" + originalGroupName)
+                .remove("pref_blur_radius_" + originalGroupName)
+                .remove("pref_blur_strength_" + originalGroupName)
                 .putBoolean("pref_widget_hide_logo_" + newName, oldHide)
                 .putBoolean("pref_widget_hide_text_" + newName, oldHideText)
                 .putBoolean("pref_widget_transparent_" + newName, oldTransparent)
@@ -881,6 +992,12 @@ public class GroupEditFragment extends Fragment {
                 .putInt("pref_icon_size_" + newName, oldIconSize)
                 .putInt("pref_rotation_speed_" + newName, oldSpeed)
                 .putString("pref_target_fps_" + newName, oldFps)
+                .putString("pref_sphere_position_" + newName, oldPos)
+                .putFloat("pref_sphere_x_" + newName, oldX)
+                .putFloat("pref_sphere_y_" + newName, oldY)
+                .putFloat("pref_sphere_scale_" + newName, oldScale)
+                .putInt("pref_blur_radius_" + newName, oldBlurRadius)
+                .putInt("pref_blur_strength_" + newName, oldBlurStrength)
                 .apply();
                 
             // Rename logo file
@@ -888,6 +1005,13 @@ public class GroupEditFragment extends Fragment {
             if (oldFile.exists()) {
                 File newFile = WidgetLogoStore.file(requireContext(), newName);
                 oldFile.renameTo(newFile);
+            }
+            
+            // Rename background file
+            File oldBgFile = dev.jaimin.auraorbit.BackgroundStore.file(requireContext(), originalGroupName);
+            if (oldBgFile.exists()) {
+                File newBgFile = dev.jaimin.auraorbit.BackgroundStore.file(requireContext(), newName);
+                oldBgFile.renameTo(newBgFile);
             }
         }
         
@@ -902,6 +1026,12 @@ public class GroupEditFragment extends Fragment {
             .putString("pref_target_fps_" + newName, customFps);
             
         ed.apply();
+        
+        if (pendingBackgroundClear) {
+            dev.jaimin.auraorbit.BackgroundStore.clear(requireContext(), newName);
+        } else if (pendingBackgroundUri != null) {
+            dev.jaimin.auraorbit.BackgroundStore.saveFromUri(requireContext(), pendingBackgroundUri, newName);
+        }
         
         if (pendingLogoClear) {
             WidgetLogoStore.clear(requireContext(), newName);

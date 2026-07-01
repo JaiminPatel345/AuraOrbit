@@ -40,10 +40,15 @@ public class SpherePositionEditorActivity extends AppCompatActivity {
         DisplayMetrics metrics = getResources().getDisplayMetrics();
         screenWidth = metrics.widthPixels;
 
+        String groupName = getIntent().getStringExtra("group_name");
+        String scalePref = groupName != null ? "pref_sphere_scale_" + groupName : "pref_sphere_scale";
+        String xPref = groupName != null ? "pref_sphere_x_" + groupName : "pref_sphere_x";
+        String yPref = groupName != null ? "pref_sphere_y_" + groupName : "pref_sphere_y";
+
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        currentScale = prefs.getFloat("pref_sphere_scale", 1.0f);
-        float initX = prefs.getFloat("pref_sphere_x", 0f);
-        float initY = prefs.getFloat("pref_sphere_y", (metrics.heightPixels - screenWidth)/2f);
+        currentScale = prefs.getFloat(scalePref, 1.0f);
+        float initX = prefs.getFloat(xPref, 0f);
+        float initY = prefs.getFloat(yPref, (metrics.heightPixels - screenWidth)/2f);
 
         updateSphereSize();
         
@@ -76,11 +81,17 @@ public class SpherePositionEditorActivity extends AppCompatActivity {
 
         findViewById(R.id.btn_cancel).setOnClickListener(v -> finish());
         findViewById(R.id.btn_save).setOnClickListener(v -> {
+            String saveGroupName = getIntent().getStringExtra("group_name");
+            String saveXPref = saveGroupName != null ? "pref_sphere_x_" + saveGroupName : "pref_sphere_x";
+            String saveYPref = saveGroupName != null ? "pref_sphere_y_" + saveGroupName : "pref_sphere_y";
+            String saveScalePref = saveGroupName != null ? "pref_sphere_scale_" + saveGroupName : "pref_sphere_scale";
+            String savePosPref = saveGroupName != null ? "pref_sphere_position_" + saveGroupName : "pref_sphere_position";
+            
             prefs.edit()
-                 .putFloat("pref_sphere_x", sphereMock.getX())
-                 .putFloat("pref_sphere_y", sphereMock.getY())
-                 .putFloat("pref_sphere_scale", currentScale)
-                 .putString("pref_sphere_position", "custom")
+                 .putFloat(saveXPref, sphereMock.getX())
+                 .putFloat(saveYPref, sphereMock.getY())
+                 .putFloat(saveScalePref, currentScale)
+                 .putString(savePosPref, "custom")
                  .apply();
             finish();
         });

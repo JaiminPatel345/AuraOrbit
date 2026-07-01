@@ -461,12 +461,162 @@
                         app:tint="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
 
-                <LinearLayout
-                    android:id="@+id/custom_config_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_marginTop="16dp">
+                    <LinearLayout
+                        android:id="@+id/custom_config_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginTop="16dp">
+
+                        <!-- Sphere Position Menu -->
+                        <LinearLayout
+                            android:id="@+id/btn_sphere_position"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:focusable="true">
+                            
+                            <ImageView
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:src="@android:drawable/ic_menu_sort_by_size" 
+                                android:padding="8dp"
+                                android:background="@drawable/rounded_bg_solid"
+                                app:tint="?attr/colorPrimary"/>
+                                
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:layout_marginStart="16dp">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Sphere Position"
+                                    android:textColor="?android:attr/textColorPrimary"
+                                    android:textSize="16sp"/>
+                                <TextView
+                                    android:id="@+id/tv_sphere_position_status"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Center"
+                                    android:textSize="14sp"
+                                    android:textColor="?android:attr/textColorSecondary"/>
+                            </LinearLayout>
+                            
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@android:drawable/ic_menu_edit"
+                                app:tint="?attr/colorOnSurfaceVariant"/>
+                        </LinearLayout>
+
+                        <!-- Blur Background Button -->
+                        <LinearLayout
+                            android:id="@+id/btn_sphere_blur"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginTop="20dp"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:focusable="true">
+                            
+                            <ImageView
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:src="@android:drawable/ic_menu_view" 
+                                android:padding="8dp"
+                                android:background="@drawable/rounded_bg_solid"
+                                app:tint="?attr/colorPrimary"/>
+                                
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:layout_marginStart="16dp">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Background Blur"
+                                    android:textColor="?android:attr/textColorPrimary"
+                                    android:textSize="16sp"/>
+                                <TextView
+                                    android:id="@+id/tv_blur_status"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="No Blur"
+                                    android:textSize="14sp"
+                                    android:textColor="?android:attr/textColorSecondary"/>
+                            </LinearLayout>
+                            
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@android:drawable/ic_menu_edit"
+                                app:tint="?attr/colorOnSurfaceVariant"/>
+                        </LinearLayout>
+
+                        <!-- App Background (Sphere Mode) -->
+                        <LinearLayout
+                            android:id="@+id/btn_app_background"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginTop="20dp"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:focusable="true">
+                            
+                            <ImageView
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:src="@drawable/ic_widget_planet" 
+                                android:padding="8dp"
+                                android:background="@drawable/rounded_bg_solid"
+                                app:tint="?attr/colorPrimary"/>
+                                
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:layout_marginStart="16dp">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Sphere Background"
+                                    android:textColor="?android:attr/textColorPrimary"
+                                    android:textSize="16sp"/>
+                                <TextView
+                                    android:id="@+id/tv_background_status"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Default"
+                                    android:textSize="14sp"
+                                    android:textColor="?android:attr/textColorSecondary"/>
+                            </LinearLayout>
+                            
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@android:drawable/ic_menu_edit"
+                                app:tint="?attr/colorOnSurfaceVariant"/>
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="?attr/colorOutlineVariant"
+                            android:layout_marginTop="20dp"
+                            android:layout_marginBottom="20dp"/>
                     
                     <TextView
                         android:layout_width="wrap_content"

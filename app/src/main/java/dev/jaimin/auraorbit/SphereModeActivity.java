@@ -97,13 +97,20 @@ public class SphereModeActivity extends AndroidApplication {
             surfaceView.getHolder().setFormat(android.graphics.PixelFormat.TRANSLUCENT);
             surfaceView.setZOrderOnTop(true);
         }
-        float scale = prefs.getFloat("pref_sphere_scale", 1.0f);
-        String pos = prefs.getString("pref_sphere_position", "center");
-        int blurRadiusPref = prefs.getInt("pref_blur_radius", 0);
-        int blurStrengthPref = prefs.getInt("pref_blur_strength", 0);
+        String scalePref = groupName != null ? "pref_sphere_scale_" + groupName : "pref_sphere_scale";
+        String radiusPref = groupName != null ? "pref_blur_radius_" + groupName : "pref_blur_radius";
+        String strengthPref = groupName != null ? "pref_blur_strength_" + groupName : "pref_blur_strength";
+        String posPref = groupName != null ? "pref_sphere_position_" + groupName : "pref_sphere_position";
+        String xPref = groupName != null ? "pref_sphere_x_" + groupName : "pref_sphere_x";
+        String yPref = groupName != null ? "pref_sphere_y_" + groupName : "pref_sphere_y";
+
+        float scale = prefs.getFloat(scalePref, 1.0f);
+        String pos = prefs.getString(posPref, "center");
+        int blurRadiusPref = prefs.getInt(radiusPref, 0);
+        int blurStrengthPref = prefs.getInt(strengthPref, 0);
         
         // Migrate old pref_blur_amount if the new ones don't exist
-        if (!prefs.contains("pref_blur_radius") && prefs.contains("pref_blur_amount")) {
+        if (!prefs.contains(radiusPref) && groupName == null && prefs.contains("pref_blur_amount")) {
             int oldAmount = prefs.getInt("pref_blur_amount", 0);
             blurRadiusPref = oldAmount;
             blurStrengthPref = oldAmount > 0 ? 50 : 0;
@@ -133,8 +140,8 @@ public class SphereModeActivity extends AndroidApplication {
         } else if ("bottom".equals(pos)) {
             sphereY = screenHeight - sphereSize - 100;
         } else if ("custom".equals(pos)) {
-            sphereX = (int) prefs.getFloat("pref_sphere_x", sphereX);
-            sphereY = (int) prefs.getFloat("pref_sphere_y", sphereY);
+            sphereX = (int) prefs.getFloat(xPref, sphereX);
+            sphereY = (int) prefs.getFloat(yPref, sphereY);
         }
         
         int sphereCenterX = sphereX + sphereSize / 2;
