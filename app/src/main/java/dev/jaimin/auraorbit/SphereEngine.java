@@ -1277,12 +1277,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         if (N == 0) return;
 
         // ─── Compute effectiveRadius ──────────────────────────────────────
-        // 0.52 (vs old 0.48) gives more breathing room per icon.
-        // No group-spread floor — all icons are on the same lattice now.
-        effectiveRadius = MathUtils.clamp(
-                0.52f * iconSize * (float) Math.sqrt(N),
-                1.6f * iconSize,
-                sphereRadius);
+        // The user explicitly requested that the sphere radius should always match
+        // the user's setting, regardless of icon size or count.
+        effectiveRadius = sphereRadius;
 
         // ─── Packing-density icon size: slider live in both cap regimes ─────
         //
