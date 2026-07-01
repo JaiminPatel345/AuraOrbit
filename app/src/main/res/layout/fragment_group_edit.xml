@@ -208,99 +208,6 @@
                             android:orientation="horizontal"
                             android:paddingVertical="4dp" />
                     </HorizontalScrollView>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="8dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Use System Theme Color"
-                            android:textColor="?android:attr/textColorPrimary"
-                            android:textSize="16sp"/>
-                        <ImageButton
-                            android:id="@+id/btn_info_theme_color"
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:layout_marginStart="8dp"
-                            android:src="@android:drawable/ic_dialog_info"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:scaleType="fitCenter"
-                            app:tint="?attr/colorOnSurfaceVariant" />
-                        <View
-                            android:layout_width="0dp"
-                            android:layout_height="0dp"
-                            android:layout_weight="1"/>
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/switch_use_theme_color"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"/>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="8dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Transparent Widget"
-                            android:textColor="?android:attr/textColorPrimary"
-                            android:textSize="16sp"/>
-                        <ImageButton
-                            android:id="@+id/btn_info_transparent"
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:layout_marginStart="8dp"
-                            android:src="@android:drawable/ic_dialog_info"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:scaleType="fitCenter"
-                            app:tint="?attr/colorOnSurfaceVariant" />
-                        <View
-                            android:layout_width="0dp"
-                            android:layout_height="0dp"
-                            android:layout_weight="1"/>
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/switch_transparent_widget"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"/>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="8dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Hide Widget Logo"
-                            android:textColor="?android:attr/textColorPrimary"
-                            android:textSize="16sp"/>
-                        <ImageButton
-                            android:id="@+id/btn_info_hide_logo"
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:layout_marginStart="8dp"
-                            android:src="@android:drawable/ic_dialog_info"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:scaleType="fitCenter"
-                            app:tint="?attr/colorOnSurfaceVariant" />
-                        <View
-                            android:layout_width="0dp"
-                            android:layout_height="0dp"
-                            android:layout_weight="1"/>
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/switch_hide_widget_logo"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"/>
-                    </LinearLayout>
                 </LinearLayout>
 
                 <!-- Options shown when using CUSTOM LOGO -->
@@ -342,14 +249,45 @@
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:background="?attr/colorOutlineVariant"
-                    android:layout_marginTop="20dp"
+                    android:layout_marginTop="16dp"
                     android:layout_marginBottom="16dp"/>
 
-                <!-- Hide Text Toggle (Always shown) -->
+                <!-- Global Widget Settings -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Hide Widget Logo"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="16sp"/>
+                    <ImageButton
+                        android:id="@+id/btn_info_hide_logo"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginStart="8dp"
+                        android:src="@android:drawable/ic_dialog_info"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:scaleType="fitCenter"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"/>
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switch_hide_widget_logo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp"
                     android:gravity="center_vertical">
                     <TextView
                         android:layout_width="wrap_content"
@@ -376,6 +314,175 @@
                         android:layout_height="wrap_content"/>
                 </LinearLayout>
 
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="8dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Use System Theme Color"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="16sp"/>
+                    <ImageButton
+                        android:id="@+id/btn_info_theme_color"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginStart="8dp"
+                        android:src="@android:drawable/ic_dialog_info"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:scaleType="fitCenter"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"/>
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switch_use_theme_color"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="8dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Transparent Widget"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="16sp"/>
+                    <ImageButton
+                        android:id="@+id/btn_info_transparent"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginStart="8dp"
+                        android:src="@android:drawable/ic_dialog_info"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:scaleType="fitCenter"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"/>
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switch_transparent_widget"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="?attr/colorOutlineVariant"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="16dp"/>
+
+                <!-- Custom Sphere Configuration -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Sphere Configuration"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="16sp"
+                        android:textStyle="bold"/>
+                    <ImageButton
+                        android:id="@+id/btn_info_custom_config"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginStart="8dp"
+                        android:src="@android:drawable/ic_dialog_info"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:scaleType="fitCenter"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/custom_config_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="16dp">
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Icon Size"
+                        android:textColor="?android:attr/textColorPrimary" />
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/slider_icon_size"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:valueFrom="20"
+                        android:valueTo="200"
+                        android:stepSize="1" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Rotation Speed"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:layout_marginTop="16dp"/>
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/slider_speed"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:valueFrom="10"
+                        android:valueTo="300"
+                        android:stepSize="1" />
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp">
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Target FPS"
+                                android:textColor="?android:attr/textColorPrimary"
+                                android:textSize="14sp"/>
+                            <TextView
+                                android:id="@+id/tv_fps_value"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="120 FPS"
+                                android:textColor="?android:attr/textColorSecondary"
+                                android:layout_marginTop="4dp"/>
+                        </LinearLayout>
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_fps"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:text="Change" />
+                    </RelativeLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_reset_config"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="16dp"
+                        android:text="Reset to Global Config"
+                        android:textColor="?attr/colorPrimary" />
+                </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

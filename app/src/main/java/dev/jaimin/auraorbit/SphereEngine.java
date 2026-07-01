@@ -936,14 +936,26 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
         // Icon size: pref value 0–100 mapped to world units ICON_SIZE_MIN–ICON_SIZE_MAX
         int iconPref = prefs.getInt("pref_icon_size", 50);
+        if (pinnedGroupName != null) {
+            iconPref = prefs.getInt("pref_icon_size_" + pinnedGroupName, iconPref);
+        }
         iconSize = MathUtils.lerp(ICON_SIZE_MIN, ICON_SIZE_MAX, iconPref / 100f);
 
         // Rotation speed: pref value 10–300, divide by 100 to get factor, clamp to [0.1, 3.0]
-        rotationSpeedFactor = MathUtils.clamp(prefs.getInt("pref_rotation_speed", 100) / 100f, 0.1f, 3.0f);
+        int speedPref = prefs.getInt("pref_rotation_speed", 100);
+        if (pinnedGroupName != null) {
+            speedPref = prefs.getInt("pref_rotation_speed_" + pinnedGroupName, speedPref);
+        }
+        rotationSpeedFactor = MathUtils.clamp(speedPref / 100f, 0.1f, 3.0f);
 
         // Target FPS
         try {
-            int targetFps = Integer.parseInt(prefs.getString("pref_target_fps", "120"));
+            String defaultFpsStr = prefs.getString("pref_target_fps", "120");
+            String fpsStr = defaultFpsStr;
+            if (pinnedGroupName != null) {
+                fpsStr = prefs.getString("pref_target_fps_" + pinnedGroupName, defaultFpsStr);
+            }
+            int targetFps = Integer.parseInt(fpsStr);
             Gdx.graphics.setForegroundFPS(targetFps);
         } catch (Exception e) {
             Log.e(TAG, "Failed to parse target fps", e);
@@ -980,10 +992,20 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         sb.append(prefs.getBoolean("pref_show_background", true)).append('|');
         sb.append(prefs.getInt(BackgroundStore.PREF_BACKGROUND_VERSION, 0)).append('|');
         sb.append(prefs.getInt("pref_sphere_radius", 50)).append('|');
-        sb.append(prefs.getInt("pref_icon_size", 50)).append('|');
-        sb.append(prefs.getInt("pref_rotation_speed", 100)).append('|');
+        
+        int iconPref = prefs.getInt("pref_icon_size", 50);
+        if (pinnedGroupName != null) iconPref = prefs.getInt("pref_icon_size_" + pinnedGroupName, iconPref);
+        sb.append(iconPref).append('|');
+        
+        int speedPref = prefs.getInt("pref_rotation_speed", 100);
+        if (pinnedGroupName != null) speedPref = prefs.getInt("pref_rotation_speed_" + pinnedGroupName, speedPref);
+        sb.append(speedPref).append('|');
+        
         sb.append(prefs.getInt("pref_active_page", 1)).append('|'); // raw 1-based value (UI default)
-        sb.append(prefs.getString("pref_target_fps", "120")).append('|');
+        
+        String fpsPref = prefs.getString("pref_target_fps", "120");
+        if (pinnedGroupName != null) fpsPref = prefs.getString("pref_target_fps_" + pinnedGroupName, fpsPref);
+        sb.append(fpsPref).append('|');
 
         // System-wallpaper mirror: changing the system wallpaper or granting
         // MANAGE_EXTERNAL_STORAGE must both trigger a background rebuild on next

@@ -126,6 +126,9 @@ public class GroupEditFragment extends Fragment {
     private boolean isHideText = false;
     private boolean isTransparent = false;
     private boolean isUseThemeColor = true;
+    private int customIconSize = 50;
+    private int customSpeed = 100;
+    private String customFps = "120";
     private ActivityResultLauncher<PickVisualMediaRequest> pickMedia;
 
     // ─── Preview Views ───────────────────────────────────────────────────
@@ -247,6 +250,9 @@ public class GroupEditFragment extends Fragment {
         MaterialButton btnRemoveCustomLogo = root.findViewById(R.id.btn_remove_custom_logo);
 
         // ─── Info Buttons ─────────────────────────────────────────────────
+        root.findViewById(R.id.btn_info_custom_config).setOnClickListener(v -> 
+            showInfoDialog("Sphere Configuration", "Set unique size, speed, and FPS for this group.")
+        );
         root.findViewById(R.id.btn_info_orbit_color).setOnClickListener(v -> 
             showInfoDialog("Orbit Color", "Sets the color of the widget's ring and the group's color in the sphere.")
         );
@@ -290,7 +296,60 @@ public class GroupEditFragment extends Fragment {
             isHideText = prefs.getBoolean("pref_widget_hide_text_" + originalGroupName, false);
             isTransparent = prefs.getBoolean("pref_widget_transparent_" + originalGroupName, false);
             isUseThemeColor = prefs.getBoolean("pref_widget_use_theme_color_" + originalGroupName, true);
+            customIconSize = prefs.getInt("pref_icon_size_" + originalGroupName, prefs.getInt("pref_icon_size", 50));
+            customSpeed = prefs.getInt("pref_rotation_speed_" + originalGroupName, prefs.getInt("pref_rotation_speed", 100));
+            customFps = prefs.getString("pref_target_fps_" + originalGroupName, prefs.getString("pref_target_fps", "120"));
+        } else {
+            customIconSize = prefs.getInt("pref_icon_size", 50);
+            customSpeed = prefs.getInt("pref_rotation_speed", 100);
+            customFps = prefs.getString("pref_target_fps", "120");
         }
+        
+        com.google.android.material.slider.Slider sliderIconSize = root.findViewById(R.id.slider_icon_size);
+        sliderIconSize.setValue(customIconSize);
+        sliderIconSize.addOnChangeListener((slider, value, fromUser) -> {
+            if (fromUser) customIconSize = (int) value;
+        });
+
+        com.google.android.material.slider.Slider sliderSpeed = root.findViewById(R.id.slider_speed);
+        sliderSpeed.setValue(customSpeed);
+        sliderSpeed.addOnChangeListener((slider, value, fromUser) -> {
+            if (fromUser) customSpeed = (int) value;
+        });
+
+        TextView tvFpsValue = root.findViewById(R.id.tv_fps_value);
+        tvFpsValue.setText(customFps + " FPS");
+        root.findViewById(R.id.btn_fps).setOnClickListener(v -> {
+            String[] options = {"30 FPS", "60 FPS", "90 FPS", "120 FPS"};
+            String[] values = {"30", "60", "90", "120"};
+            int checkedItem = 3;
+            for (int i = 0; i < values.length; i++) {
+                if (values[i].equals(customFps)) {
+                    checkedItem = i;
+                    break;
+                }
+            }
+            new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Target FPS")
+                    .setSingleChoiceItems(options, checkedItem, (dialog, which) -> {
+                        customFps = values[which];
+                        tvFpsValue.setText(options[which]);
+                        dialog.dismiss();
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        });
+
+        root.findViewById(R.id.btn_reset_config).setOnClickListener(v -> {
+            customIconSize = prefs.getInt("pref_icon_size", 50);
+            customSpeed = prefs.getInt("pref_rotation_speed", 100);
+            customFps = prefs.getString("pref_target_fps", "120");
+
+            sliderIconSize.setValue(customIconSize);
+            sliderSpeed.setValue(customSpeed);
+            tvFpsValue.setText(customFps + " FPS");
+        });
+
         hideLogoSwitch.setChecked(isHideLogo);
         hideLogoSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             isHideLogo = isChecked;
@@ -804,15 +863,24 @@ public class GroupEditFragment extends Fragment {
             boolean oldHideText = prefs.getBoolean("pref_widget_hide_text_" + originalGroupName, false);
             boolean oldTransparent = prefs.getBoolean("pref_widget_transparent_" + originalGroupName, false);
             boolean oldUseTheme = prefs.getBoolean("pref_widget_use_theme_color_" + originalGroupName, true);
+            int oldIconSize = prefs.getInt("pref_icon_size_" + originalGroupName, prefs.getInt("pref_icon_size", 50));
+            int oldSpeed = prefs.getInt("pref_rotation_speed_" + originalGroupName, prefs.getInt("pref_rotation_speed", 100));
+            String oldFps = prefs.getString("pref_target_fps_" + originalGroupName, prefs.getString("pref_target_fps", "120"));
             prefs.edit()
                 .remove("pref_widget_hide_logo_" + originalGroupName)
                 .remove("pref_widget_hide_text_" + originalGroupName)
                 .remove("pref_widget_transparent_" + originalGroupName)
                 .remove("pref_widget_use_theme_color_" + originalGroupName)
+                .remove("pref_icon_size_" + originalGroupName)
+                .remove("pref_rotation_speed_" + originalGroupName)
+                .remove("pref_target_fps_" + originalGroupName)
                 .putBoolean("pref_widget_hide_logo_" + newName, oldHide)
                 .putBoolean("pref_widget_hide_text_" + newName, oldHideText)
                 .putBoolean("pref_widget_transparent_" + newName, oldTransparent)
                 .putBoolean("pref_widget_use_theme_color_" + newName, oldUseTheme)
+                .putInt("pref_icon_size_" + newName, oldIconSize)
+                .putInt("pref_rotation_speed_" + newName, oldSpeed)
+                .putString("pref_target_fps_" + newName, oldFps)
                 .apply();
                 
             // Rename logo file
@@ -824,12 +892,16 @@ public class GroupEditFragment extends Fragment {
         }
         
         // Apply pending widget logo changes
-        prefs.edit()
+        SharedPreferences.Editor ed = prefs.edit()
             .putBoolean("pref_widget_hide_logo_" + newName, isHideLogo)
             .putBoolean("pref_widget_hide_text_" + newName, isHideText)
             .putBoolean("pref_widget_transparent_" + newName, isTransparent)
             .putBoolean("pref_widget_use_theme_color_" + newName, isUseThemeColor)
-            .apply();
+            .putInt("pref_icon_size_" + newName, customIconSize)
+            .putInt("pref_rotation_speed_" + newName, customSpeed)
+            .putString("pref_target_fps_" + newName, customFps);
+            
+        ed.apply();
         
         if (pendingLogoClear) {
             WidgetLogoStore.clear(requireContext(), newName);

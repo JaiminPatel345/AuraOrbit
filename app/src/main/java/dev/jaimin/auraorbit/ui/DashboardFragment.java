@@ -284,6 +284,7 @@ public class DashboardFragment extends Fragment {
         switchHideText.setOnCheckedChangeListener((buttonView, isChecked) -> {
             prefs.edit().putBoolean("pref_widget_hide_text", isChecked).apply();
             SphereWidgetProvider.updateAllWidgets(requireContext());
+            updateLivePreview();
         });
 
         MaterialSwitch switchHideLogo = view.findViewById(R.id.switch_hide_widget_logo);

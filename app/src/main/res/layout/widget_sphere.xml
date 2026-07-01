@@ -53,6 +53,5 @@
         android:shadowDx="1"
         android:shadowDy="1"
         android:shadowRadius="2"
-        android:textAlignment="center"
-        android:visibility="gone" />
+        android:textAlignment="center" />
 </LinearLayout>
