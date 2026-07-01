@@ -449,6 +449,31 @@ public class GroupEditFragment extends Fragment {
                     requestPinWidget(originalGroupName);
                 }
             });
+            
+            MaterialButton btnEditApps = root.findViewById(R.id.btn_edit_apps);
+            View cardApps = root.findViewById(R.id.card_apps);
+            View tvAppsTitle = root.findViewById(R.id.tv_apps_title);
+            
+            btnEditApps.setVisibility(View.VISIBLE);
+            cardApps.setVisibility(View.GONE);
+            tvAppsTitle.setVisibility(View.GONE);
+            
+            btnEditApps.setOnClickListener(v -> {
+                ViewGroup parent = (ViewGroup) cardApps.getParent();
+                if (parent != null) {
+                    parent.removeView(cardApps);
+                }
+                cardApps.setVisibility(View.VISIBLE);
+                new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Edit Apps")
+                    .setView(cardApps)
+                    .setPositiveButton("Done", null)
+                    .setOnDismissListener(dialog -> {
+                        ViewGroup dp = (ViewGroup) cardApps.getParent();
+                        if (dp != null) dp.removeView(cardApps);
+                    })
+                    .show();
+            });
         }
 
         // ─── Member search ────────────────────────────────────────────────
