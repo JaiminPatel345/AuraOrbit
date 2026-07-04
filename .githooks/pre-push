@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Blocks push to main if versionCode + versionName haven't been bumped.
+# Set up once with: git config core.hooksPath .githooks
+
+BRANCH=$(git symbolic-ref HEAD 2>/dev/null | sed 's|refs/heads/||')
+[ "$BRANCH" = "main" ] || exit 0
+
+VERSION_NAME=$(grep -oP '(?<=versionName ").*(?=")' app/build.gradle)
+VERSION_CODE=$(grep -oP '(?<=versionCode )\d+' app/build.gradle)
+TAG="v$VERSION_NAME"
+
+if git rev-parse "$TAG" >/dev/null 2>&1 || git ls-remote --tags origin "$TAG" | grep -q "$TAG"; then
+  echo ""
+  echo "ERROR: tag $TAG (versionCode $VERSION_CODE) already exists."
+  echo "  Bump both versionCode and versionName in app/build.gradle before pushing to main."
+  echo ""
+  exit 1
+fi
+
+exit 0
