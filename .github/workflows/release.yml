@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
+    branches:
+      - main
 
 jobs:
   release:
@@ -13,60 +13,71 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read version from build.gradle
+        id: version
+        run: |
+          VERSION_NAME=$(grep -oP '(?<=versionName ").*(?=")' app/build.gradle)
+          VERSION_CODE=$(grep -oP '(?<=versionCode )\d+' app/build.gradle)
+          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_OUTPUT
+          echo "TAG=v$VERSION_NAME" >> $GITHUB_OUTPUT
+
+      - name: Check if tag already exists
+        id: tag_check
+        run: |
+          if git rev-parse "v${{ steps.version.outputs.VERSION_NAME }}" >/dev/null 2>&1; then
+            echo "EXISTS=true" >> $GITHUB_OUTPUT
+          else
+            echo "EXISTS=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Set up JDK 17
+        if: steps.tag_check.outputs.EXISTS == 'false'
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: gradle
 
-      - name: Compute version name and code from tag
-        id: version
-        run: |
-          VERSION=${GITHUB_REF_NAME#v}
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-          if [ "$PATCH" -gt 99 ] || [ "$MINOR" -gt 99 ]; then
-            echo "ERROR: version component exceeds 99 — versionCode will collide" >&2
-            exit 1
-          fi
-          VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_OUTPUT
-
       - name: Decode keystore
+        if: steps.tag_check.outputs.EXISTS == 'false'
         run: printf '%s' "${{ secrets.KEYSTORE_BASE64 }}" | base64 --ignore-garbage -d > "$RUNNER_TEMP/keystore.jks"
 
       - name: Grant execute permission to gradlew
+        if: steps.tag_check.outputs.EXISTS == 'false'
         run: chmod +x gradlew
 
       - name: Build signed release APK
+        if: steps.tag_check.outputs.EXISTS == 'false'
         env:
           KEYSTORE_PATH: ${{ runner.temp }}/keystore.jks
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-        run: |
-          ./gradlew assembleRelease \
-            -PversionName="${{ steps.version.outputs.VERSION }}" \
-            -PversionCode="${{ steps.version.outputs.VERSION_CODE }}"
+        run: ./gradlew assembleRelease
 
-      - name: Get release notes from tag message
-        id: tag_notes
+      - name: Create git tag
+        if: steps.tag_check.outputs.EXISTS == 'false'
         run: |
-          NOTES=$(git tag -l --format='%(contents)' "${GITHUB_REF_NAME}")
-          echo "NOTES<<EOF" >> $GITHUB_OUTPUT
-          echo "$NOTES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "v${{ steps.version.outputs.VERSION_NAME }}"
+          git push origin "v${{ steps.version.outputs.VERSION_NAME }}"
 
       - name: Rename APK to match F-Droid Binaries URL pattern
-        run: cp app/build/outputs/apk/release/app-release.apk AuraOrbit-${{ steps.version.outputs.VERSION }}.apk
+        if: steps.tag_check.outputs.EXISTS == 'false'
+        run: cp app/build/outputs/apk/release/app-release.apk AuraOrbit-${{ steps.version.outputs.VERSION_NAME }}.apk
 
       - name: Create GitHub Release and upload APK
+        if: steps.tag_check.outputs.EXISTS == 'false'
         uses: softprops/action-gh-release@v2
         with:
-          files: AuraOrbit-${{ steps.version.outputs.VERSION }}.apk
-          body: "${{ steps.tag_notes.outputs.NOTES }}"
+          tag_name: "v${{ steps.version.outputs.VERSION_NAME }}"
+          files: AuraOrbit-${{ steps.version.outputs.VERSION_NAME }}.apk
           fail_on_unmatched_files: true
 
       - name: Remove keystore
