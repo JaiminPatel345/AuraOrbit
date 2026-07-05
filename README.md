@@ -5,6 +5,8 @@
 
 [This is video for how to show on mobile](Video/Full%20details.mp4)
 
+![Homescreen Sphere](docs/images/homescreen-sphere.png)
+
 ## 🚀 Core Features
 
 **3D Sphere**
@@ -91,6 +93,14 @@ Hit the **Settings ⚙️** icon in the preview window to open the AuraOrbit das
 - Customize each group's widget: logo, ring color, transparency, text visibility.
 - Set the target framerate (30/60/90/120 FPS).
 - Adjust icon size and rotation speed.
+
+## 🤝 Contributing
+
+We welcome contributions! If you'd like to help improve AuraOrbit, please feel free to fork the repository, make your changes, and submit a Pull Request.
+
+## 🐛 Bugs and Issues
+
+If you find a bug or have a feature request, please raise an issue on the GitHub issues page.
 
 ## 📄 License
 
