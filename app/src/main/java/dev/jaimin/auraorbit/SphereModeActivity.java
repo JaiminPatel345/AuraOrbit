@@ -106,9 +106,8 @@ public class SphereModeActivity extends AndroidApplication {
 
         float scale = prefs.getFloat(scalePref, 1.0f);
         String pos = prefs.getString(posPref, "center");
-        int blurRadiusPref = prefs.getInt(radiusPref, 0);
-        int blurStrengthPref = prefs.getInt(strengthPref, 0);
-        
+        int blurRadiusPref = prefs.getInt(radiusPref, 50);
+        int blurStrengthPref = prefs.getInt(strengthPref, 50);
         // Migrate old pref_blur_amount if the new ones don't exist
         if (!prefs.contains(radiusPref) && groupName == null && prefs.contains("pref_blur_amount")) {
             int oldAmount = prefs.getInt("pref_blur_amount", 0);
@@ -123,15 +122,6 @@ public class SphereModeActivity extends AndroidApplication {
 
         android.widget.FrameLayout container = new android.widget.FrameLayout(this);
         
-        android.widget.FrameLayout.LayoutParams glParams = new android.widget.FrameLayout.LayoutParams(
-                sphereSize, sphereSize, android.view.Gravity.CENTER);
-        container.addView(glView, glParams);
-        
-        // Close the activity if the user touches the blurred background outside the sphere
-        container.setOnClickListener(v -> finish());
-        
-        setContentView(container);
-
         // ─── Window Bounds ────────────────────────────────────────────────
         int sphereX = (screenWidth - sphereSize) / 2;
         int sphereY = (screenHeight - sphereSize) / 2;
@@ -147,18 +137,28 @@ public class SphereModeActivity extends AndroidApplication {
         int sphereCenterX = sphereX + sphereSize / 2;
         int sphereCenterY = sphereY + sphereSize / 2;
         
+        // Position glView absolutely
+        android.widget.FrameLayout.LayoutParams glParams = new android.widget.FrameLayout.LayoutParams(
+                sphereSize, sphereSize, android.view.Gravity.TOP | android.view.Gravity.START);
+        glParams.leftMargin = sphereX;
+        glParams.topMargin = sphereY;
+        container.addView(glView, glParams);
+        
+        // Close the activity if the user touches the blurred background outside the sphere
+        container.setOnClickListener(v -> finish());
+        
+        setContentView(container);
+
         int maxDim = Math.max(screenWidth, screenHeight) * 2;
         int windowSize = (int) (sphereSize + (maxDim - sphereSize) * (blurRadiusPref / 100.0f));
-        // Fallback so glView doesn't get squashed if it relies on window size.
-        // Let's ensure windowSize is at least sphereSize.
-        windowSize = Math.max(windowSize, sphereSize);
+        if (blurRadiusPref == 0) windowSize = sphereSize;
         
         WindowManager.LayoutParams params = getWindow().getAttributes();
-        params.width = windowSize;
-        params.height = windowSize;
-        params.gravity = android.view.Gravity.TOP | android.view.Gravity.LEFT;
-        params.x = sphereCenterX - windowSize / 2;
-        params.y = sphereCenterY - windowSize / 2;
+        params.width = WindowManager.LayoutParams.MATCH_PARENT;
+        params.height = WindowManager.LayoutParams.MATCH_PARENT;
+        params.gravity = android.view.Gravity.TOP | android.view.Gravity.START;
+        params.x = 0;
+        params.y = 0;
         
         params.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
         params.flags |= WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
@@ -168,12 +168,22 @@ public class SphereModeActivity extends AndroidApplication {
             int radius = Math.min(blurStrengthPref * 2, 150);
             if (radius == 0) radius = 1;
             getWindow().setBackgroundBlurRadius(radius);
+        } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            getWindow().setBackgroundBlurRadius(0);
         }
+        
+        int left = sphereCenterX - windowSize / 2;
+        int top = sphereCenterY - windowSize / 2;
+        int right = screenWidth - (left + windowSize);
+        int bottom = screenHeight - (top + windowSize);
         
         android.graphics.drawable.GradientDrawable circle = new android.graphics.drawable.GradientDrawable();
         circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);
         circle.setColor(android.graphics.Color.TRANSPARENT);
-        getWindow().setBackgroundDrawable(circle);
+        
+        android.graphics.drawable.InsetDrawable insetDrawable = 
+            new android.graphics.drawable.InsetDrawable(circle, left, top, right, bottom);
+        getWindow().setBackgroundDrawable(insetDrawable);
         
         getWindow().setAttributes(params);
 

@@ -127,7 +127,7 @@ public class DashboardFragment extends Fragment {
         View btnSphereBlur = view.findViewById(R.id.btn_sphere_blur);
         TextView tvBlurStatus = view.findViewById(R.id.tv_blur_status);
         if (btnSphereBlur != null) {
-            updateBlurStatusText(tvBlurStatus, prefs.getInt("pref_blur_amount", 0));
+            updateBlurStatusText(tvBlurStatus, prefs.getInt("pref_blur_radius", 50));
             btnSphereBlur.setOnClickListener(v -> {
                 startActivity(new android.content.Intent(requireContext(), dev.jaimin.auraorbit.SphereBlurEditorActivity.class));
             });
@@ -305,7 +305,7 @@ public class DashboardFragment extends Fragment {
         if (view != null) {
             TextView tvBlurStatus = view.findViewById(R.id.tv_blur_status);
             if (tvBlurStatus != null) {
-                updateBlurStatusText(tvBlurStatus, androidx.preference.PreferenceManager.getDefaultSharedPreferences(requireContext()).getInt("pref_blur_amount", 0));
+                updateBlurStatusText(tvBlurStatus, androidx.preference.PreferenceManager.getDefaultSharedPreferences(requireContext()).getInt("pref_blur_radius", 50));
             }
         }
     }

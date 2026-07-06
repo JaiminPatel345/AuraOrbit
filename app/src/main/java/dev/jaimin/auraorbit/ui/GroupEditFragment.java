@@ -640,9 +640,9 @@ public class GroupEditFragment extends Fragment {
 
     private void updateBlurStatusText(SharedPreferences prefs) {
         if (tvBlurStatus == null) return;
-        int amount = prefs.getInt("pref_blur_radius_" + originalGroupName, 0);
+        int amount = prefs.getInt("pref_blur_radius_" + originalGroupName, 50);
         if (originalGroupName == null && !prefs.contains("pref_blur_radius_" + originalGroupName)) {
-            amount = prefs.getInt("pref_blur_radius", 0);
+            amount = prefs.getInt("pref_blur_radius", 50);
         }
         if (amount == 0) tvBlurStatus.setText("No Blur");
         else if (amount <= 33) tvBlurStatus.setText("Sphere Background Only");
@@ -993,8 +993,8 @@ public class GroupEditFragment extends Fragment {
             float oldX = prefs.getFloat("pref_sphere_x_" + originalGroupName, prefs.getFloat("pref_sphere_x", 0f));
             float oldY = prefs.getFloat("pref_sphere_y_" + originalGroupName, prefs.getFloat("pref_sphere_y", 0f));
             float oldScale = prefs.getFloat("pref_sphere_scale_" + originalGroupName, prefs.getFloat("pref_sphere_scale", 1f));
-            int oldBlurRadius = prefs.getInt("pref_blur_radius_" + originalGroupName, prefs.getInt("pref_blur_radius", 0));
-            int oldBlurStrength = prefs.getInt("pref_blur_strength_" + originalGroupName, prefs.getInt("pref_blur_strength", 0));
+            int oldBlurRadius = prefs.getInt("pref_blur_radius_" + originalGroupName, prefs.getInt("pref_blur_radius", 50));
+            int oldBlurStrength = prefs.getInt("pref_blur_strength_" + originalGroupName, prefs.getInt("pref_blur_strength", 50));
             
             prefs.edit()
                 .remove("pref_widget_hide_logo_" + originalGroupName)

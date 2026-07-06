@@ -10,7 +10,7 @@ android {
         applicationId "dev.jaimin.auraorbit"
         minSdk rootProject.ext.androidMinSdk
         targetSdk rootProject.ext.androidTargetSdk
-        versionCode 4
+        versionCode 6
         versionName "2.1.0"
     }
 

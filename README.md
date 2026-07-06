@@ -92,6 +92,12 @@ Hit the **Settings ⚙️** icon in the preview window to open the AuraOrbit das
 - Set the target framerate (30/60/90/120 FPS).
 - Adjust icon size and rotation speed.
 
+## 🤝 Contributing
+
+We welcome contributions from everyone! If you want to contribute to AuraOrbit, feel free to fork the repository, make your changes, and submit a pull request. 
+
+If you find any bugs or have feature requests, please **raise an issue** on GitHub so we can look into it. 
+
 ## 📄 License
 
 This project is licensed under the **GNU General Public License v3.0 (GPLv3)**. It is Free and Open Source Software (FOSS). You are free to use, modify, and distribute the software.
