@@ -55,21 +55,18 @@
                 android:text="Pin Widget"
                 android:visibility="gone"
                 style="@style/Widget.Material3.Button.TextButton"
-                app:icon="@android:drawable/ic_menu_add" />
+                app:icon="@drawable/ic_pin" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_cancel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:text="@string/btn_cancel" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_save"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="@string/btn_save" />
+            <ImageButton
+                android:id="@+id/btn_info_pin_widget"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="-4dp"
+                android:padding="6dp"
+                android:src="@drawable/ic_info"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:scaleType="fitCenter"
+                android:visibility="gone" />
 
         </LinearLayout>
 

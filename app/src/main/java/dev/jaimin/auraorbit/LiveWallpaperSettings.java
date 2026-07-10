@@ -159,11 +159,8 @@ public class LiveWallpaperSettings extends AppCompatActivity {
      */
     @Override
     public boolean onSupportNavigateUp() {
-        if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
-            getSupportFragmentManager().popBackStack();
-            return true;
-        }
-        return super.onSupportNavigateUp();
+        getOnBackPressedDispatcher().onBackPressed();
+        return true;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
