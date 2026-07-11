@@ -218,8 +218,25 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                         views.setImageViewBitmap(R.id.widget_custom_logo, bitmap);
                     }
                 } else {
-                    views.setViewVisibility(R.id.widget_icon_planet, View.VISIBLE);
-                    views.setViewVisibility(R.id.widget_custom_logo, View.GONE);
+                    IconPackManager iconPackManager = IconPackManager.getInstance(context);
+                    android.graphics.drawable.Drawable themedIcon = iconPackManager.getIcon("ComponentInfo{dev.jaimin.auraorbit/dev.jaimin.auraorbit.LiveWallpaperSettings}");
+                    if (themedIcon == null) {
+                        themedIcon = iconPackManager.getIcon("ComponentInfo{dev.jaimin.auraorbit/dev.jaimin.auraorbit.SphereModeActivity}");
+                    }
+                    
+                    if (themedIcon != null) {
+                        views.setViewVisibility(R.id.widget_icon_planet, View.GONE);
+                        views.setViewVisibility(R.id.widget_icon_ring, View.GONE);
+                        views.setViewVisibility(R.id.widget_custom_logo, View.VISIBLE);
+                        android.graphics.Bitmap b = android.graphics.Bitmap.createBitmap(themedIcon.getIntrinsicWidth() > 0 ? themedIcon.getIntrinsicWidth() : 192, themedIcon.getIntrinsicHeight() > 0 ? themedIcon.getIntrinsicHeight() : 192, android.graphics.Bitmap.Config.ARGB_8888);
+                        android.graphics.Canvas canvas = new android.graphics.Canvas(b);
+                        themedIcon.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+                        themedIcon.draw(canvas);
+                        views.setImageViewBitmap(R.id.widget_custom_logo, b);
+                    } else {
+                        views.setViewVisibility(R.id.widget_icon_planet, View.VISIBLE);
+                        views.setViewVisibility(R.id.widget_custom_logo, View.GONE);
+                    }
                     GroupStore.Group group = GroupStore.find(groups, groupName);
                     if (group != null) {
                         boolean useThemeColor = prefs.getBoolean("pref_widget_use_theme_color_" + groupName, true);
@@ -274,9 +291,26 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                         views.setImageViewBitmap(R.id.widget_custom_logo, bitmap);
                     }
                 } else {
-                    views.setViewVisibility(R.id.widget_icon_planet, View.VISIBLE);
+                    IconPackManager iconPackManager = IconPackManager.getInstance(context);
+                    android.graphics.drawable.Drawable themedIcon = iconPackManager.getIcon("ComponentInfo{dev.jaimin.auraorbit/dev.jaimin.auraorbit.LiveWallpaperSettings}");
+                    if (themedIcon == null) {
+                        themedIcon = iconPackManager.getIcon("ComponentInfo{dev.jaimin.auraorbit/dev.jaimin.auraorbit.SphereModeActivity}");
+                    }
+                    
+                    if (themedIcon != null) {
+                        views.setViewVisibility(R.id.widget_icon_planet, View.GONE);
+                        views.setViewVisibility(R.id.widget_icon_ring, View.GONE);
+                        views.setViewVisibility(R.id.widget_custom_logo, View.VISIBLE);
+                        android.graphics.Bitmap b = android.graphics.Bitmap.createBitmap(themedIcon.getIntrinsicWidth() > 0 ? themedIcon.getIntrinsicWidth() : 192, themedIcon.getIntrinsicHeight() > 0 ? themedIcon.getIntrinsicHeight() : 192, android.graphics.Bitmap.Config.ARGB_8888);
+                        android.graphics.Canvas canvas = new android.graphics.Canvas(b);
+                        themedIcon.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+                        themedIcon.draw(canvas);
+                        views.setImageViewBitmap(R.id.widget_custom_logo, b);
+                    } else {
+                        views.setViewVisibility(R.id.widget_icon_planet, View.VISIBLE);
+                        views.setViewVisibility(R.id.widget_custom_logo, View.GONE);
+                    }
                     views.setViewVisibility(R.id.widget_icon_ring, View.VISIBLE);
-                    views.setViewVisibility(R.id.widget_custom_logo, View.GONE);
                     String orbitColor = prefs.getString("pref_widget_orbit_color", "#FFFFFF");
                     boolean useThemeColor = prefs.getBoolean("pref_widget_use_theme_color", true);
                     try {

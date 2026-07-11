@@ -19,6 +19,10 @@
 - Dual blur system: independent Blur Radius (area) and Blur Strength (intensity) controls
 - Five blur presets from "No Blur" to "Full Screen Blur" with real-time preview
 
+**Icon Pack Support**
+- Apply third-party icon packs (Nova, Apex, etc.) to all apps orbiting your sphere
+- Automatically applies to your group widgets, app picker, and the central AuraOrbit logo
+
 **App Groups**
 - Create color-coded groups with 8 presets + custom RGB color picker
 - Assign apps to groups; groups appear as 3D translucent backdrops on the sphere
@@ -86,6 +90,7 @@ Once installed, navigate to:
 
 Hit the **Settings ⚙️** icon in the preview window to open the AuraOrbit dashboard where you can:
 - Select which apps appear on your orbit.
+- Apply third-party icon packs directly to your 3D sphere.
 - Create color-coded app groups with custom names and colors.
 - Drag and scale the sphere to any position on your screen.
 - Upload a custom background image and tune blur radius + strength.

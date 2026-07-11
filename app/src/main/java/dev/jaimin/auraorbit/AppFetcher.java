@@ -184,7 +184,12 @@ public class AppFetcher {
                 // ─── Extract and convert the app icon ───────────────────
                 Bitmap bitmap = sIconCache.get(packageName);
                 if (bitmap == null) {
-                    Drawable drawable = pm.getApplicationIcon(appInfo);
+                    IconPackManager iconPackManager = IconPackManager.getInstance(context);
+                    Drawable drawable = iconPackManager.getIcon("ComponentInfo{" + packageName + "/" + pm.getLaunchIntentForPackage(packageName).getComponent().getClassName() + "}");
+                    
+                    if (drawable == null) {
+                        drawable = pm.getApplicationIcon(appInfo);
+                    }
                     bitmap = drawableToBitmap(drawable, ICON_SIZE);
                     if (bitmap != null) {
                         sIconCache.put(packageName, bitmap);

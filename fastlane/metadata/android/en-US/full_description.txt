@@ -14,6 +14,12 @@ AuraOrbit is a next-generation Android Live Wallpaper featuring a fully interact
 <li>Five blur levels from no blur to full-screen blur.</li>
 </ul>
 
+<b>Icon Pack Support:</b>
+<ul>
+<li>Apply third-party icon packs (Nova, Apex, etc.) seamlessly to all your 3D sphere apps.</li>
+<li>Automatically applies to group widgets, the app picker, and fallback elements.</li>
+</ul>
+
 <b>App Groups &amp; Widgets:</b>
 <ul>
 <li>Create color-coded app groups with 8 presets plus a custom RGB color picker.</li>

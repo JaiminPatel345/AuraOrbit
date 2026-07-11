@@ -9,6 +9,13 @@ The core of AuraOrbit is a fully interactive, GPU-accelerated live wallpaper.
 - **120Hz Display Unlock:** Designed specifically for flagship displays, AuraOrbit explicitly unlocks your hardware's 120 FPS limit to deliver a buttery-smooth physics experience.
 - **Page Isolation:** The sphere seamlessly fades in and out as you swipe across your launcher pages, scaling perfectly with your wallpaper offsets.
 
+## 🎨 Icon Pack Support & Theming
+Comprehensively theme your 3D experience with third-party icon packs.
+- **Seamless Icon Pack Integration:** Apply any popular icon pack (Nova, Apex, Arcticons, etc.) directly from the dashboard.
+- **3D Sphere Theming:** All apps orbiting your sphere are instantly updated with their themed variants.
+- **Widget & App Picker Theming:** Icon packs are applied across the entire app ecosystem—from the "Select Apps" picker to the logos on your home screen widgets!
+- **Intelligent Fallbacks:** If an app isn't natively supported by the icon pack (such as AuraOrbit itself), the engine intelligently applies generic drawer/launcher icons from the pack to maintain a cohesive look.
+
 ## 🎨 Intelligent App Grouping & Customization
 Organize your apps exactly how you want them, with powerful per-group customization options.
 - **Spatial Clustering:** Group related apps together (e.g. "Social", "Games", "Work"). Apps within the same group are spatially clustered closely together on the sphere.
