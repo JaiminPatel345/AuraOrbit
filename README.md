@@ -5,6 +5,8 @@
 
 [This is video for how to show on mobile](Video/Full%20details.mp4)
 
+![Homescreen Sphere](docs/images/homescreen-sphere.png)
+
 ## 🚀 Core Features
 
 **3D Sphere**
