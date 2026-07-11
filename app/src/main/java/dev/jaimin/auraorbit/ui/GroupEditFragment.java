@@ -47,6 +47,10 @@ import android.net.Uri;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.activity.OnBackPressedCallback;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import dev.jaimin.auraorbit.WidgetPinnedReceiver;
 import dev.jaimin.auraorbit.SphereWidgetProvider;
 import dev.jaimin.auraorbit.WidgetLogoStore;
@@ -133,6 +137,11 @@ public class GroupEditFragment extends Fragment {
     private ActivityResultLauncher<PickVisualMediaRequest> pickBackgroundMedia;
     private Uri pendingBackgroundUri = null;
     private boolean pendingBackgroundClear = false;
+    private boolean hasUnsavedChanges = false;
+    
+    private void markUnsaved() {
+        hasUnsavedChanges = true;
+    }
 
     // ─── Preview Views ───────────────────────────────────────────────────
     private View previewIconContainer;
@@ -190,6 +199,7 @@ public class GroupEditFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
         executor = Executors.newSingleThreadExecutor();
 
         // Read the argument once; keep in a field for use across methods.
@@ -212,6 +222,23 @@ public class GroupEditFragment extends Fragment {
                 updateBackgroundStatus();
             }
         });
+    }
+
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        inflater.inflate(R.menu.menu_group_edit, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.action_save) {
+            TextInputEditText nameInput = requireView().findViewById(R.id.group_name_input);
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+            onSaveClicked(nameInput, prefs);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     @Nullable
@@ -240,9 +267,8 @@ public class GroupEditFragment extends Fragment {
         LinearLayout      colorRow    = root.findViewById(R.id.color_row);
         TextInputEditText memberSearch = root.findViewById(R.id.member_search_input);
         RecyclerView      memberList  = root.findViewById(R.id.member_list);
-        MaterialButton    btnCancel   = root.findViewById(R.id.btn_cancel);
-        MaterialButton    btnSave     = root.findViewById(R.id.btn_save);
         MaterialButton    btnPinWidget= root.findViewById(R.id.btn_pin_widget);
+        View btnInfoPinWidget = root.findViewById(R.id.btn_info_pin_widget);
 
         memberList.setLayoutManager(new LinearLayoutManager(requireContext()));
         memberAdapter = new MemberAdapter();
@@ -411,6 +437,7 @@ public class GroupEditFragment extends Fragment {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
             @Override public void afterTextChanged(Editable s) {
+                markUnsaved();
                 updateLivePreview();
             }
         });
@@ -418,16 +445,39 @@ public class GroupEditFragment extends Fragment {
         // ─── Color circles ────────────────────────────────────────────────
         buildColorRow(colorRow);
 
-        // ─── Cancel button ────────────────────────────────────────────────
-        btnCancel.setOnClickListener(v -> getParentFragmentManager().popBackStack());
-
-        // ─── Save button ──────────────────────────────────────────────────
-        btnSave.setOnClickListener(v -> onSaveClicked(nameInput, prefs));
+        // ─── Back press callback ──────────────────────────────────────────
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (hasUnsavedChanges) {
+                    new MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Unsaved Changes")
+                        .setMessage("Changes will be discarded. Do you want to discard or save them?")
+                        .setPositiveButton("Save", (dialog, which) -> {
+                            TextInputEditText nameInput = requireView().findViewById(R.id.group_name_input);
+                            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+                            onSaveClicked(nameInput, prefs);
+                        })
+                        .setNegativeButton("Discard/Cancel", (dialog, which) -> {
+                            setEnabled(false);
+                            requireActivity().getOnBackPressedDispatcher().onBackPressed();
+                        })
+                        .show();
+                } else {
+                    setEnabled(false);
+                    requireActivity().getOnBackPressedDispatcher().onBackPressed();
+                }
+            }
+        });
 
         // ─── Pin Widget button ────────────────────────────────────────────
         AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(requireContext());
         if (originalGroupName != null && appWidgetManager.isRequestPinAppWidgetSupported()) {
             btnPinWidget.setVisibility(View.VISIBLE);
+            if (btnInfoPinWidget != null) {
+                btnInfoPinWidget.setVisibility(View.VISIBLE);
+                btnInfoPinWidget.setOnClickListener(v -> showInfoDialog("Pin Widget", "Adds a shortcut to this group directly on your home screen."));
+            }
             btnPinWidget.setOnClickListener(v -> {
                 int[] appWidgetIds = appWidgetManager.getAppWidgetIds(new ComponentName(requireContext(), SphereWidgetProvider.class));
                 boolean alreadyPinned = false;
@@ -640,9 +690,9 @@ public class GroupEditFragment extends Fragment {
 
     private void updateBlurStatusText(SharedPreferences prefs) {
         if (tvBlurStatus == null) return;
-        int amount = prefs.getInt("pref_blur_radius_" + originalGroupName, 0);
+        int amount = prefs.getInt("pref_blur_radius_" + originalGroupName, 50);
         if (originalGroupName == null && !prefs.contains("pref_blur_radius_" + originalGroupName)) {
-            amount = prefs.getInt("pref_blur_radius", 0);
+            amount = prefs.getInt("pref_blur_radius", 50);
         }
         if (amount == 0) tvBlurStatus.setText("No Blur");
         else if (amount <= 33) tvBlurStatus.setText("Sphere Background Only");
@@ -993,8 +1043,8 @@ public class GroupEditFragment extends Fragment {
             float oldX = prefs.getFloat("pref_sphere_x_" + originalGroupName, prefs.getFloat("pref_sphere_x", 0f));
             float oldY = prefs.getFloat("pref_sphere_y_" + originalGroupName, prefs.getFloat("pref_sphere_y", 0f));
             float oldScale = prefs.getFloat("pref_sphere_scale_" + originalGroupName, prefs.getFloat("pref_sphere_scale", 1f));
-            int oldBlurRadius = prefs.getInt("pref_blur_radius_" + originalGroupName, prefs.getInt("pref_blur_radius", 0));
-            int oldBlurStrength = prefs.getInt("pref_blur_strength_" + originalGroupName, prefs.getInt("pref_blur_strength", 0));
+            int oldBlurRadius = prefs.getInt("pref_blur_radius_" + originalGroupName, prefs.getInt("pref_blur_radius", 50));
+            int oldBlurStrength = prefs.getInt("pref_blur_strength_" + originalGroupName, prefs.getInt("pref_blur_strength", 50));
             
             prefs.edit()
                 .remove("pref_widget_hide_logo_" + originalGroupName)
@@ -1226,6 +1276,7 @@ public class GroupEditFragment extends Fragment {
 
                 // Row click toggles membership in the working set.
                 holder.itemView.setOnClickListener(v -> {
+                    markUnsaved();
                     boolean nowMember = workingMembers.contains(row.packageName);
                     if (nowMember) {
                         workingMembers.remove(row.packageName);

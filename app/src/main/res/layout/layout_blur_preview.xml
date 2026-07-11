@@ -8,6 +8,6 @@
         android:layout_width="300dp"
         android:layout_height="300dp"
         android:background="@drawable/circle_mock"
-        android:layout_gravity="center" />
+        android:layout_gravity="top|start" />
 
 </FrameLayout>

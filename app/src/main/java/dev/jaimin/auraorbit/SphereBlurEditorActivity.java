@@ -63,8 +63,8 @@ public class SphereBlurEditorActivity extends AppCompatActivity {
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
         currentScale = prefs.getFloat(scalePref, 1.0f);
         // We now have two preferences
-        currentBlurRadius = prefs.getInt(radiusPref, 0);
-        currentBlurStrength = prefs.getInt(strengthPref, 0);
+        currentBlurRadius = prefs.getInt(radiusPref, 50);
+        currentBlurStrength = prefs.getInt(strengthPref, 50);
         
         // Migrate old pref_blur_amount if the new ones don't exist
         if (!prefs.contains(radiusPref) && groupName == null && prefs.contains("pref_blur_amount")) {
@@ -97,13 +97,7 @@ public class SphereBlurEditorActivity extends AppCompatActivity {
         blurDialog = new Dialog(this, android.R.style.Theme_Translucent_NoTitleBar);
         blurDialog.setContentView(R.layout.layout_blur_preview);
         
-        View sphereMock = blurDialog.findViewById(R.id.sphere_mock);
-        FrameLayout.LayoutParams mockParams = (FrameLayout.LayoutParams) sphereMock.getLayoutParams();
-        mockParams.width = (int) (screenWidth * currentScale);
-        mockParams.height = (int) (screenWidth * currentScale);
-        mockParams.gravity = android.view.Gravity.CENTER;
-        sphereMock.setLayoutParams(mockParams);
-        
+        // sphere_mock layout is now handled by updateBlurPreview
         Window window = blurDialog.getWindow();
         if (window != null) {
             GradientDrawable circle = new GradientDrawable();
@@ -197,30 +191,52 @@ public class SphereBlurEditorActivity extends AppCompatActivity {
                 
                 // blurSize grows from sphereSize to maxDim
                 int blurSize = (int) (sphereSize + (maxDim - sphereSize) * (currentBlurRadius / 100.0f));
+                if (currentBlurRadius == 0) blurSize = sphereSize;
+                
+                // Make the window fullscreen so it never shifts
+                params.width = WindowManager.LayoutParams.MATCH_PARENT;
+                params.height = WindowManager.LayoutParams.MATCH_PARENT;
+                params.x = 0;
+                params.y = 0;
+                params.gravity = android.view.Gravity.TOP | android.view.Gravity.START;
                 
                 if (currentBlurRadius == 0 || currentBlurStrength == 0) {
                     window.setBackgroundBlurRadius(0);
-                    // Still need to keep it at least sphereSize so sphereMock isn't clipped
-                    params.width = sphereSize;
-                    params.height = sphereSize;
                 } else {
                     int radius = Math.min(currentBlurStrength * 2, 150); // Scale up to max blur radius
                     if (radius == 0) radius = 1;
                     window.setBackgroundBlurRadius(radius);
-                    
-                    params.width = blurSize;
-                    params.height = blurSize;
                 }
-                
-                params.gravity = android.view.Gravity.TOP | android.view.Gravity.LEFT;
                 
                 float sphereCenterX = sphereX + sphereSize / 2f;
                 float sphereCenterY = sphereY + sphereSize / 2f;
                 
-                params.x = (int) (sphereCenterX - params.width / 2f);
-                params.y = (int) (sphereCenterY - params.height / 2f);
+                // Calculate insets for the blur OVAL
+                int left = (int) (sphereCenterX - blurSize / 2f);
+                int top = (int) (sphereCenterY - blurSize / 2f);
+                int right = screenWidth - (left + blurSize);
+                int bottom = screenHeight - (top + blurSize);
+
+                android.graphics.drawable.GradientDrawable circle = new android.graphics.drawable.GradientDrawable();
+                circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+                circle.setColor(android.graphics.Color.TRANSPARENT);
+                
+                android.graphics.drawable.InsetDrawable insetDrawable = 
+                    new android.graphics.drawable.InsetDrawable(circle, left, top, right, bottom);
+                window.setBackgroundDrawable(insetDrawable);
                 
                 window.setAttributes(params);
+                
+                // Position sphereMock
+                View sphereMock = blurDialog.findViewById(R.id.sphere_mock);
+                if (sphereMock != null) {
+                    android.widget.FrameLayout.LayoutParams mockParams = (android.widget.FrameLayout.LayoutParams) sphereMock.getLayoutParams();
+                    mockParams.width = sphereSize;
+                    mockParams.height = sphereSize;
+                    mockParams.leftMargin = (int) sphereX;
+                    mockParams.topMargin = (int) sphereY;
+                    sphereMock.setLayoutParams(mockParams);
+                }
             }
         }
     }

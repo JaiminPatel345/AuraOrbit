@@ -96,11 +96,9 @@ Hit the **Settings ⚙️** icon in the preview window to open the AuraOrbit das
 
 ## 🤝 Contributing
 
-We welcome contributions! If you'd like to help improve AuraOrbit, please feel free to fork the repository, make your changes, and submit a Pull Request.
+We welcome contributions from everyone! If you want to contribute to AuraOrbit, feel free to fork the repository, make your changes, and submit a pull request. 
 
-## 🐛 Bugs and Issues
-
-If you find a bug or have a feature request, please raise an issue on the GitHub issues page.
+If you find any bugs or have feature requests, please **raise an issue** on GitHub so we can look into it. 
 
 ## 📄 License
 
