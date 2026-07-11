@@ -9,4 +9,6 @@
     android:resizeMode="horizontal|vertical"
     android:previewImage="@mipmap/ic_launcher"
     android:previewLayout="@layout/widget_sphere"
+    android:configure="dev.jaimin.auraorbit.LiveWallpaperSettings"
+    android:widgetFeatures="reconfigurable"
     android:widgetCategory="home_screen" />
