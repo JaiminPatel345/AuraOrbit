@@ -176,6 +176,7 @@ public class AppPickerFragment extends Fragment {
         executor.submit(() -> {
             PackageManager pm = appCtx.getPackageManager();
             List<ResolveInfo> resolvedApps = AppFetcher.getAllLaunchableApps(appCtx);
+            dev.jaimin.auraorbit.IconPackManager iconPackManager = dev.jaimin.auraorbit.IconPackManager.getInstance(appCtx);
 
             // Build the group reverse-lookup once for O(1) per-app lookup.
             List<GroupStore.Group> groups = GroupStore.load(prefs);
@@ -188,8 +189,14 @@ public class AppPickerFragment extends Fragment {
             List<AppRow> rows = new ArrayList<>(resolvedApps.size());
             for (ResolveInfo ri : resolvedApps) {
                 String pkg = ri.activityInfo.packageName;
+                String className = ri.activityInfo.name;
+                String componentName = "ComponentInfo{" + pkg + "/" + className + "}";
                 String label = ri.loadLabel(pm).toString();
-                Drawable icon = ri.loadIcon(pm);
+                
+                Drawable icon = iconPackManager.getIcon(componentName);
+                if (icon == null) {
+                    icon = ri.loadIcon(pm);
+                }
 
                 // Determine group membership (null → no badge shown).
                 GroupStore.Group owningGroup = pkgToGroup.get(pkg);

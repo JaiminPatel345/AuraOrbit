@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.content.pm.PackageManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -64,6 +65,25 @@ public class DashboardFragment extends Fragment {
 
     public static final String PREF_SPHERE_POSITION = "pref_sphere_position";
     private TextView tvSpherePositionStatus;
+    private TextView tvIconPackStatus;
+    private dev.jaimin.auraorbit.IconPackManager iconPackManager;
+
+    private void updateIconPackStatus() {
+        if (tvIconPackStatus != null) {
+            String current = prefs.getString(dev.jaimin.auraorbit.IconPackManager.PREF_ICON_PACK, null);
+            if (current == null || current.isEmpty()) {
+                tvIconPackStatus.setText("Default");
+            } else {
+                PackageManager pm = requireContext().getPackageManager();
+                try {
+                    String label = pm.getApplicationInfo(current, 0).loadLabel(pm).toString();
+                    tvIconPackStatus.setText(label);
+                } catch (PackageManager.NameNotFoundException e) {
+                    tvIconPackStatus.setText("Unknown");
+                }
+            }
+        }
+    }
 
     private void updateSpherePositionStatus() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
@@ -109,6 +129,14 @@ public class DashboardFragment extends Fragment {
 
         MaterialCardView cardGroups = view.findViewById(R.id.card_groups);
         cardGroups.setOnClickListener(v -> navigateTo(new GroupListFragment()));
+
+        iconPackManager = dev.jaimin.auraorbit.IconPackManager.getInstance(requireContext());
+        tvIconPackStatus = view.findViewById(R.id.tv_icon_pack_status);
+        updateIconPackStatus();
+        
+        view.findViewById(R.id.btn_icon_pack).setOnClickListener(v -> {
+            showIconPackSelector();
+        });
 
 
         Slider sliderIconSize = view.findViewById(R.id.slider_icon_size);
@@ -581,5 +609,50 @@ public class DashboardFragment extends Fragment {
         View colorRowScroll = getView().findViewById(R.id.color_row).getParent() instanceof View ? (View) getView().findViewById(R.id.color_row).getParent() : getView().findViewById(R.id.color_row);
         if (orbitColorHeader != null) orbitColorHeader.setVisibility(useThemeColor ? View.GONE : View.VISIBLE);
         if (colorRowScroll != null) colorRowScroll.setVisibility(useThemeColor ? View.GONE : View.VISIBLE);
+    }
+
+    private void showIconPackSelector() {
+        java.util.List<dev.jaimin.auraorbit.IconPackManager.IconPackInfo> packs = dev.jaimin.auraorbit.IconPackManager.getAvailableIconPacks(requireContext());
+        String[] options = new String[packs.size() + 1];
+        String[] values = new String[packs.size() + 1];
+        
+        options[0] = "Default";
+        values[0] = "";
+        
+        String current = prefs.getString(dev.jaimin.auraorbit.IconPackManager.PREF_ICON_PACK, "");
+        int checkedItem = 0;
+        
+        for (int i = 0; i < packs.size(); i++) {
+            options[i + 1] = packs.get(i).label;
+            values[i + 1] = packs.get(i).packageName;
+            if (values[i + 1].equals(current)) {
+                checkedItem = i + 1;
+            }
+        }
+        
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Select Icon Pack")
+                .setSingleChoiceItems(options, checkedItem, (dialog, which) -> {
+                    prefs.edit().putString(dev.jaimin.auraorbit.IconPackManager.PREF_ICON_PACK, values[which]).apply();
+                    iconPackManager.loadIconPack(values[which]);
+                    updateIconPackStatus();
+                    
+                    // Clear the icon cache so new icons are loaded
+                    try {
+                        java.lang.reflect.Field cacheField = AppFetcher.class.getDeclaredField("sIconCache");
+                        cacheField.setAccessible(true);
+                        java.util.Map cache = (java.util.Map) cacheField.get(null);
+                        cache.clear();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    
+                    // Update all widgets to reflect the new icon pack
+                    SphereWidgetProvider.updateAllWidgets(requireContext());
+                    
+                    dialog.dismiss();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 }
