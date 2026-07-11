@@ -24,6 +24,7 @@ Organize your apps exactly how you want them, with powerful per-group customizat
   - **Custom Sphere Position & Scale:** Drag, drop, and resize the sphere for a specific group.
   - **Custom Background Blur:** Set unique blur radius and strength per group.
   - **Custom Background Image:** Assign a unique background image to show only when a specific group is active.
+- **Auto-Save Functionality:** Changes made in the group editor are seamlessly auto-saved when you navigate away, with live previews updating your widgets instantly.
 - **Seamless Edit UX:** When editing an existing group, manage the apps list effortlessly via a clean popup dialog.
 
 ## 🚀 Sphere Mode (Standalone App Launcher)
@@ -35,6 +36,7 @@ Don't want it as a wallpaper? Run it as a standalone app.
 Bring specific groups directly to your home screen.
 - **Pin Groups as Widgets:** Pin specific groups as customizable Android widgets.
 - **Themed Widget Designs:** Widgets feature a sleek dark background with an orbiting ring that perfectly matches the color you assigned to the group.
+- **Granular Widget Customization:** Click the gear icon on any widget to adjust its appearance—upload custom logos, hide the text label, toggle transparency, or enforce system Material You colors!
 - **Safety State (Deleted Groups):** If you delete a group from settings, its pinned widgets instantly update across your home screen to show a red "**Deleted**" label and disable clicking.
 
 ## ⚙️ Extensive Configuration & Settings
