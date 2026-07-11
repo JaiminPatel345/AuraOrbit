@@ -137,12 +137,7 @@ public class GroupEditFragment extends Fragment {
     private ActivityResultLauncher<PickVisualMediaRequest> pickBackgroundMedia;
     private Uri pendingBackgroundUri = null;
     private boolean pendingBackgroundClear = false;
-    private boolean hasUnsavedChanges = false;
     
-    private void markUnsaved() {
-        hasUnsavedChanges = true;
-    }
-
     // ─── Preview Views ───────────────────────────────────────────────────
     private View previewIconContainer;
     private ImageView previewPlanet;
@@ -199,7 +194,6 @@ public class GroupEditFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setHasOptionsMenu(true);
         executor = Executors.newSingleThreadExecutor();
 
         // Read the argument once; keep in a field for use across methods.
@@ -222,30 +216,6 @@ public class GroupEditFragment extends Fragment {
                 updateBackgroundStatus();
             }
         });
-    }
-
-    @Override
-    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        inflater.inflate(R.menu.menu_group_edit, menu);
-        MenuItem saveItem = menu.findItem(R.id.action_save);
-        if (saveItem != null) {
-            View actionView = saveItem.getActionView();
-            if (actionView != null) {
-                actionView.setOnClickListener(v -> onOptionsItemSelected(saveItem));
-            }
-        }
-        super.onCreateOptionsMenu(menu, inflater);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if (item.getItemId() == R.id.action_save) {
-            TextInputEditText nameInput = requireView().findViewById(R.id.group_name_input);
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
-            onSaveClicked(nameInput, prefs);
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
     }
 
     @Nullable
@@ -444,38 +414,12 @@ public class GroupEditFragment extends Fragment {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
             @Override public void afterTextChanged(Editable s) {
-                markUnsaved();
                 updateLivePreview();
             }
         });
 
         // ─── Color circles ────────────────────────────────────────────────
         buildColorRow(colorRow);
-
-        // ─── Back press callback ──────────────────────────────────────────
-        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                if (hasUnsavedChanges) {
-                    new MaterialAlertDialogBuilder(requireContext())
-                        .setTitle("Unsaved Changes")
-                        .setMessage("Changes will be discarded. Do you want to discard or save them?")
-                        .setPositiveButton("Save", (dialog, which) -> {
-                            TextInputEditText nameInput = requireView().findViewById(R.id.group_name_input);
-                            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
-                            onSaveClicked(nameInput, prefs);
-                        })
-                        .setNegativeButton("Discard/Cancel", (dialog, which) -> {
-                            setEnabled(false);
-                            requireActivity().getOnBackPressedDispatcher().onBackPressed();
-                        })
-                        .show();
-                } else {
-                    setEnabled(false);
-                    requireActivity().getOnBackPressedDispatcher().onBackPressed();
-                }
-            }
-        });
 
         // ─── Pin Widget button ────────────────────────────────────────────
         AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(requireContext());
@@ -986,27 +930,27 @@ public class GroupEditFragment extends Fragment {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    //  Save handler
+    //  Auto Save handler
     // ─────────────────────────────────────────────────────────────────────
 
-    /**
-     * Validates the input and calls {@link GroupStore#upsert}. On success,
-     * saves to SharedPreferences, shows a toast, and pops the fragment.
-     * On validation failure, shows a descriptive toast and stays open.
-     *
-     * @param nameInput  The name text input view.
-     * @param prefs      SharedPreferences instance.
-     */
-    private void onSaveClicked(@NonNull TextInputEditText nameInput,
-                               @NonNull SharedPreferences prefs) {
+    @Override
+    public void onPause() {
+        super.onPause();
+        saveData();
+    }
+
+    private void saveData() {
+        View root = getView();
+        if (root == null) return;
+        TextInputEditText nameInput = root.findViewById(R.id.group_name_input);
+        if (nameInput == null) return;
+        
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
         Editable editable = nameInput.getText();
         String newName = (editable == null) ? "" : editable.toString().trim();
 
-        // Validate: name must not be empty.
+        // Validate: name must not be empty. If empty, don't save.
         if (newName.isEmpty()) {
-            Toast.makeText(requireContext(),
-                    R.string.toast_group_name_empty,
-                    Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -1142,15 +1086,13 @@ public class GroupEditFragment extends Fragment {
             // We do not show the "Saved" Toast here so it doesn't conflict with the system popup
             requestPinWidget(newName);
         } else {
-            Toast.makeText(requireContext(),
-                    R.string.toast_saved,
-                    Toast.LENGTH_SHORT).show();
             // Update existing widgets when a group is edited
             SphereWidgetProvider.updateAllWidgets(requireContext());
         }
 
-        // Return to GroupListFragment (or wherever we came from).
-        getParentFragmentManager().popBackStack();
+        // Update originalGroupName so subsequent auto-saves (e.g. after config change)
+        // know the new identity of this group.
+        originalGroupName = newName;
     }
 
 
@@ -1293,7 +1235,6 @@ public class GroupEditFragment extends Fragment {
 
                 // Row click toggles membership in the working set.
                 holder.itemView.setOnClickListener(v -> {
-                    markUnsaved();
                     boolean nowMember = workingMembers.contains(row.packageName);
                     if (nowMember) {
                         workingMembers.remove(row.packageName);
