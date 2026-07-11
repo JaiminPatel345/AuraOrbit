@@ -307,12 +307,9 @@ public class SphereWidgetProvider extends AppWidgetProvider {
     }
 
     public static void updateAllWidgets(Context context) {
-        Intent intent = new Intent(context, SphereWidgetProvider.class);
-        intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
         AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
         android.content.ComponentName thisWidget = new android.content.ComponentName(context, SphereWidgetProvider.class);
         int[] appWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
-        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
-        context.sendBroadcast(intent);
+        new SphereWidgetProvider().onUpdate(context, appWidgetManager, appWidgetIds);
     }
 }
