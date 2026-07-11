@@ -26,10 +26,7 @@ public class WidgetPinnedReceiver extends BroadcastReceiver {
             AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
             int[] appWidgetIds = new int[]{widgetId};
             
-            Intent updateIntent = new Intent(context, SphereWidgetProvider.class);
-            updateIntent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
-            updateIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
-            context.sendBroadcast(updateIntent);
+            new SphereWidgetProvider().onUpdate(context, appWidgetManager, appWidgetIds);
             
             android.widget.Toast.makeText(context, "Group Saved & Widget Pinned!", android.widget.Toast.LENGTH_SHORT).show();
         }

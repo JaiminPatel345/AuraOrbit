@@ -1046,6 +1046,16 @@ public class GroupEditFragment extends Fragment {
             int oldBlurRadius = prefs.getInt("pref_blur_radius_" + originalGroupName, prefs.getInt("pref_blur_radius", 50));
             int oldBlurStrength = prefs.getInt("pref_blur_strength_" + originalGroupName, prefs.getInt("pref_blur_strength", 50));
             
+            // Migrate widget group mappings to new name
+            android.appwidget.AppWidgetManager appWidgetManager = android.appwidget.AppWidgetManager.getInstance(requireContext());
+            android.content.ComponentName thisWidget = new android.content.ComponentName(requireContext(), SphereWidgetProvider.class);
+            int[] appWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
+            for (int id : appWidgetIds) {
+                if (originalGroupName.equals(prefs.getString("widget_group_" + id, null))) {
+                    prefs.edit().putString("widget_group_" + id, newName).apply();
+                }
+            }
+            
             prefs.edit()
                 .remove("pref_widget_hide_logo_" + originalGroupName)
                 .remove("pref_widget_hide_text_" + originalGroupName)
