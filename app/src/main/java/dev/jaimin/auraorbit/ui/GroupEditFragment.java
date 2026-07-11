@@ -128,7 +128,7 @@ public class GroupEditFragment extends Fragment {
     private boolean pendingLogoClear = false;
     private boolean isHideLogo = false;
     private boolean isHideText = false;
-    private boolean isTransparent = false;
+    private boolean isTransparent = true;
     private boolean isUseThemeColor = true;
     private int customIconSize = 50;
     private int customSpeed = 100;
@@ -335,7 +335,7 @@ public class GroupEditFragment extends Fragment {
         if (originalGroupName != null) {
             isHideLogo = prefs.getBoolean("pref_widget_hide_logo_" + originalGroupName, false);
             isHideText = prefs.getBoolean("pref_widget_hide_text_" + originalGroupName, false);
-            isTransparent = prefs.getBoolean("pref_widget_transparent_" + originalGroupName, false);
+            isTransparent = prefs.getBoolean("pref_widget_transparent_" + originalGroupName, true);
             isUseThemeColor = prefs.getBoolean("pref_widget_use_theme_color_" + originalGroupName, true);
             customIconSize = prefs.getInt("pref_icon_size_" + originalGroupName, prefs.getInt("pref_icon_size", 50));
             customSpeed = prefs.getInt("pref_rotation_speed_" + originalGroupName, prefs.getInt("pref_rotation_speed", 100));
@@ -1045,6 +1045,16 @@ public class GroupEditFragment extends Fragment {
             float oldScale = prefs.getFloat("pref_sphere_scale_" + originalGroupName, prefs.getFloat("pref_sphere_scale", 1f));
             int oldBlurRadius = prefs.getInt("pref_blur_radius_" + originalGroupName, prefs.getInt("pref_blur_radius", 50));
             int oldBlurStrength = prefs.getInt("pref_blur_strength_" + originalGroupName, prefs.getInt("pref_blur_strength", 50));
+            
+            // Migrate widget group mappings to new name
+            android.appwidget.AppWidgetManager appWidgetManager = android.appwidget.AppWidgetManager.getInstance(requireContext());
+            android.content.ComponentName thisWidget = new android.content.ComponentName(requireContext(), SphereWidgetProvider.class);
+            int[] appWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
+            for (int id : appWidgetIds) {
+                if (originalGroupName.equals(prefs.getString("widget_group_" + id, null))) {
+                    prefs.edit().putString("widget_group_" + id, newName).apply();
+                }
+            }
             
             prefs.edit()
                 .remove("pref_widget_hide_logo_" + originalGroupName)

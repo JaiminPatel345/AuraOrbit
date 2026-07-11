@@ -42,7 +42,7 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                     views.setTextViewText(R.id.widget_label, groupName);
                     views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
                     boolean hideLogo = prefs.getBoolean("pref_widget_hide_logo_" + groupName, false);
-                    boolean transparent = prefs.getBoolean("pref_widget_transparent_" + groupName, false);
+                    boolean transparent = prefs.getBoolean("pref_widget_transparent_" + groupName, true);
                     if (transparent || hideLogo) {
                         views.setInt(R.id.widget_icon_container, "setBackgroundColor", android.graphics.Color.TRANSPARENT);
                     } else {
@@ -87,7 +87,7 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                     }
                 } else {
                     String widgetName = prefs.getString("pref_widget_name", "All");
-                    boolean transparent = prefs.getBoolean("pref_widget_transparent", false);
+                    boolean transparent = prefs.getBoolean("pref_widget_transparent", true);
                     boolean hideText = prefs.getBoolean("pref_widget_hide_text", false);
 
                     if (transparent) {
@@ -199,7 +199,7 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                 views.setTextViewText(R.id.widget_label, groupName);
                 views.setTextColor(R.id.widget_label, android.graphics.Color.WHITE);
                 boolean hideLogo = prefs.getBoolean("pref_widget_hide_logo_" + groupName, false);
-                boolean transparent = prefs.getBoolean("pref_widget_transparent_" + groupName, false);
+                boolean transparent = prefs.getBoolean("pref_widget_transparent_" + groupName, true);
                 if (transparent || hideLogo) {
                     views.setInt(R.id.widget_icon_container, "setBackgroundColor", android.graphics.Color.TRANSPARENT);
                 } else {
@@ -252,7 +252,7 @@ public class SphereWidgetProvider extends AppWidgetProvider {
                 }
             } else {
                 String widgetName = prefs.getString("pref_widget_name", "All");
-                boolean transparent = prefs.getBoolean("pref_widget_transparent", false);
+                boolean transparent = prefs.getBoolean("pref_widget_transparent", true);
                 boolean hideText = prefs.getBoolean("pref_widget_hide_text", false);
 
                 if (transparent) {
@@ -307,12 +307,9 @@ public class SphereWidgetProvider extends AppWidgetProvider {
     }
 
     public static void updateAllWidgets(Context context) {
-        Intent intent = new Intent(context, SphereWidgetProvider.class);
-        intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
         AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
         android.content.ComponentName thisWidget = new android.content.ComponentName(context, SphereWidgetProvider.class);
         int[] appWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
-        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
-        context.sendBroadcast(intent);
+        new SphereWidgetProvider().onUpdate(context, appWidgetManager, appWidgetIds);
     }
 }
