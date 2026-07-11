@@ -85,6 +85,24 @@ public class LiveWallpaperSettings extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
 
+        // Handle widget configuration intent
+        Intent intent = getIntent();
+        int appWidgetId = intent.getIntExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID, android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID);
+        android.util.Log.d("AuraOrbit", "CONFIGURE check. action=" + intent.getAction() + " appWidgetId=" + appWidgetId);
+        
+        if (appWidgetId != android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID) {
+            Intent resultValue = new Intent();
+            resultValue.putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
+            setResult(RESULT_OK, resultValue);
+
+            android.content.SharedPreferences prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
+            String groupName = prefs.getString("widget_group_" + appWidgetId, null);
+            android.util.Log.d("AuraOrbit", "CONFIGURE groupName for widget=" + groupName);
+            if (groupName != null) {
+                intent.putExtra("open_group", groupName);
+            }
+        }
+
         // Inflate the activity layout that owns the MaterialToolbar + settings_container.
         // This replaces the implicit android.R.id.content-only approach so that
         // AppBarLayout.fitsSystemWindows handles the status-bar inset and
@@ -123,6 +141,13 @@ public class LiveWallpaperSettings extends AppCompatActivity {
                 getSupportFragmentManager()
                         .beginTransaction()
                         .replace(R.id.settings_container, new dev.jaimin.auraorbit.ui.AppPickerFragment())
+                        .addToBackStack(null)
+                        .commit();
+            } else if (getIntent().hasExtra("open_group")) {
+                String groupName = getIntent().getStringExtra("open_group");
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.settings_container, dev.jaimin.auraorbit.ui.GroupEditFragment.newInstance(groupName))
                         .addToBackStack(null)
                         .commit();
             }

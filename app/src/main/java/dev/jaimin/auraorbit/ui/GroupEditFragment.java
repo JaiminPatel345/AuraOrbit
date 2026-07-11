@@ -227,6 +227,13 @@ public class GroupEditFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
         inflater.inflate(R.menu.menu_group_edit, menu);
+        MenuItem saveItem = menu.findItem(R.id.action_save);
+        if (saveItem != null) {
+            View actionView = saveItem.getActionView();
+            if (actionView != null) {
+                actionView.setOnClickListener(v -> onOptionsItemSelected(saveItem));
+            }
+        }
         super.onCreateOptionsMenu(menu, inflater);
     }
 
