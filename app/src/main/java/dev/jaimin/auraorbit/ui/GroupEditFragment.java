@@ -472,8 +472,20 @@ public class GroupEditFragment extends Fragment {
                     .setOnDismissListener(dialog -> {
                         ViewGroup dp = (ViewGroup) cardApps.getParent();
                         if (dp != null) dp.removeView(cardApps);
+                        cardApps.setVisibility(View.GONE);
+                        ((ViewGroup) root.findViewById(R.id.actions_container).getParent()).addView(cardApps, ((ViewGroup) root.findViewById(R.id.actions_container).getParent()).indexOfChild(tvAppsTitle) + 1);
                     })
                     .show();
+            });
+        }
+        
+        MaterialButton btnSaveNewGroup = root.findViewById(R.id.btn_save_new_group);
+        if (originalGroupName == null) {
+            btnSaveNewGroup.setVisibility(View.VISIBLE);
+            btnSaveNewGroup.setOnClickListener(v -> {
+                if (saveData()) {
+                    btnSaveNewGroup.setVisibility(View.GONE);
+                }
             });
         }
 
@@ -936,14 +948,16 @@ public class GroupEditFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        saveData();
+        if (originalGroupName != null) {
+            saveData();
+        }
     }
 
-    private void saveData() {
+    private boolean saveData() {
         View root = getView();
-        if (root == null) return;
+        if (root == null) return false;
         TextInputEditText nameInput = root.findViewById(R.id.group_name_input);
-        if (nameInput == null) return;
+        if (nameInput == null) return false;
         
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
         Editable editable = nameInput.getText();
@@ -951,7 +965,16 @@ public class GroupEditFragment extends Fragment {
 
         // Validate: name must not be empty. If empty, don't save.
         if (newName.isEmpty()) {
-            return;
+            nameInput.setError("Group name cannot be empty");
+            nameInput.requestFocus();
+            androidx.core.widget.NestedScrollView scrollView = root.findViewById(R.id.scroll_view);
+            if (scrollView != null) {
+                View cardGeneral = root.findViewById(R.id.card_general);
+                if (cardGeneral != null) {
+                    scrollView.smoothScrollTo(0, cardGeneral.getTop());
+                }
+            }
+            return false;
         }
 
         // Reload latest group list to prevent stale-data issues (another agent
@@ -970,10 +993,19 @@ public class GroupEditFragment extends Fragment {
         if (!ok) {
             // upsert returns false on: name collision with different group,
             // or empty name (already guarded above), or old-name-not-found.
+            nameInput.setError(getString(R.string.toast_group_exists));
+            nameInput.requestFocus();
+            androidx.core.widget.NestedScrollView scrollView = root.findViewById(R.id.scroll_view);
+            if (scrollView != null) {
+                View cardGeneral = root.findViewById(R.id.card_general);
+                if (cardGeneral != null) {
+                    scrollView.smoothScrollTo(0, cardGeneral.getTop());
+                }
+            }
             Toast.makeText(requireContext(),
                     R.string.toast_group_exists,
                     Toast.LENGTH_SHORT).show();
-            return;
+            return false;
         }
 
         // Persist the mutated list.
@@ -1083,16 +1115,18 @@ public class GroupEditFragment extends Fragment {
 
         if (originalGroupName == null) {
             // Automatically prompt the user to pin the widget to their home screen for new groups
-            // We do not show the "Saved" Toast here so it doesn't conflict with the system popup
             requestPinWidget(newName);
         } else {
             // Update existing widgets when a group is edited
             SphereWidgetProvider.updateAllWidgets(requireContext());
         }
 
+        Toast.makeText(requireContext(), "Saved!", Toast.LENGTH_SHORT).show();
+
         // Update originalGroupName so subsequent auto-saves (e.g. after config change)
         // know the new identity of this group.
         originalGroupName = newName;
+        return true;
     }
 
 
@@ -1216,35 +1250,25 @@ public class GroupEditFragment extends Fragment {
             // Detach listener before setting state to avoid re-entrant calls.
             holder.check.setOnCheckedChangeListener(null);
 
-            if (lockedByOtherGroup) {
-                // App belongs to a DIFFERENT group: disable the row entirely.
-                // The checkbox must be unchecked so it can never enter workingMembers.
-                holder.check.setChecked(false);
-                holder.check.setEnabled(false);
-                holder.itemView.setEnabled(false);
-                holder.itemView.setAlpha(0.45f);
-                holder.itemView.setOnClickListener(null); // row click does nothing
-            } else {
-                // App is ungrouped or already in THIS group: fully interactive.
-                holder.check.setEnabled(true);
-                holder.itemView.setEnabled(true);
-                holder.itemView.setAlpha(1f);
+            // App is always fully interactive, even if it belongs to another group.
+            holder.check.setEnabled(true);
+            holder.itemView.setEnabled(true);
+            holder.itemView.setAlpha(1f);
 
-                boolean isMember = workingMembers.contains(row.packageName);
-                holder.check.setChecked(isMember);
+            boolean isMember = workingMembers.contains(row.packageName);
+            holder.check.setChecked(isMember);
 
-                // Row click toggles membership in the working set.
-                holder.itemView.setOnClickListener(v -> {
-                    boolean nowMember = workingMembers.contains(row.packageName);
-                    if (nowMember) {
-                        workingMembers.remove(row.packageName);
-                        holder.check.setChecked(false);
-                    } else {
-                        workingMembers.add(row.packageName);
-                        holder.check.setChecked(true);
-                    }
-                });
-            }
+            // Row click toggles membership in the working set.
+            holder.itemView.setOnClickListener(v -> {
+                boolean nowMember = workingMembers.contains(row.packageName);
+                if (nowMember) {
+                    workingMembers.remove(row.packageName);
+                    holder.check.setChecked(false);
+                } else {
+                    workingMembers.add(row.packageName);
+                    holder.check.setChecked(true);
+                }
+            });
         }
 
         @Override
