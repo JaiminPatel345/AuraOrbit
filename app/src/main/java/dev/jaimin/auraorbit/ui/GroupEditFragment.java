@@ -484,7 +484,7 @@ public class GroupEditFragment extends Fragment {
             btnSaveNewGroup.setVisibility(View.VISIBLE);
             btnSaveNewGroup.setOnClickListener(v -> {
                 if (saveData()) {
-                    getParentFragmentManager().popBackStack();
+                    btnSaveNewGroup.setVisibility(View.GONE);
                 }
             });
         }
@@ -966,6 +966,14 @@ public class GroupEditFragment extends Fragment {
         // Validate: name must not be empty. If empty, don't save.
         if (newName.isEmpty()) {
             nameInput.setError("Group name cannot be empty");
+            nameInput.requestFocus();
+            androidx.core.widget.NestedScrollView scrollView = root.findViewById(R.id.scroll_view);
+            if (scrollView != null) {
+                View cardGeneral = root.findViewById(R.id.card_general);
+                if (cardGeneral != null) {
+                    scrollView.smoothScrollTo(0, cardGeneral.getTop());
+                }
+            }
             return false;
         }
 
@@ -986,6 +994,14 @@ public class GroupEditFragment extends Fragment {
             // upsert returns false on: name collision with different group,
             // or empty name (already guarded above), or old-name-not-found.
             nameInput.setError(getString(R.string.toast_group_exists));
+            nameInput.requestFocus();
+            androidx.core.widget.NestedScrollView scrollView = root.findViewById(R.id.scroll_view);
+            if (scrollView != null) {
+                View cardGeneral = root.findViewById(R.id.card_general);
+                if (cardGeneral != null) {
+                    scrollView.smoothScrollTo(0, cardGeneral.getTop());
+                }
+            }
             Toast.makeText(requireContext(),
                     R.string.toast_group_exists,
                     Toast.LENGTH_SHORT).show();
