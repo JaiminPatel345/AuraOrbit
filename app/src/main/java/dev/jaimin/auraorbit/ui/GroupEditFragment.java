@@ -483,8 +483,9 @@ public class GroupEditFragment extends Fragment {
         if (originalGroupName == null) {
             btnSaveNewGroup.setVisibility(View.VISIBLE);
             btnSaveNewGroup.setOnClickListener(v -> {
-                saveData();
-                requireActivity().getSupportFragmentManager().popBackStack();
+                if (saveData()) {
+                    requireActivity().getSupportFragmentManager().popBackStack();
+                }
             });
         }
 
@@ -952,11 +953,11 @@ public class GroupEditFragment extends Fragment {
         }
     }
 
-    private void saveData() {
+    private boolean saveData() {
         View root = getView();
-        if (root == null) return;
+        if (root == null) return false;
         TextInputEditText nameInput = root.findViewById(R.id.group_name_input);
-        if (nameInput == null) return;
+        if (nameInput == null) return false;
         
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
         Editable editable = nameInput.getText();
@@ -964,7 +965,8 @@ public class GroupEditFragment extends Fragment {
 
         // Validate: name must not be empty. If empty, don't save.
         if (newName.isEmpty()) {
-            return;
+            nameInput.setError("Group name cannot be empty");
+            return false;
         }
 
         // Reload latest group list to prevent stale-data issues (another agent
@@ -983,10 +985,11 @@ public class GroupEditFragment extends Fragment {
         if (!ok) {
             // upsert returns false on: name collision with different group,
             // or empty name (already guarded above), or old-name-not-found.
+            nameInput.setError(getString(R.string.toast_group_exists));
             Toast.makeText(requireContext(),
                     R.string.toast_group_exists,
                     Toast.LENGTH_SHORT).show();
-            return;
+            return false;
         }
 
         // Persist the mutated list.
@@ -1106,6 +1109,7 @@ public class GroupEditFragment extends Fragment {
         // Update originalGroupName so subsequent auto-saves (e.g. after config change)
         // know the new identity of this group.
         originalGroupName = newName;
+        return true;
     }
 
 
