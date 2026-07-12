@@ -1216,35 +1216,25 @@ public class GroupEditFragment extends Fragment {
             // Detach listener before setting state to avoid re-entrant calls.
             holder.check.setOnCheckedChangeListener(null);
 
-            if (lockedByOtherGroup) {
-                // App belongs to a DIFFERENT group: disable the row entirely.
-                // The checkbox must be unchecked so it can never enter workingMembers.
-                holder.check.setChecked(false);
-                holder.check.setEnabled(false);
-                holder.itemView.setEnabled(false);
-                holder.itemView.setAlpha(0.45f);
-                holder.itemView.setOnClickListener(null); // row click does nothing
-            } else {
-                // App is ungrouped or already in THIS group: fully interactive.
-                holder.check.setEnabled(true);
-                holder.itemView.setEnabled(true);
-                holder.itemView.setAlpha(1f);
+            // App is always fully interactive, even if it belongs to another group.
+            holder.check.setEnabled(true);
+            holder.itemView.setEnabled(true);
+            holder.itemView.setAlpha(1f);
 
-                boolean isMember = workingMembers.contains(row.packageName);
-                holder.check.setChecked(isMember);
+            boolean isMember = workingMembers.contains(row.packageName);
+            holder.check.setChecked(isMember);
 
-                // Row click toggles membership in the working set.
-                holder.itemView.setOnClickListener(v -> {
-                    boolean nowMember = workingMembers.contains(row.packageName);
-                    if (nowMember) {
-                        workingMembers.remove(row.packageName);
-                        holder.check.setChecked(false);
-                    } else {
-                        workingMembers.add(row.packageName);
-                        holder.check.setChecked(true);
-                    }
-                });
-            }
+            // Row click toggles membership in the working set.
+            holder.itemView.setOnClickListener(v -> {
+                boolean nowMember = workingMembers.contains(row.packageName);
+                if (nowMember) {
+                    workingMembers.remove(row.packageName);
+                    holder.check.setChecked(false);
+                } else {
+                    workingMembers.add(row.packageName);
+                    holder.check.setChecked(true);
+                }
+            });
         }
 
         @Override

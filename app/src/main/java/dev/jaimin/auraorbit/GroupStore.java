@@ -357,9 +357,6 @@ public final class GroupStore {
             Group fresh = new Group(trimmedNew, color);
             if (packages != null) fresh.packages.addAll(packages);
             groups.add(fresh);
-
-            // Enforce single-membership: remove assigned packages from other groups
-            enforceExclusive(groups, fresh);
             return true;
 
         } else {
@@ -376,9 +373,6 @@ public final class GroupStore {
             target.color = color;
             target.packages.clear();
             if (packages != null) target.packages.addAll(packages);
-
-            // Enforce single-membership for the updated set
-            enforceExclusive(groups, target);
             return true;
         }
     }
@@ -397,21 +391,4 @@ public final class GroupStore {
         return true;
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    //  Private helpers
-    // ═══════════════════════════════════════════════════════════════════════
-
-    /**
-     * Removes every package in {@code owner}'s package set from all OTHER groups,
-     * enforcing the single-membership invariant.
-     *
-     * @param groups  Full group list
-     * @param owner   The group that "owns" its package set after an upsert
-     */
-    private static void enforceExclusive(List<Group> groups, Group owner) {
-        for (Group other : groups) {
-            if (other == owner) continue;
-            other.packages.removeAll(owner.packages);
-        }
-    }
 }
