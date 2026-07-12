@@ -484,7 +484,7 @@ public class GroupEditFragment extends Fragment {
             btnSaveNewGroup.setVisibility(View.VISIBLE);
             btnSaveNewGroup.setOnClickListener(v -> {
                 if (saveData()) {
-                    requireActivity().getSupportFragmentManager().popBackStack();
+                    getParentFragmentManager().popBackStack();
                 }
             });
         }
@@ -1099,12 +1099,13 @@ public class GroupEditFragment extends Fragment {
 
         if (originalGroupName == null) {
             // Automatically prompt the user to pin the widget to their home screen for new groups
-            // We do not show the "Saved" Toast here so it doesn't conflict with the system popup
             requestPinWidget(newName);
         } else {
             // Update existing widgets when a group is edited
             SphereWidgetProvider.updateAllWidgets(requireContext());
         }
+
+        Toast.makeText(requireContext(), "Saved!", Toast.LENGTH_SHORT).show();
 
         // Update originalGroupName so subsequent auto-saves (e.g. after config change)
         // know the new identity of this group.
