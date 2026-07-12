@@ -472,8 +472,19 @@ public class GroupEditFragment extends Fragment {
                     .setOnDismissListener(dialog -> {
                         ViewGroup dp = (ViewGroup) cardApps.getParent();
                         if (dp != null) dp.removeView(cardApps);
+                        cardApps.setVisibility(View.GONE);
+                        ((ViewGroup) root.findViewById(R.id.actions_container).getParent()).addView(cardApps, ((ViewGroup) root.findViewById(R.id.actions_container).getParent()).indexOfChild(tvAppsTitle) + 1);
                     })
                     .show();
+            });
+        }
+        
+        MaterialButton btnSaveNewGroup = root.findViewById(R.id.btn_save_new_group);
+        if (originalGroupName == null) {
+            btnSaveNewGroup.setVisibility(View.VISIBLE);
+            btnSaveNewGroup.setOnClickListener(v -> {
+                saveData();
+                requireActivity().getSupportFragmentManager().popBackStack();
             });
         }
 
@@ -936,7 +947,9 @@ public class GroupEditFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        saveData();
+        if (originalGroupName != null) {
+            saveData();
+        }
     }
 
     private void saveData() {

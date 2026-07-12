@@ -57,6 +57,15 @@
                 style="@style/Widget.Material3.Button.TextButton"
                 app:icon="@drawable/ic_pin" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_save_new_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Save"
+                android:visibility="gone"
+                style="@style/Widget.Material3.Button"
+                app:icon="@android:drawable/ic_menu_save" />
+
             <ImageButton
                 android:id="@+id/btn_info_pin_widget"
                 android:layout_width="32dp"
