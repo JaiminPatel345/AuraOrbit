@@ -14,16 +14,16 @@ public class BackgroundStore {
     public static final String PREF_BACKGROUND_VERSION = "bg_ver";
     private static final String DEFAULT_FILE_NAME = "background.png";
 
-    public static boolean exists(Context c, String groupName) {
-        return file(c, groupName).exists();
+    public static boolean exists(Context c, String widgetName) {
+        return file(c, widgetName).exists();
     }
     
     public static boolean exists(Context c) {
         return exists(c, null);
     }
     
-    public static void clear(Context c, String groupName) {
-        File f = file(c, groupName);
+    public static void clear(Context c, String widgetName) {
+        File f = file(c, widgetName);
         if (f.exists()) {
             f.delete();
         }
@@ -34,7 +34,7 @@ public class BackgroundStore {
         clear(c, null);
     }
     
-    public static boolean saveFromUri(Context context, Uri uri, String groupName) {
+    public static boolean saveFromUri(Context context, Uri uri, String widgetName) {
         try {
             InputStream in = context.getContentResolver().openInputStream(uri);
             if (in == null) return false;
@@ -67,7 +67,7 @@ public class BackgroundStore {
                 }
             }
 
-            File f = file(context, groupName);
+            File f = file(context, widgetName);
             FileOutputStream out = new FileOutputStream(f);
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
             out.flush();
@@ -100,10 +100,10 @@ public class BackgroundStore {
         prefs.edit().putInt(PREF_BACKGROUND_VERSION, v + 1).apply();
     }
     
-    public static File file(Context context, String groupName) {
-        String fileName = (groupName == null || groupName.isEmpty()) 
+    public static File file(Context context, String widgetName) {
+        String fileName = (widgetName == null || widgetName.isEmpty()) 
                 ? DEFAULT_FILE_NAME 
-                : "background_" + groupName.replaceAll("[^a-zA-Z0-9_-]", "") + ".png";
+                : "background_" + widgetName.replaceAll("[^a-zA-Z0-9_-]", "") + ".png";
         return new File(context.getFilesDir(), fileName);
     }
 

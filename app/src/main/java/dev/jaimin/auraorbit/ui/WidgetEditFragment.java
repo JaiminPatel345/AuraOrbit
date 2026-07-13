@@ -57,30 +57,30 @@ import dev.jaimin.auraorbit.WidgetLogoStore;
 import java.io.File;
 
 import dev.jaimin.auraorbit.AppFetcher;
-import dev.jaimin.auraorbit.GroupStore;
+import dev.jaimin.auraorbit.WidgetStore;
 import dev.jaimin.auraorbit.R;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * GroupEditFragment.java — Create or edit a single app group
+ * WidgetEditFragment.java — Create or edit a single app widget
  * ═══════════════════════════════════════════════════════════════════════════════
  *
- * Inflates {@code fragment_group_edit}. Key view ids:
- *   {@code group_name_input}, {@code color_row}, {@code member_search_input},
+ * Inflates {@code fragment_widget_edit}. Key view ids:
+ *   {@code widget_name_input}, {@code color_row}, {@code member_search_input},
  *   {@code member_list}, {@code btn_delete} (gone by default), {@code btn_save}.
  *
- * Rows use {@code row_group_member}: {@code member_icon}, {@code member_label},
+ * Rows use {@code row_widget_member}: {@code member_icon}, {@code member_label},
  * {@code member_subtitle} (gone by default), {@code member_check} (non-clickable).
  *
  * ─── Modes ───────────────────────────────────────────────────────────────────
  *
- * Create mode ({@code groupName} arg is {@code null}):
+ * Create mode ({@code widgetName} arg is {@code null}):
  *   - Title = {@code title_new_group}
  *   - {@code btn_delete} remains GONE.
  *
- * Edit mode ({@code groupName} arg is non-null):
+ * Edit mode ({@code widgetName} arg is non-null):
  *   - Title = {@code title_edit_group}
- *   - Prefills name, selected color, and member checkboxes from the stored group.
+ *   - Prefills name, selected color, and member checkboxes from the stored widget.
  *   - {@code btn_delete} is made VISIBLE.
  *
  * ─── Member list ─────────────────────────────────────────────────────────────
@@ -89,36 +89,36 @@ import dev.jaimin.auraorbit.R;
  * ({@link AppFetcher#PREF_SELECTED_APPS}) appear in the member list. Uninstalled
  * apps are silently skipped. The list is loaded off the main thread and filtered
  * by the {@code member_search_input} TextWatcher. Each row's subtitle shows
- * "In <other group> — saving will move it" when the app belongs to a different group.
+ * "In <other widget> — saving will move it" when the app belongs to a different widget.
  *
  * ─── Save ────────────────────────────────────────────────────────────────────
  *
- * {@link GroupStore#upsert} is used for both create and edit. On success,
- * {@link GroupStore#save} persists the new list, a toast is shown, and the
+ * {@link WidgetStore#upsert} is used for both create and edit. On success,
+ * {@link WidgetStore#save} persists the new list, a toast is shown, and the
  * fragment pops off the back stack. On validation failure (empty name or duplicate)
  * a descriptive toast is shown and the fragment stays open.
  *
  * ─── Delete ──────────────────────────────────────────────────────────────────
  *
  * A {@link MaterialAlertDialogBuilder} confirmation dialog is shown before
- * {@link GroupStore#delete} + {@link GroupStore#save} + pop.
+ * {@link WidgetStore#delete} + {@link WidgetStore#save} + pop.
  */
-public class GroupEditFragment extends Fragment {
+public class WidgetEditFragment extends Fragment {
 
     // ─── Fragment argument key ────────────────────────────────────────────
-    private static final String ARG_GROUP_NAME = "group_name";
+    private static final String ARG_GROUP_NAME = "widget_name";
 
     // ─── Background loader (icons + labels) ──────────────────────────────
     private ExecutorService executor;
 
     // ─── State ────────────────────────────────────────────────────────────
-    /** The original name of the group being edited, or {@code null} in create mode. */
+    /** The original name of the widget being edited, or {@code null} in create mode. */
     @Nullable private String originalGroupName;
     /** Currently selected color hex string. */
     private String selectedColor;
     /**
      * Working membership set — modified by row clicks, committed on Save.
-     * Starts as a copy of the group's current members (edit mode) or empty
+     * Starts as a copy of the widget's current members (edit mode) or empty
      * (create mode).
      */
     private final Set<String> workingMembers = new HashSet<>();
@@ -173,16 +173,16 @@ public class GroupEditFragment extends Fragment {
     // ─────────────────────────────────────────────────────────────────────
 
     /**
-     * Creates an instance of {@link GroupEditFragment}.
+     * Creates an instance of {@link WidgetEditFragment}.
      *
-     * @param groupName  Name of the group to edit, or {@code null} to create a new group.
+     * @param widgetName  Name of the widget to edit, or {@code null} to create a new widget.
      * @return Configured fragment.
      */
     @NonNull
-    public static GroupEditFragment newInstance(@Nullable String groupName) {
-        GroupEditFragment f = new GroupEditFragment();
+    public static WidgetEditFragment newInstance(@Nullable String widgetName) {
+        WidgetEditFragment f = new WidgetEditFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_GROUP_NAME, groupName); // putString(key, null) is valid
+        args.putString(ARG_GROUP_NAME, widgetName); // putString(key, null) is valid
         f.setArguments(args);
         return f;
     }
@@ -223,7 +223,7 @@ public class GroupEditFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_group_edit, container, false);
+        return inflater.inflate(R.layout.fragment_widget_edit, container, false);
     }
 
     @Override
@@ -240,7 +240,7 @@ public class GroupEditFragment extends Fragment {
                 .getStringArray(R.array.group_color_names);
 
         // ─── Views ────────────────────────────────────────────────────────
-        TextInputEditText nameInput    = root.findViewById(R.id.group_name_input);
+        TextInputEditText nameInput    = root.findViewById(R.id.widget_name_input);
         LinearLayout      colorRow    = root.findViewById(R.id.color_row);
         TextInputEditText memberSearch = root.findViewById(R.id.member_search_input);
         RecyclerView      memberList  = root.findViewById(R.id.member_list);
@@ -269,10 +269,10 @@ public class GroupEditFragment extends Fragment {
 
         // ─── Info Buttons ─────────────────────────────────────────────────
         root.findViewById(R.id.btn_info_custom_config).setOnClickListener(v -> 
-            showInfoDialog("Sphere Configuration", "Set unique size, speed, and FPS for this group.")
+            showInfoDialog("Sphere Configuration", "Set unique size, speed, and FPS for this widget.")
         );
         root.findViewById(R.id.btn_info_orbit_color).setOnClickListener(v -> 
-            showInfoDialog("Orbit Color", "Sets the color of the widget's ring and the group's color in the sphere.")
+            showInfoDialog("Orbit Color", "Sets the color of the widget's ring and the widget's color in the sphere.")
         );
         root.findViewById(R.id.btn_info_theme_color).setOnClickListener(v -> 
             showInfoDialog("System Theme Color", "Overrides the custom orbit color to match your Android system's Material You theme.")
@@ -284,13 +284,13 @@ public class GroupEditFragment extends Fragment {
             showInfoDialog("Hide Widget Logo", "Makes the widget fully transparent by hiding the icon. Only the text label will remain visible.")
         );
         root.findViewById(R.id.btn_info_hide_text).setOnClickListener(v -> 
-            showInfoDialog("Hide Widget Text", "Removes the group name label displayed beneath the widget.")
+            showInfoDialog("Hide Widget Text", "Removes the widget name label displayed beneath the widget.")
         );
 
-        // ─── Load existing group data if editing ──────────────────────────
-        List<GroupStore.Group> groups = GroupStore.load(prefs);
-        GroupStore.Group existingGroup = (originalGroupName != null)
-                ? GroupStore.find(groups, originalGroupName)
+        // ─── Load existing widget data if editing ──────────────────────────
+        List<WidgetStore.Widget> widgets = WidgetStore.load(prefs);
+        WidgetStore.Widget existingGroup = (originalGroupName != null)
+                ? WidgetStore.find(widgets, originalGroupName)
                 : null;
 
         // Seed the working members set.
@@ -427,13 +427,13 @@ public class GroupEditFragment extends Fragment {
             btnPinWidget.setVisibility(View.VISIBLE);
             if (btnInfoPinWidget != null) {
                 btnInfoPinWidget.setVisibility(View.VISIBLE);
-                btnInfoPinWidget.setOnClickListener(v -> showInfoDialog("Pin Widget", "Adds a shortcut to this group directly on your home screen."));
+                btnInfoPinWidget.setOnClickListener(v -> showInfoDialog("Pin Widget", "Adds a shortcut to this widget directly on your home screen."));
             }
             btnPinWidget.setOnClickListener(v -> {
                 int[] appWidgetIds = appWidgetManager.getAppWidgetIds(new ComponentName(requireContext(), SphereWidgetProvider.class));
                 boolean alreadyPinned = false;
                 for (int id : appWidgetIds) {
-                    if (originalGroupName.equals(prefs.getString("widget_group_" + id, null))) {
+                    if (originalGroupName.equals(prefs.getString("widget_id_" + id, null))) {
                         alreadyPinned = true;
                         break;
                     }
@@ -442,7 +442,7 @@ public class GroupEditFragment extends Fragment {
                 if (alreadyPinned) {
                     new MaterialAlertDialogBuilder(requireContext())
                         .setTitle("Widget Already Pinned")
-                        .setMessage("A widget for this group is already present on your home screen. Do you want to add another one?")
+                        .setMessage("A widget for this widget is already present on your home screen. Do you want to add another one?")
                         .setPositiveButton("Add Another", (dialog, which) -> requestPinWidget(originalGroupName))
                         .setNegativeButton("Cancel", null)
                         .show();
@@ -499,7 +499,7 @@ public class GroupEditFragment extends Fragment {
         });
 
         // ─── Load members asynchronously ──────────────────────────────────
-        loadMembersAsync(prefs, groups);
+        loadMembersAsync(prefs, widgets);
         
         // --- Widget Customization UI Setup ---
         updateLivePreview();
@@ -514,15 +514,15 @@ public class GroupEditFragment extends Fragment {
         
         root.findViewById(R.id.btn_sphere_position).setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), dev.jaimin.auraorbit.SpherePositionEditorActivity.class);
-            if (originalGroupName != null) intent.putExtra("group_name", originalGroupName);
-            else intent.putExtra("group_name", nameInput.getText().toString());
+            if (originalGroupName != null) intent.putExtra("widget_name", originalGroupName);
+            else intent.putExtra("widget_name", nameInput.getText().toString());
             startActivity(intent);
         });
         
         root.findViewById(R.id.btn_sphere_blur).setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), dev.jaimin.auraorbit.SphereBlurEditorActivity.class);
-            if (originalGroupName != null) intent.putExtra("group_name", originalGroupName);
-            else intent.putExtra("group_name", nameInput.getText().toString());
+            if (originalGroupName != null) intent.putExtra("widget_name", originalGroupName);
+            else intent.putExtra("widget_name", nameInput.getText().toString());
             startActivity(intent);
         });
         
@@ -554,9 +554,9 @@ public class GroupEditFragment extends Fragment {
     private void updateLivePreview() {
         if (!isAdded()) return;
         
-        TextInputEditText nameInput = requireView().findViewById(R.id.group_name_input);
+        TextInputEditText nameInput = requireView().findViewById(R.id.widget_name_input);
         String name = nameInput.getText().toString();
-        if (name.isEmpty()) name = "Group Name";
+        if (name.isEmpty()) name = "Widget Name";
         previewLabel.setText(name);
         previewLabel.setVisibility(isHideText ? View.GONE : View.VISIBLE);
         
@@ -692,13 +692,13 @@ public class GroupEditFragment extends Fragment {
         }
     }
 
-    private void requestPinWidget(String groupName) {
+    private void requestPinWidget(String widgetName) {
         AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(requireContext());
         ComponentName myProvider = new ComponentName(requireContext(), SphereWidgetProvider.class);
 
         if (appWidgetManager.isRequestPinAppWidgetSupported()) {
             Intent callbackIntent = new Intent(requireContext(), WidgetPinnedReceiver.class);
-            callbackIntent.putExtra(WidgetPinnedReceiver.EXTRA_GROUP_NAME, groupName);
+            callbackIntent.putExtra(WidgetPinnedReceiver.EXTRA_GROUP_NAME, widgetName);
             
             int flags = PendingIntent.FLAG_UPDATE_CURRENT;
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
@@ -892,16 +892,16 @@ public class GroupEditFragment extends Fragment {
      * thread, resolving labels and icons via PackageManager. Uninstalled apps
      * are silently skipped. Results are posted to the main thread.
      *
-     * @param prefs   SharedPreferences for reading selected-app and group data.
-     * @param groups  Full group list, used for "in other group" subtitle logic.
+     * @param prefs   SharedPreferences for reading selected-app and widget data.
+     * @param widgets  Full widget list, used for "in other widget" subtitle logic.
      */
     private void loadMembersAsync(@NonNull SharedPreferences prefs,
-                                  @NonNull List<GroupStore.Group> groups) {
+                                  @NonNull List<WidgetStore.Widget> widgets) {
         android.content.Context appCtx = requireContext().getApplicationContext();
         Handler mainHandler = new Handler(Looper.getMainLooper());
 
-        // Build a package→group reverse map to detect conflicting membership.
-        Map<String, GroupStore.Group> pkgToGroup = GroupStore.packageToGroup(groups);
+        // Build a package→widget reverse map to detect conflicting membership.
+        Map<String, WidgetStore.Widget> pkgToGroup = WidgetStore.packageToWidget(widgets);
 
         executor.submit(() -> {
             PackageManager pm = appCtx.getPackageManager();
@@ -913,8 +913,8 @@ public class GroupEditFragment extends Fragment {
                 String label = ri.loadLabel(pm).toString();
                 Drawable icon = ri.loadIcon(pm);
 
-                // Determine if this app already belongs to a DIFFERENT group.
-                GroupStore.Group owningGroup = pkgToGroup.get(pkg);
+                // Determine if this app already belongs to a DIFFERENT widget.
+                WidgetStore.Widget owningGroup = pkgToGroup.get(pkg);
                 String otherGroupName = null;
                 if (owningGroup != null
                         && !owningGroup.name.equalsIgnoreCase(
@@ -956,7 +956,7 @@ public class GroupEditFragment extends Fragment {
     private boolean saveData() {
         View root = getView();
         if (root == null) return false;
-        TextInputEditText nameInput = root.findViewById(R.id.group_name_input);
+        TextInputEditText nameInput = root.findViewById(R.id.widget_name_input);
         if (nameInput == null) return false;
         
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
@@ -965,7 +965,7 @@ public class GroupEditFragment extends Fragment {
 
         // Validate: name must not be empty. If empty, don't save.
         if (newName.isEmpty()) {
-            nameInput.setError("Group name cannot be empty");
+            nameInput.setError("Widget name cannot be empty");
             nameInput.requestFocus();
             androidx.core.widget.NestedScrollView scrollView = root.findViewById(R.id.scroll_view);
             if (scrollView != null) {
@@ -977,13 +977,13 @@ public class GroupEditFragment extends Fragment {
             return false;
         }
 
-        // Reload latest group list to prevent stale-data issues (another agent
-        // may have saved groups while this fragment was open, but in practice
-        // the list is fresh because GroupStore.load is side-effect-free here).
-        List<GroupStore.Group> groups = GroupStore.load(prefs);
+        // Reload latest widget list to prevent stale-data issues (another agent
+        // may have saved widgets while this fragment was open, but in practice
+        // the list is fresh because WidgetStore.load is side-effect-free here).
+        List<WidgetStore.Widget> widgets = WidgetStore.load(prefs);
 
-        boolean ok = GroupStore.upsert(
-                groups,
+        boolean ok = WidgetStore.upsert(
+                widgets,
                 originalGroupName, // null → create; non-null → edit
                 newName,
                 selectedColor,
@@ -991,7 +991,7 @@ public class GroupEditFragment extends Fragment {
         );
 
         if (!ok) {
-            // upsert returns false on: name collision with different group,
+            // upsert returns false on: name collision with different widget,
             // or empty name (already guarded above), or old-name-not-found.
             nameInput.setError(getString(R.string.toast_group_exists));
             nameInput.requestFocus();
@@ -1009,7 +1009,7 @@ public class GroupEditFragment extends Fragment {
         }
 
         // Persist the mutated list.
-        GroupStore.save(prefs, groups);
+        WidgetStore.save(prefs, widgets);
 
         // Migrate widget preferences if name changed
         if (originalGroupName != null && !originalGroupName.equals(newName)) {
@@ -1029,13 +1029,13 @@ public class GroupEditFragment extends Fragment {
             int oldBlurRadius = prefs.getInt("pref_blur_radius_" + originalGroupName, prefs.getInt("pref_blur_radius", 50));
             int oldBlurStrength = prefs.getInt("pref_blur_strength_" + originalGroupName, prefs.getInt("pref_blur_strength", 50));
             
-            // Migrate widget group mappings to new name
+            // Migrate widget widget mappings to new name
             android.appwidget.AppWidgetManager appWidgetManager = android.appwidget.AppWidgetManager.getInstance(requireContext());
             android.content.ComponentName thisWidget = new android.content.ComponentName(requireContext(), SphereWidgetProvider.class);
             int[] appWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
             for (int id : appWidgetIds) {
-                if (originalGroupName.equals(prefs.getString("widget_group_" + id, null))) {
-                    prefs.edit().putString("widget_group_" + id, newName).apply();
+                if (originalGroupName.equals(prefs.getString("widget_id_" + id, null))) {
+                    prefs.edit().putString("widget_id_" + id, newName).apply();
                 }
             }
             
@@ -1107,24 +1107,24 @@ public class GroupEditFragment extends Fragment {
             WidgetLogoStore.saveFromUri(requireContext(), pendingLogoUri, newName);
         }
 
-        // Ensure apps added to this group are also visible on the sphere
+        // Ensure apps added to this widget are also visible on the sphere
         Set<String> selectedApps = new HashSet<>(prefs.getStringSet(AppFetcher.PREF_SELECTED_APPS, new HashSet<>()));
         if (selectedApps.addAll(workingMembers)) {
             prefs.edit().putStringSet(AppFetcher.PREF_SELECTED_APPS, selectedApps).apply();
         }
 
         if (originalGroupName == null) {
-            // Automatically prompt the user to pin the widget to their home screen for new groups
+            // Automatically prompt the user to pin the widget to their home screen for new widgets
             requestPinWidget(newName);
         } else {
-            // Update existing widgets when a group is edited
+            // Update existing widgets when a widget is edited
             SphereWidgetProvider.updateAllWidgets(requireContext());
         }
 
         Toast.makeText(requireContext(), "Saved!", Toast.LENGTH_SHORT).show();
 
         // Update originalGroupName so subsequent auto-saves (e.g. after config change)
-        // know the new identity of this group.
+        // know the new identity of this widget.
         originalGroupName = newName;
         return true;
     }
@@ -1147,14 +1147,14 @@ public class GroupEditFragment extends Fragment {
     /**
      * Data bag for a single row in the member list.
      * {@code inOtherGroupName} is {@code null} when the app belongs to no
-     * group, the current group, or no group at all.
+     * widget, the current widget, or no widget at all.
      */
     private static final class MemberRow {
         final String   packageName;
         final String   label;
         final Drawable icon;
         /**
-         * Non-null only when the app is currently in a DIFFERENT group,
+         * Non-null only when the app is currently in a DIFFERENT widget,
          * triggering the "In X — saving will move it" subtitle.
          */
         @Nullable final String inOtherGroupName;
@@ -1173,15 +1173,15 @@ public class GroupEditFragment extends Fragment {
     // ═════════════════════════════════════════════════════════════════════
 
     /**
-     * Adapter for the member list inside GroupEditFragment.
+     * Adapter for the member list inside WidgetEditFragment.
      *
      * <p>Maintains a full list and a filtered display list, just like
      * {@link AppPickerFragment}'s adapter. Toggling a row updates
      * {@link #workingMembers} in the enclosing fragment — the set is then
-     * passed to {@link GroupStore#upsert} on Save.</p>
+     * passed to {@link WidgetStore#upsert} on Save.</p>
      *
      * <p>The checkbox in each row is {@code clickable=false} (declared in
-     * {@code row_group_member.xml}), so only the row's root click fires.</p>
+     * {@code row_widget_member.xml}), so only the row's root click fires.</p>
      *
      * <p>The {@code member_subtitle} visibility is explicitly set both ways
      * in {@link #onBindViewHolder} to handle recycled views correctly.</p>
@@ -1223,7 +1223,7 @@ public class GroupEditFragment extends Fragment {
         @Override
         public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View v = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.row_group_member, parent, false);
+                    .inflate(R.layout.row_widget_member, parent, false);
             return new VH(v);
         }
 
@@ -1234,7 +1234,7 @@ public class GroupEditFragment extends Fragment {
             holder.icon.setImageDrawable(row.icon);
             holder.label.setText(row.label);
 
-            // ─── "Already in other group" subtitle + disabled state ───────
+            // ─── "Already in other widget" subtitle + disabled state ───────
             // Handle BOTH states explicitly to handle recycled views that
             // previously showed the subtitle but now should not.
             boolean lockedByOtherGroup = row.inOtherGroupName != null;
@@ -1250,7 +1250,7 @@ public class GroupEditFragment extends Fragment {
             // Detach listener before setting state to avoid re-entrant calls.
             holder.check.setOnCheckedChangeListener(null);
 
-            // App is always fully interactive, even if it belongs to another group.
+            // App is always fully interactive, even if it belongs to another widget.
             holder.check.setEnabled(true);
             holder.itemView.setEnabled(true);
             holder.itemView.setAlpha(1f);

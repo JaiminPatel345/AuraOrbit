@@ -11,9 +11,9 @@
 
     <PreferenceCategory android:title="@string/pref_category_groups">
         <Preference
-            android:key="pref_manage_groups"
-            android:title="@string/pref_manage_groups_title"
-            android:summary="@string/pref_manage_groups_summary" />
+            android:key="pref_manage_widgets"
+            android:title="@string/pref_manage_widgets_title"
+            android:summary="@string/pref_manage_widgets_summary" />
     </PreferenceCategory>
 
     

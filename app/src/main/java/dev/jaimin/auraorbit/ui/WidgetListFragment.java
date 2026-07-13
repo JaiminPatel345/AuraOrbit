@@ -21,35 +21,35 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.ArrayList;
 import java.util.List;
 
-import dev.jaimin.auraorbit.GroupStore;
+import dev.jaimin.auraorbit.WidgetStore;
 import dev.jaimin.auraorbit.R;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
- * GroupListFragment.java — Scrollable list of all configured app groups
+ * WidgetListFragment.java — Scrollable list of all configured app widgets
  * ═══════════════════════════════════════════════════════════════════════════════
  *
- * Inflates {@code fragment_group_list} (ids: {@code group_list}, {@code empty_view},
- * {@code fab_add}). Each row uses {@code row_group} (ids: {@code group_color_dot},
- * {@code group_name}, {@code group_count}).
+ * Inflates {@code fragment_widget_list} (ids: {@code group_list}, {@code empty_view},
+ * {@code fab_add}). Each row uses {@code row_widget} (ids: {@code group_color_dot},
+ * {@code widget_name}, {@code group_count}).
  *
  * ─── Data refresh ────────────────────────────────────────────────────────────
  *
- * Groups are reloaded from SharedPreferences in {@link #onResume} so that
- * returning from {@link GroupEditFragment} (after a save or delete) always
+ * Widgets are reloaded from SharedPreferences in {@link #onResume} so that
+ * returning from {@link WidgetEditFragment} (after a save or delete) always
  * shows the current state without manual cache invalidation.
  *
  * ─── Empty state ─────────────────────────────────────────────────────────────
  *
- * When no groups exist, the RecyclerView is hidden (GONE) and {@code empty_view}
- * is shown (VISIBLE). The inverse applies when at least one group exists.
+ * When no widgets exist, the RecyclerView is hidden (GONE) and {@code empty_view}
+ * is shown (VISIBLE). The inverse applies when at least one widget exists.
  *
  * ─── Navigation ──────────────────────────────────────────────────────────────
  *
- * Row taps and the FAB both navigate to {@link GroupEditFragment} using the
+ * Row taps and the FAB both navigate to {@link WidgetEditFragment} using the
  * shared {@code R.id.settings_container} back-stack pattern.
  */
-public class GroupListFragment extends Fragment {
+public class WidgetListFragment extends Fragment {
 
     // ─── Adapter reference kept so onResume can swap data ─────────────────
     private GroupAdapter adapter;
@@ -65,7 +65,7 @@ public class GroupListFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_group_list, container, false);
+        return inflater.inflate(R.layout.fragment_widget_list, container, false);
     }
 
     @Override
@@ -81,7 +81,7 @@ public class GroupListFragment extends Fragment {
         adapter = new GroupAdapter();
         recyclerView.setAdapter(adapter);
 
-        // FAB: navigate to GroupEditFragment in "create new" mode (groupName = null).
+        // FAB: navigate to WidgetEditFragment in "create new" mode (widgetName = null).
         fab.setOnClickListener(v -> navigateToEdit(null));
     }
 
@@ -90,7 +90,7 @@ public class GroupListFragment extends Fragment {
         super.onResume();
         // Set the fragment title in the Activity's action bar.
         requireActivity().setTitle(R.string.title_groups);
-        // Reload groups — this covers the "return from GroupEditFragment" case.
+        // Reload widgets — this covers the "return from WidgetEditFragment" case.
         reloadGroups();
     }
 
@@ -99,19 +99,19 @@ public class GroupListFragment extends Fragment {
     // ─────────────────────────────────────────────────────────────────────
 
     /**
-     * Reads the current group list from SharedPreferences and updates the
+     * Reads the current widget list from SharedPreferences and updates the
      * adapter and empty-state visibility. Safe to call from the main thread
-     * because {@link GroupStore#load} only does a JSON parse.
+     * because {@link WidgetStore#load} only does a JSON parse.
      */
     private void reloadGroups() {
         SharedPreferences prefs =
                 PreferenceManager.getDefaultSharedPreferences(requireContext());
-        List<GroupStore.Group> groups = GroupStore.load(prefs);
+        List<WidgetStore.Widget> widgets = WidgetStore.load(prefs);
 
-        adapter.setGroups(groups);
+        adapter.setGroups(widgets);
 
         // Toggle empty state visibility
-        if (groups.isEmpty()) {
+        if (widgets.isEmpty()) {
             recyclerView.setVisibility(View.GONE);
             emptyView.setVisibility(View.VISIBLE);
         } else {
@@ -125,31 +125,31 @@ public class GroupListFragment extends Fragment {
     // ─────────────────────────────────────────────────────────────────────
 
     /**
-     * Navigates to {@link GroupEditFragment}, passing the group name as an
+     * Navigates to {@link WidgetEditFragment}, passing the widget name as an
      * argument (or {@code null} for the create-new flow).
      *
-     * @param groupName  Name of the group to edit, or {@code null} to create new.
+     * @param widgetName  Name of the widget to edit, or {@code null} to create new.
      */
-    private void navigateToEdit(@Nullable String groupName) {
+    private void navigateToEdit(@Nullable String widgetName) {
         getParentFragmentManager()
                 .beginTransaction()
-                .replace(R.id.settings_container, GroupEditFragment.newInstance(groupName))
+                .replace(R.id.settings_container, WidgetEditFragment.newInstance(widgetName))
                 .addToBackStack(null)
                 .commit();
     }
 
     /**
-     * Shows a confirmation dialog before deleting the group.
+     * Shows a confirmation dialog before deleting the widget.
      */
-    private void confirmDelete(@NonNull String groupName) {
+    private void confirmDelete(@NonNull String widgetName) {
         new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-                .setTitle(getString(R.string.dialog_delete_confirm, groupName))
+                .setTitle(getString(R.string.dialog_delete_confirm, widgetName))
                 .setMessage(R.string.dialog_delete_confirm_msg)
                 .setPositiveButton(R.string.btn_delete_group, (dialog, which) -> {
                     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
-                    List<GroupStore.Group> freshGroups = GroupStore.load(prefs);
-                    GroupStore.delete(freshGroups, groupName);
-                    GroupStore.save(prefs, freshGroups);
+                    List<WidgetStore.Widget> freshGroups = WidgetStore.load(prefs);
+                    WidgetStore.delete(freshGroups, widgetName);
+                    WidgetStore.save(prefs, freshGroups);
                     dev.jaimin.auraorbit.SphereWidgetProvider.updateAllWidgets(requireContext());
 
                     android.widget.Toast.makeText(requireContext(),
@@ -167,20 +167,20 @@ public class GroupListFragment extends Fragment {
     // ═════════════════════════════════════════════════════════════════════
 
     /**
-     * Adapter for the group list.
+     * Adapter for the widget list.
      *
-     * <p>Each row shows a coloured oval ({@code group_color_dot}), the group name
-     * ({@code group_name}), and the member count ({@code group_count}).
-     * Tapping a row opens {@link GroupEditFragment} for that group.</p>
+     * <p>Each row shows a coloured oval ({@code group_color_dot}), the widget name
+     * ({@code widget_name}), and the member count ({@code group_count}).
+     * Tapping a row opens {@link WidgetEditFragment} for that widget.</p>
      */
     private final class GroupAdapter
             extends RecyclerView.Adapter<GroupAdapter.VH> {
 
-        private final List<GroupStore.Group> items = new ArrayList<>();
+        private final List<WidgetStore.Widget> items = new ArrayList<>();
 
-        void setGroups(@NonNull List<GroupStore.Group> groups) {
+        void setGroups(@NonNull List<WidgetStore.Widget> widgets) {
             items.clear();
-            items.addAll(groups);
+            items.addAll(widgets);
             notifyDataSetChanged();
         }
 
@@ -188,19 +188,19 @@ public class GroupListFragment extends Fragment {
         @Override
         public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View v = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.row_group, parent, false);
+                    .inflate(R.layout.row_widget, parent, false);
             return new VH(v);
         }
 
         @Override
         public void onBindViewHolder(@NonNull VH holder, int position) {
-            GroupStore.Group group = items.get(position);
+            WidgetStore.Widget widget = items.get(position);
 
-            // ─── Color dot: oval GradientDrawable filled with group color ─
+            // ─── Color dot: oval GradientDrawable filled with widget color ─
             GradientDrawable oval = new GradientDrawable();
             oval.setShape(GradientDrawable.OVAL);
             try {
-                oval.setColor(Color.parseColor(group.color));
+                oval.setColor(Color.parseColor(widget.color));
             } catch (IllegalArgumentException e) {
                 // Defensive: fall back to white if the stored hex is malformed.
                 oval.setColor(Color.WHITE);
@@ -209,17 +209,17 @@ public class GroupListFragment extends Fragment {
             
             // ─── Custom Logo Preview ───────────────────────────────────────
             boolean hideLogo = PreferenceManager.getDefaultSharedPreferences(requireContext())
-                    .getBoolean("pref_widget_hide_logo_" + group.name, false);
+                    .getBoolean("pref_widget_hide_logo_" + widget.name, false);
                     
             if (hideLogo) {
                 holder.planetIcon.setVisibility(View.GONE);
                 holder.colorDot.setVisibility(View.GONE);
                 holder.customLogo.setVisibility(View.GONE);
-            } else if (dev.jaimin.auraorbit.WidgetLogoStore.exists(requireContext(), group.name)) {
+            } else if (dev.jaimin.auraorbit.WidgetLogoStore.exists(requireContext(), widget.name)) {
                 holder.planetIcon.setVisibility(View.GONE);
                 holder.colorDot.setVisibility(View.GONE);
                 holder.customLogo.setVisibility(View.VISIBLE);
-                android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeFile(dev.jaimin.auraorbit.WidgetLogoStore.file(requireContext(), group.name).getAbsolutePath());
+                android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeFile(dev.jaimin.auraorbit.WidgetLogoStore.file(requireContext(), widget.name).getAbsolutePath());
                 if (bitmap != null) {
                     holder.customLogo.setImageBitmap(bitmap);
                 }
@@ -229,15 +229,15 @@ public class GroupListFragment extends Fragment {
                 holder.customLogo.setVisibility(View.GONE);
             }
 
-            holder.name.setText(group.name);
+            holder.name.setText(widget.name);
             holder.count.setText(getString(R.string.group_member_count,
-                    group.packages.size()));
+                    widget.packages.size()));
 
-            // Row tap → edit this group
-            holder.itemView.setOnClickListener(v -> navigateToEdit(group.name));
+            // Row tap → edit this widget
+            holder.itemView.setOnClickListener(v -> navigateToEdit(widget.name));
 
             // Delete button tap
-            holder.btnDelete.setOnClickListener(v -> confirmDelete(group.name));
+            holder.btnDelete.setOnClickListener(v -> confirmDelete(widget.name));
         }
 
         @Override
@@ -260,7 +260,7 @@ public class GroupListFragment extends Fragment {
                 colorDot  = itemView.findViewById(R.id.group_color_dot);
                 planetIcon = itemView.findViewById(R.id.group_icon_planet);
                 customLogo = itemView.findViewById(R.id.group_custom_logo);
-                name      = itemView.findViewById(R.id.group_name);
+                name      = itemView.findViewById(R.id.widget_name);
                 count     = itemView.findViewById(R.id.group_count);
                 btnDelete = itemView.findViewById(R.id.btn_delete_group);
             }

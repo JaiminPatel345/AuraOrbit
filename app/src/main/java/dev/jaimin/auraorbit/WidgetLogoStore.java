@@ -11,16 +11,16 @@ import java.io.InputStream;
 public class WidgetLogoStore {
     private static final String DEFAULT_FILE_NAME = "widget_logo.png";
 
-    public static boolean exists(Context context, String groupName) {
-        return file(context, groupName).exists();
+    public static boolean exists(Context context, String widgetName) {
+        return file(context, widgetName).exists();
     }
     
     public static boolean exists(Context context) {
         return exists(context, null);
     }
 
-    public static void clear(Context context, String groupName) {
-        File f = file(context, groupName);
+    public static void clear(Context context, String widgetName) {
+        File f = file(context, widgetName);
         if (f.exists()) {
             f.delete();
         }
@@ -30,7 +30,7 @@ public class WidgetLogoStore {
         clear(context, null);
     }
 
-    public static boolean saveFromUri(Context context, Uri uri, String groupName) {
+    public static boolean saveFromUri(Context context, Uri uri, String widgetName) {
         try {
             InputStream in = context.getContentResolver().openInputStream(uri);
             if (in == null) return false;
@@ -66,7 +66,7 @@ public class WidgetLogoStore {
                 }
             }
 
-            File f = file(context, groupName);
+            File f = file(context, widgetName);
             FileOutputStream out = new FileOutputStream(f);
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
             out.flush();
@@ -84,10 +84,10 @@ public class WidgetLogoStore {
         return saveFromUri(context, uri, null);
     }
 
-    public static File file(Context context, String groupName) {
-        String fileName = (groupName == null || groupName.isEmpty()) 
+    public static File file(Context context, String widgetName) {
+        String fileName = (widgetName == null || widgetName.isEmpty()) 
                 ? DEFAULT_FILE_NAME 
-                : "widget_logo_" + groupName.replaceAll("[^a-zA-Z0-9_-]", "") + ".png";
+                : "widget_logo_" + widgetName.replaceAll("[^a-zA-Z0-9_-]", "") + ".png";
         return new File(context.getFilesDir(), fileName);
     }
     

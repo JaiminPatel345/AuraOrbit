@@ -83,13 +83,13 @@ public class SphereModeActivity extends AndroidApplication {
         config.b = 8;
         config.a = 8;
 
-        // Read group_name extra if opened from a pinned group widget
-        String groupName = getIntent().getStringExtra("group_name");
+        // Read widget_name extra if opened from a pinned widget widget
+        String widgetName = getIntent().getStringExtra("widget_name");
 
         // Initialize libGDX with activityMode=true so the engine bypasses all
         // wallpaper-specific guards (page isolation, edge exclusion, zoom revert,
         // command gating).
-        sphereEngine = new SphereEngine(this, true, groupName);
+        sphereEngine = new SphereEngine(this, true, widgetName);
         View glView = initializeForView(sphereEngine, config);
         glView.setClickable(true); // Ensure glView consumes clicks
         if (graphics.getView() instanceof android.view.SurfaceView) {
@@ -97,19 +97,19 @@ public class SphereModeActivity extends AndroidApplication {
             surfaceView.getHolder().setFormat(android.graphics.PixelFormat.TRANSLUCENT);
             surfaceView.setZOrderOnTop(true);
         }
-        String scalePref = groupName != null ? "pref_sphere_scale_" + groupName : "pref_sphere_scale";
-        String radiusPref = groupName != null ? "pref_blur_radius_" + groupName : "pref_blur_radius";
-        String strengthPref = groupName != null ? "pref_blur_strength_" + groupName : "pref_blur_strength";
-        String posPref = groupName != null ? "pref_sphere_position_" + groupName : "pref_sphere_position";
-        String xPref = groupName != null ? "pref_sphere_x_" + groupName : "pref_sphere_x";
-        String yPref = groupName != null ? "pref_sphere_y_" + groupName : "pref_sphere_y";
+        String scalePref = widgetName != null ? "pref_sphere_scale_" + widgetName : "pref_sphere_scale";
+        String radiusPref = widgetName != null ? "pref_blur_radius_" + widgetName : "pref_blur_radius";
+        String strengthPref = widgetName != null ? "pref_blur_strength_" + widgetName : "pref_blur_strength";
+        String posPref = widgetName != null ? "pref_sphere_position_" + widgetName : "pref_sphere_position";
+        String xPref = widgetName != null ? "pref_sphere_x_" + widgetName : "pref_sphere_x";
+        String yPref = widgetName != null ? "pref_sphere_y_" + widgetName : "pref_sphere_y";
 
         float scale = prefs.getFloat(scalePref, 1.0f);
         String pos = prefs.getString(posPref, "center");
         int blurRadiusPref = prefs.getInt(radiusPref, 50);
         int blurStrengthPref = prefs.getInt(strengthPref, 50);
         // Migrate old pref_blur_amount if the new ones don't exist
-        if (!prefs.contains(radiusPref) && groupName == null && prefs.contains("pref_blur_amount")) {
+        if (!prefs.contains(radiusPref) && widgetName == null && prefs.contains("pref_blur_amount")) {
             int oldAmount = prefs.getInt("pref_blur_amount", 0);
             blurRadiusPref = oldAmount;
             blurStrengthPref = oldAmount > 0 ? 50 : 0;
@@ -244,10 +244,10 @@ public class SphereModeActivity extends AndroidApplication {
         setIntent(intent);
         
         // If the activity was already running and another widget was clicked,
-        // update the engine with the new group name!
+        // update the engine with the new widget name!
         if (sphereEngine != null) {
-            String groupName = intent.getStringExtra("group_name");
-            sphereEngine.setPinnedGroupName(groupName);
+            String widgetName = intent.getStringExtra("widget_name");
+            sphereEngine.setPinnedGroupName(widgetName);
         }
     }
 

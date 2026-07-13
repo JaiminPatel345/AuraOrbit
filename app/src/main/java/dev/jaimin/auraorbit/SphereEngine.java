@@ -72,12 +72,12 @@ import java.util.TreeSet;
  *    so the live wallpaper appears transparent; else a procedural vertical
  *    gradient texture as a final fallback.
  *
- * 2. **Group Backdrop Layer** (ModelBatch, 3D)
+ * 2. **Widget Backdrop Layer** (ModelBatch, 3D)
  *    Renders translucent colored convex-hull polygon patches behind each app
- *    group cluster. These patches are built as padded spherical polygons that
- *    precisely cover the group's icons, and they rotate rigidly with the sphere.
+ *    widget cluster. These patches are built as padded spherical polygons that
+ *    precisely cover the widget's icons, and they rotate rigidly with the sphere.
  *    IntAttribute.CullFace=GL_NONE makes patches visible from both the front
- *    and back of the sphere, so users can see where a group is even when it is
+ *    and back of the sphere, so users can see where a widget is even when it is
  *    on the far side.
  *
  * 3. **App Icon Layer** (DecalBatch, 3D billboarded)
@@ -104,7 +104,7 @@ import java.util.TreeSet;
  * ─── Layout ─────────────────────────────────────────────────────────────────
  *
  * ALL N apps are placed on a single plain Fibonacci sphere for perfectly uniform
- * spacing. Every icon has the same inter-icon distance — grouped or not. Groups
+ * spacing. Every icon has the same inter-icon distance — grouped or not. Widgets
  * stay spatially contiguous by ASSIGNING which Fibonacci lattice point each app
  * gets (a permutation), never by distorting the lattice.
  *
@@ -192,7 +192,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private PerspectiveCamera camera;
     private SpriteBatch spriteBatch;       // For 2D background and empty-state hint
     private DecalBatch decalBatch;         // For 3D billboarded app icons
-    private ModelBatch modelBatch;         // For 3D group backdrop meshes
+    private ModelBatch modelBatch;         // For 3D widget backdrop meshes
 
     // ─── Background Textures ────────────────────────────────────────────
     /**
@@ -269,7 +269,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * 0.95 spacing is the upper bound so icons never overlap (5% clearance to neighbor).
      *
      * Used everywhere icon size drives visual output: decal dimensions, hit
-     * radius, group cloth pad. NOT used in computeCameraDistance (camera stays
+     * radius, widget cloth pad. NOT used in computeCameraDistance (camera stays
      * slider-referenced) and NOT in the effectiveRadius formula itself.
      */
     private float effectiveIconSize;
@@ -349,7 +349,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      */
     private float idleBlend = 1f;
 
-    // ─── Group Backdrop Meshes ──────────────────────────────────────────
+    // ─── Widget Backdrop Meshes ──────────────────────────────────────────
     private Array<ModelInstance> groupBackdrops;
     private Array<Model> groupModels;  // Must be disposed
     /**
@@ -757,7 +757,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      */
     private static final Set<String> RELEVANT_KEYS = Set.of(
             "selected_app_packages",
-            GroupStore.PREF_GROUPS_JSON,
+            WidgetStore.PREF_GROUPS_JSON,
             "pref_show_background",
             BackgroundStore.PREF_BACKGROUND_VERSION,
             "pref_sphere_radius",
@@ -788,7 +788,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
     /**
      * If non-null, this engine instance is running inside a pinned widget,
-     * and should only render apps belonging to this specific group.
+     * and should only render apps belonging to this specific widget.
      */
     private String pinnedGroupName = null;
 
@@ -812,7 +812,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * @param context      The Android context ({@link SphereModeActivity}).
      * @param activityMode {@code true} when running inside a fullscreen activity
      *                     that owns all input exclusively.
-     * @param pinnedGroupName The name of the group to display exclusively, or null for all apps.
+     * @param pinnedGroupName The name of the widget to display exclusively, or null for all apps.
      */
     public SphereEngine(Context context, boolean activityMode, String pinnedGroupName) {
         this.context = context;
@@ -824,13 +824,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     }
 
     /**
-     * Updates the pinned group name dynamically (used when SphereModeActivity receives onNewIntent).
+     * Updates the pinned widget name dynamically (used when SphereModeActivity receives onNewIntent).
      */
     public void setPinnedGroupName(String newGroupName) {
         if ((this.pinnedGroupName == null && newGroupName != null) || 
             (this.pinnedGroupName != null && !this.pinnedGroupName.equals(newGroupName))) {
             this.pinnedGroupName = newGroupName;
-            // Force a rebuild to apply the new group filtering
+            // Force a rebuild to apply the new widget filtering
             lastConfigSnapshot = ""; 
             applyConfig();
         }
@@ -988,7 +988,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         Set<String> selectedApps = prefs.getStringSet("selected_app_packages", new java.util.HashSet<>());
         sb.append(new TreeSet<>(selectedApps)).append('|');
 
-        sb.append(prefs.getString(GroupStore.PREF_GROUPS_JSON, "")).append('|');
+        sb.append(prefs.getString(WidgetStore.PREF_GROUPS_JSON, "")).append('|');
         sb.append(prefs.getBoolean("pref_show_background", true)).append('|');
         sb.append(prefs.getInt(BackgroundStore.PREF_BACKGROUND_VERSION, 0)).append('|');
         sb.append(prefs.getInt("pref_sphere_radius", 50)).append('|');
@@ -1030,7 +1030,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * ─── What is rebuilt ─────────────────────────────────────────────────
      *
      * - All app icon textures (disposed then re-fetched from PackageManager)
-     * - Group backdrop 3D models (disposed then rebuilt from new GroupStore data)
+     * - Widget backdrop 3D models (disposed then rebuilt from new WidgetStore data)
      * - Background texture (disposed then reloaded from BackgroundStore)
      * - Uniform Fibonacci node distribution (recalculated with new effectiveRadius)
      * - Decals (recreated with new iconSize)
@@ -1064,7 +1064,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             }
         }
 
-        // ─── Dispose old group models ────────────────────────────────────
+        // ─── Dispose old widget models ────────────────────────────────────
         if (groupModels != null) {
             for (Model model : groupModels) model.dispose();
             groupModels.clear();
@@ -1134,7 +1134,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         if (pinnedGroupName != null) {
             java.util.List<AppFetcher.AppNode> filtered = new java.util.ArrayList<>();
             for (AppFetcher.AppNode node : appNodes) {
-                if (pinnedGroupName.equals(node.groupId)) {
+                if (pinnedGroupName.equals(node.widgetId)) {
                     filtered.add(node);
                 } else {
                     if (node.iconTexture != null) node.iconTexture.dispose();
@@ -1218,38 +1218,38 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  Uniform Fibonacci Sphere Distribution with Contiguous Group Assignment
+    //  Uniform Fibonacci Sphere Distribution with Contiguous Widget Assignment
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
      * Distributes all N app nodes uniformly on the sphere using a single plain
-     * Fibonacci sphere lattice, then assigns positions to nodes so that group
+     * Fibonacci sphere lattice, then assigns positions to nodes so that widget
      * members occupy a contiguous patch of the lattice.
      *
      * ─── Why Plain Fibonacci (not slot+sunflower)? ────────────────────────
      *
-     * The old slot+sunflower layout squeezed group members into spherical caps
+     * The old slot+sunflower layout squeezed widget members into spherical caps
      * whose radius was bounded by the slot-separation angle — causing members
-     * to collide with neighboring slots' icons when groups were large. More
+     * to collide with neighboring slots' icons when widgets were large. More
      * fundamentally, the sunflower sub-layout used different inter-icon spacing
-     * inside a group than the global Fibonacci spacing, so apps had unequal
+     * inside a widget than the global Fibonacci spacing, so apps had unequal
      * distances to their neighbors depending on whether they were grouped.
      *
      * The new approach: ALL N icons live on the SAME Fibonacci lattice, so
      * every icon has the same minimum angular separation to its nearest neighbor,
      * grouped or not.
      *
-     * ─── Contiguous Group Assignment ─────────────────────────────────────
+     * ─── Contiguous Widget Assignment ─────────────────────────────────────
      *
      * We permute which lattice point each app gets (never moving the points):
      *
      *   1. Compute N Fibonacci unit directions as candidate positions.
-     *   2. Sort groups in descending member-count order so large groups get
+     *   2. Sort widgets in descending member-count order so large widgets get
      *      first pick of the best-separated seed points.
-     *   3. For each group: pick a seed = the unassigned lattice point with the
+     *   3. For each widget: pick a seed = the unassigned lattice point with the
      *      maximum min-angular-distance to ALL already-assigned points (i.e.,
      *      the point that is farthest from everything assigned so far). For
-     *      the very first group (nothing assigned yet) any point works — use
+     *      the very first widget (nothing assigned yet) any point works — use
      *      index 0. Then greedily assign the (M−1) nearest unassigned points
      *      to the seed direction (by dot-product to seed). This yields a
      *      spatially contiguous patch of pristine lattice points.
@@ -1264,7 +1264,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      *   effectiveRadius = clamp(0.52 × iconSize × √N, 1.6×iconSize, sphereRadius)
      *
      * 0.52 gives more breathing room than the old 0.48 so icons are comfortably
-     * spaced. The group-spread floor term is gone — no caps or sub-layouts any more.
+     * spaced. The widget-spread floor term is gone — no caps or sub-layouts any more.
      * computeCameraDistance() still uses sphereRadius (the slider) as its
      * reference, so the camera envelope is fixed.
      *
@@ -1337,21 +1337,21 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             );
         }
 
-        // ─── Collect group memberships (descending by size for seed priority) ─
-        // groupEntries: list of (groupId, [nodeIndices]) sorted largest first.
+        // ─── Collect widget memberships (descending by size for seed priority) ─
+        // groupEntries: list of (widgetId, [nodeIndices]) sorted largest first.
         LinkedHashMap<String, List<Integer>> groupMap = new LinkedHashMap<>();
         for (int i = 0; i < N; i++) {
             AppFetcher.AppNode node = appNodes.get(i);
-            if (node.groupId != null) {
-                groupMap.computeIfAbsent(node.groupId, k -> new ArrayList<>()).add(i);
+            if (node.widgetId != null) {
+                groupMap.computeIfAbsent(node.widgetId, k -> new ArrayList<>()).add(i);
             }
         }
-        // Filter to groups with M >= 2 (singletons behave like ungrouped apps).
+        // Filter to widgets with M >= 2 (singletons behave like ungrouped apps).
         List<Map.Entry<String, List<Integer>>> groupEntries = new ArrayList<>();
         for (Map.Entry<String, List<Integer>> e : groupMap.entrySet()) {
             if (e.getValue().size() >= 2) groupEntries.add(e);
         }
-        // Descending size so large groups get first pick of best-separated seeds.
+        // Descending size so large widgets get first pick of best-separated seeds.
         groupEntries.sort((a, b) -> b.getValue().size() - a.getValue().size());
 
         // ─── Permutation: assign a lattice index to each node index ──────────
@@ -1362,7 +1362,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // Parallel: is lattice point i already claimed?
         boolean[] latticeClaimed = new boolean[N];
 
-        // ─── Assign groups contiguously ───────────────────────────────────
+        // ─── Assign widgets contiguously ───────────────────────────────────
         int totalAssigned = 0;
         for (Map.Entry<String, List<Integer>> entry : groupEntries) {
             List<Integer> members = entry.getValue();
@@ -1370,7 +1370,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
             // ── Choose seed: unassigned lattice point farthest from assigned ──
             // "Farthest" = maximizes min-dot-product distance to all assigned pts.
-            // For the very first group (totalAssigned==0) no assigned pts exist;
+            // For the very first widget (totalAssigned==0) no assigned pts exist;
             // use lattice index 0 as the seed (any choice is valid).
             int seedLattice;
             if (totalAssigned == 0) {
@@ -1419,7 +1419,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 return Float.compare(db, da);
             });
 
-            // Assign first M candidates to this group's members.
+            // Assign first M candidates to this widget's members.
             for (int k = 0; k < M && k < candidates.size(); k++) {
                 int li = candidates.get(k)[0];
                 int nodeIdx = members.get(k);
@@ -1433,7 +1433,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // Walk lattice indices in order; assign to ungrouped nodes in node order.
         int nextLattice = 0;
         for (int i = 0; i < N; i++) {
-            if (positionFor[i] >= 0) continue; // already assigned by a group
+            if (positionFor[i] >= 0) continue; // already assigned by a widget
             // Advance to next unclaimed lattice point.
             while (nextLattice < N && latticeClaimed[nextLattice]) nextLattice++;
             if (nextLattice < N) {
@@ -1450,8 +1450,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             nodePositions[i] = new Vector3(fibDirs[li]).scl(effectiveRadius);
         }
 
-        Log.d(TAG, "Distributed " + N + " nodes uniformly (Fibonacci+contiguous group assignment),"
-                + " groups=" + groupEntries.size());
+        Log.d(TAG, "Distributed " + N + " nodes uniformly (Fibonacci+contiguous widget assignment),"
+                + " widgets=" + groupEntries.size());
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -1496,17 +1496,17 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  Group Convex-Hull Polygon Mesh Generation
+    //  Widget Convex-Hull Polygon Mesh Generation
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
-     * Builds translucent colored convex-hull polygon patches behind each app group.
+     * Builds translucent colored convex-hull polygon patches behind each app widget.
      *
      * ─── Visual Design ───────────────────────────────────────────────────
      *
-     * Each group gets a semi-transparent polygon positioned at radius
+     * Each widget gets a semi-transparent polygon positioned at radius
      * 0.90 × effectiveRadius — slightly inside the icon sphere so patches appear
-     * as colored cloth draped under the group's icons. The polygon fully encloses
+     * as colored cloth draped under the widget's icons. The polygon fully encloses
      * every member icon with a smooth rounded margin via Minkowski-sum padding.
      *
      * IntAttribute.CullFace=GL_NONE disables back-face culling so patches are
@@ -1516,11 +1516,11 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      *
      * ─── Why Gnomonic Projection? ─────────────────────────────────────────
      *
-     * The convex hull of the group's icons must be computed in a flat 2D space.
+     * The convex hull of the widget's icons must be computed in a flat 2D space.
      * Gnomonic projection maps geodesics (great-circle arcs on the sphere) to
      * straight lines in the plane, so the 2D convex hull of the projected
      * points IS the spherical convex hull of the original directions. For the
-     * small angular extents of typical groups (≪ hemisphere), gnomonic
+     * small angular extents of typical widgets (≪ hemisphere), gnomonic
      * coordinates are nearly identical to simple tangent-plane projection,
      * and d·c > 0 always holds.
      *
@@ -1537,7 +1537,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      *   5. Subdivide each hull edge so no segment spans > 0.15 gnomonic units.
      *   6. Inverse-project boundary vertices back to sphere at 0.90R.
      *   7. Fan-triangulate from centroid vertex; add mid-ring for sphere-curvature.
-     *   8. Material: group color at 32% alpha (base; overridden per-frame for depth cue),
+     *   8. Material: widget color at 32% alpha (base; overridden per-frame for depth cue),
      *      GL_NONE cull face.
      *
      * ─── Geometry in sphere-local space ──────────────────────────────────
@@ -1553,16 +1553,16 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
         if (appNodes == null || appNodes.isEmpty()) return;
 
-        // ─── Collect groups (M >= 2 only) ─────────────────────────────────
+        // ─── Collect widgets (M >= 2 only) ─────────────────────────────────
         LinkedHashMap<String, List<Integer>> groupSlots = new LinkedHashMap<>();
         Map<String, String> groupColorMap = new HashMap<>();
 
         for (int i = 0; i < appNodes.size(); i++) {
             AppFetcher.AppNode node = appNodes.get(i);
-            if (node.groupId != null) {
-                groupSlots.computeIfAbsent(node.groupId, k -> new ArrayList<>()).add(i);
+            if (node.widgetId != null) {
+                groupSlots.computeIfAbsent(node.widgetId, k -> new ArrayList<>()).add(i);
                 if (node.groupColorHex != null) {
-                    groupColorMap.put(node.groupId, node.groupColorHex);
+                    groupColorMap.put(node.widgetId, node.groupColorHex);
                 }
             }
         }
@@ -1570,12 +1570,12 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         ModelBuilder modelBuilder = new ModelBuilder();
 
         for (Map.Entry<String, List<Integer>> entry : groupSlots.entrySet()) {
-            String groupId        = entry.getKey();
+            String widgetId        = entry.getKey();
             List<Integer> indices = entry.getValue();
             int M = indices.size();
-            if (M < 2) continue;  // backdrops only for groups with ≥2 members
+            if (M < 2) continue;  // backdrops only for widgets with ≥2 members
 
-            String colorHex = groupColorMap.getOrDefault(groupId, "#FFFFFF");
+            String colorHex = groupColorMap.getOrDefault(widgetId, "#FFFFFF");
             Color gdxColor  = parseHexColor(colorHex, 0.75f);
 
             // ── 1. Centroid direction c ────────────────────────────────────
@@ -1583,7 +1583,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             for (int idx : indices) {
                 c.add(nodePositions[idx]);
             }
-            c.nor(); // unit direction toward group centroid on sphere
+            c.nor(); // unit direction toward widget centroid on sphere
 
             // ── 2. Tangent basis (t1, t2) at c ────────────────────────────
             // Degenerate-safe: cross with Y unless c ≈ ±Y.
@@ -1599,7 +1599,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // ── 3. Gnomonic projection: member directions → (u, v) ──────────
             // For direction d: scale s = 1/(d·c); u = s*(d·t1); v = s*(d·t2).
             // Guard d·c < 0.1 to avoid near-zero division (should never trigger
-            // for compact groups, but be defensive).
+            // for compact widgets, but be defensive).
             float[] us = new float[M];
             float[] vs = new float[M];
             for (int k = 0; k < M; k++) {
@@ -1709,7 +1709,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
             modelBuilder.begin();
             MeshPartBuilder pb = modelBuilder.part(
-                    "hull_" + groupId,
+                    "hull_" + widgetId,
                     GL20.GL_TRIANGLES,
                     attributes,
                     material
@@ -1746,7 +1746,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // c is already normalised (nor() called above); copy to keep it stable.
             groupPatchDirs.add(new Vector3(c));
 
-            Log.d(TAG, "Group '" + groupId + "': " + M + " apps, hull boundary=" + B
+            Log.d(TAG, "Widget '" + widgetId + "': " + M + " apps, hull boundary=" + B
                     + " verts, centroid=" + c);
         }
     }
@@ -2483,7 +2483,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             renderBackground();
         }
 
-        // ─── Layer 2: Group Backdrop Meshes ─────────────────────────────
+        // ─── Layer 2: Widget Backdrop Meshes ─────────────────────────────
         if (groupBackdrops != null && groupBackdrops.size > 0 && pageVisibility > 0.01f) {
             renderGroupBackdrops();
         }
@@ -2933,7 +2933,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  Render Layer 2 — Group Convex-Hull Polygon Patches
+    //  Render Layer 2 — Widget Convex-Hull Polygon Patches
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
@@ -2947,10 +2947,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      *
      * ─── Front/Back Depth Cue ─────────────────────────────────────────────
      *
-     * Opacity is modulated per instance each frame so groups on the front of the
-     * sphere appear vivid (alpha 0.35) while groups on the far side appear faint
+     * Opacity is modulated per instance each frame so widgets on the front of the
+     * sphere appear vivid (alpha 0.35) while widgets on the far side appear faint
      * (alpha 0.12). This gives the user a clear visual signal to rotate the sphere
-     * toward a group that is currently on the back side.
+     * toward a widget that is currently on the back side.
      *
      * The rotated centroid z-component (in [-1, 1], +z = facing camera) is mapped
      * to opacity via a lerp: alpha = lerp(0.12, 0.35, (z+1)*0.5).
@@ -3152,7 +3152,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * The rotation is applied by libGDX's Quaternion.transform(), which
      * computes v' = q * v * q⁻¹ efficiently without constructing a matrix.
      *
-     * This preserves the original positions (important for group cap
+     * This preserves the original positions (important for widget cap
      * calculations) while giving us the visually correct rotated positions.
      *
      * @param index Index into nodePositions and appNodes
@@ -3755,7 +3755,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             }
         }
 
-        // ─── Dispose group models ───────────────────────────────────────
+        // ─── Dispose widget models ───────────────────────────────────────
         if (groupModels != null) {
             for (Model model : groupModels) {
                 model.dispose();

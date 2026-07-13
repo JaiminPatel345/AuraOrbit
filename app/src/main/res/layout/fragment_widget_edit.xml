@@ -157,7 +157,7 @@
             android:id="@+id/tv_general_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Group Settings"
+            android:text="Widget Settings"
             android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="?android:attr/textColorPrimary"
@@ -186,10 +186,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:hint="@string/dialog_group_name_hint">
+                    android:hint="@string/dialog_widget_name_hint">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/group_name_input"
+                        android:id="@+id/widget_name_input"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:singleLine="true"

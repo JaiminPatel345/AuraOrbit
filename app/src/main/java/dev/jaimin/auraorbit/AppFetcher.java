@@ -53,8 +53,8 @@ import java.util.Set;
  *    SecurityException on Android 13+ when AuraOrbit itself was the active
  *    wallpaper.
  *
- * 3. **Group Configuration Parsing**: Delegates to GroupStore to map package
- *    names to group IDs/colors for the SphereEngine's visual clustering system.
+ * 3. **Widget Configuration Parsing**: Delegates to WidgetStore to map package
+ *    names to widget IDs/colors for the SphereEngine's visual clustering system.
  *
  * ─── Thread Safety ──────────────────────────────────────────────────────────
  *
@@ -113,13 +113,13 @@ public class AppFetcher {
         public Texture iconTexture;
 
         /**
-         * Group ID this app belongs to, or null if ungrouped.
+         * Widget ID this app belongs to, or null if ungrouped.
          * Used by SphereEngine to cluster apps and render colored backdrops.
          */
-        public String groupId;
+        public String widgetId;
 
         /**
-         * Group color as a hex string (e.g., "#FF6B6B"), or null if ungrouped.
+         * Widget color as a hex string (e.g., "#FF6B6B"), or null if ungrouped.
          * Parsed by SphereEngine to color the translucent backdrop mesh.
          */
         public String groupColorHex;
@@ -139,16 +139,16 @@ public class AppFetcher {
      *
      * MUST be called from the GL thread (e.g., inside SphereEngine.create()).
      *
-     * ─── Group Assignment ────────────────────────────────────────────────────
+     * ─── Widget Assignment ────────────────────────────────────────────────────
      *
-     * Group data is read via {@link GroupStore#load(SharedPreferences)} and then
-     * inverted into a package→Group map by {@link GroupStore#packageToGroup(List)}.
+     * Widget data is read via {@link WidgetStore#load(SharedPreferences)} and then
+     * inverted into a package→Widget map by {@link WidgetStore#packageToWidget(List)}.
      * This replaces the old per-key schema (groups_list / group_*_color / group_*_apps)
      * which required N+1 pref reads and two Map allocations; the new approach uses
-     * a single JSON read and a single pass over the group list.
+     * a single JSON read and a single pass over the widget list.
      *
      * @param context  Android context for PackageManager access
-     * @return List of AppNode objects ready for sphere placement, sorted by group
+     * @return List of AppNode objects ready for sphere placement, sorted by widget
      */
     public static List<AppNode> fetchSelectedApps(Context context) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
@@ -164,12 +164,12 @@ public class AppFetcher {
 
         Log.i(TAG, "Fetching " + selectedPackages.size() + " selected apps");
 
-        // ─── Read group assignments via GroupStore ───────────────────────
-        // GroupStore.load() handles both the new JSON schema and legacy key
-        // migration transparently. packageToGroup() inverts the list into a
+        // ─── Read widget assignments via WidgetStore ───────────────────────
+        // WidgetStore.load() handles both the new JSON schema and legacy key
+        // migration transparently. packageToWidget() inverts the list into a
         // fast O(1) lookup map keyed by package name.
-        Map<String, GroupStore.Group> packageToGroup =
-                GroupStore.packageToGroup(GroupStore.load(prefs));
+        Map<String, WidgetStore.Widget> packageToWidget =
+                WidgetStore.packageToWidget(WidgetStore.load(prefs));
 
         // ─── Build AppNode list ─────────────────────────────────────────
         List<AppNode> nodes = new ArrayList<>();
@@ -202,16 +202,16 @@ public class AppFetcher {
                     // Do NOT recycle the bitmap here anymore! It is cached.
                 }
 
-                // ─── Assign group metadata via GroupStore ────────────────
-                GroupStore.Group g = packageToGroup.get(packageName);
+                // ─── Assign widget metadata via WidgetStore ────────────────
+                WidgetStore.Widget g = packageToWidget.get(packageName);
                 if (g != null) {
-                    node.groupId = g.name;
+                    node.widgetId = g.name;
                     node.groupColorHex = g.color;
                 }
 
                 nodes.add(node);
                 Log.d(TAG, "Loaded: " + appName + " (" + packageName + ")"
-                        + (node.groupId != null ? " [Group: " + node.groupId + "]" : ""));
+                        + (node.widgetId != null ? " [Widget: " + node.widgetId + "]" : ""));
 
             } catch (PackageManager.NameNotFoundException e) {
                 // App was uninstalled since selection — skip silently
@@ -221,22 +221,22 @@ public class AppFetcher {
             }
         }
 
-        // ─── Sort by group for clustering on the sphere ─────────────────
-        // Ungrouped apps go to the end. Within a group, sort alphabetically.
+        // ─── Sort by widget for clustering on the sphere ─────────────────
+        // Ungrouped apps go to the end. Within a widget, sort alphabetically.
         Collections.sort(nodes, (a, b) -> {
             // Both ungrouped — sort by name
-            if (a.groupId == null && b.groupId == null) {
+            if (a.widgetId == null && b.widgetId == null) {
                 return a.appName.compareToIgnoreCase(b.appName);
             }
             // One ungrouped — push to end
-            if (a.groupId == null) return 1;
-            if (b.groupId == null) return -1;
-            // Same group — sort by name
-            if (a.groupId.equals(b.groupId)) {
+            if (a.widgetId == null) return 1;
+            if (b.widgetId == null) return -1;
+            // Same widget — sort by name
+            if (a.widgetId.equals(b.widgetId)) {
                 return a.appName.compareToIgnoreCase(b.appName);
             }
-            // Different groups — sort by group name
-            return a.groupId.compareToIgnoreCase(b.groupId);
+            // Different widgets — sort by widget name
+            return a.widgetId.compareToIgnoreCase(b.widgetId);
         });
 
         Log.i(TAG, "Successfully loaded " + nodes.size() + " app nodes");
