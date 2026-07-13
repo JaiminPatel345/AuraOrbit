@@ -102,6 +102,7 @@ public class AppPickerFragment extends Fragment {
         if (getArguments() != null && getArguments().getString("pref_key") != null) {
             prefKey = getArguments().getString("pref_key");
         }
+        setHasOptionsMenu(true);
     }
 
     @Nullable
@@ -149,13 +150,6 @@ public class AppPickerFragment extends Fragment {
             }
         });
 
-        View btnSave = root.findViewById(R.id.btn_save);
-        if (btnSave != null) {
-            btnSave.setOnClickListener(v -> {
-                requireActivity().getSupportFragmentManager().popBackStack();
-            });
-        }
-
         // Kick off the background data load.
         loadAppsAsync(prefs);
     }
@@ -174,6 +168,22 @@ public class AppPickerFragment extends Fragment {
             executor.shutdown();
             executor = null;
         }
+    }
+
+    @Override
+    public void onCreateOptionsMenu(@NonNull android.view.Menu menu, @NonNull android.view.MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        android.view.MenuItem saveItem = menu.add(android.view.Menu.NONE, 1001, android.view.Menu.NONE, "Save");
+        saveItem.setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull android.view.MenuItem item) {
+        if (item.getItemId() == 1001) {
+            requireActivity().getSupportFragmentManager().popBackStack();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     // ─────────────────────────────────────────────────────────────────────
