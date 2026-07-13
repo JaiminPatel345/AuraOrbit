@@ -174,6 +174,7 @@ import java.util.TreeSet;
 public class SphereEngine implements ApplicationListener, AndroidWallpaperListener {
 
     private static final String TAG = "AuraOrbit.Engine";
+    private static final boolean DEBUG = false;
 
     // ─── Android Context (passed from MyWallpaperService) ───────────────
     private final Context context;
@@ -745,7 +746,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * emit no wallpaper signal whatsoever — so the sphere must simply never
      * react to them: no rotation, no fling momentum, no page counting.
      */
-    private boolean edgeClaimedGesture = false;
+    // ─── Touch state for isolating the sphere ────────────────────────────
+    private boolean draggingSphere = false;
     /** Fraction of screen height treated as system edge at top and bottom. */
     private static final float EDGE_EXCLUSION_FRACTION = 0.07f;
 
@@ -1958,11 +1960,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 // two fingers are down).
                 if (pinchActive) return false;
 
-                // ─── Edge exclusion: system-born gestures never touch the sphere ─
-                // Shade pull (top edge) and gesture-nav/drawer (bottom edge) reach
-                // the wallpaper as ordinary touches with no claim signal. The flag
-                // is set once per gesture in touchDown from the start position.
-                if (edgeClaimedGesture) return false;
+                // ─── Touch isolation: only rotate if touch started on the sphere ──
+                // The draggingSphere flag is set once per gesture in touchDown.
+                if (!draggingSphere) return false;
 
                 userInteracting = true;
                 // Reset idle spin completely — ramp restarts from zero on next release.
@@ -2038,9 +2038,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             public boolean fling(float velocityX, float velocityY, int button) {
                 userInteracting = false;
 
-                // ─── Edge exclusion: no momentum from system-born gestures ───
-                if (edgeClaimedGesture) {
-                    edgeClaimedGesture = false;
+                // ─── Touch isolation: no momentum if touch started outside sphere ──
+                if (!draggingSphere) {
+                    draggingSphere = false;
                     panInProgress = false;
                     gestureCounted = true; // never page-count a system gesture
                     return false;
@@ -2091,9 +2091,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             public boolean panStop(float x, float y, int pointer, int button) {
                 userInteracting = false;
 
-                // ─── Edge exclusion: system-born gesture ends without effects ─
-                if (edgeClaimedGesture) {
-                    edgeClaimedGesture = false;
+                // ─── Touch isolation: gesture outside sphere ends without effects ─
+                if (!draggingSphere) {
+                    draggingSphere = false;
                     panInProgress = false;
                     gestureCounted = true; // never page-count a system gesture
                     return false;
@@ -2234,36 +2234,56 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                     // them. Deterministic fix: a one-finger gesture born in these
                     // zones never rotates the sphere and never counts page swipes.
                     //
-                    // In activity mode: the activity owns ALL input — no edge
-                    // exclusion zones are needed; every gesture is ours.
+                    // In activity mode: the activity owns ALL input.
+                    // If touch starts outside the sphere, we close the activity.
                     if (activityMode) {
-                        edgeClaimedGesture = false;
+                        draggingSphere = true;
                         
                         // If touch starts outside the sphere (with 30% padding), close immediately 
                         // so the user can interact with their launcher (e.g. swipe notifications).
                         if (camera != null) {
-                            com.badlogic.gdx.math.collision.Ray ray = camera.getPickRay(screenX, screenY);
-                            float radius = sphereRadius * 1.3f;
-                            if (!com.badlogic.gdx.math.Intersector.intersectRaySphere(ray, com.badlogic.gdx.math.Vector3.Zero, radius, tmpVec)) {
+                            com.badlogic.gdx.math.Vector3 projCenter = new com.badlogic.gdx.math.Vector3(0, 0, 0);
+                            camera.project(projCenter);
+                            float projScreenY = Gdx.graphics.getHeight() - projCenter.y;
+                            
+                            com.badlogic.gdx.math.Vector3 edge3d = new com.badlogic.gdx.math.Vector3(effectiveRadius * 1.3f, 0, 0);
+                            camera.project(edge3d);
+                            float hitRadiusPixels = Math.abs(edge3d.x - projCenter.x);
+                            
+                            float dx = screenX - projCenter.x;
+                            float dy = screenY - projScreenY;
+                            float dist = (float) Math.sqrt(dx * dx + dy * dy);
+                            
+                            if (dist > hitRadiusPixels) {
                                 if (context instanceof android.app.Activity) {
                                     Gdx.app.postRunnable(() -> ((android.app.Activity) context).finish());
                                 }
-                                // Return false so we don't consume the touch, 
-                                // letting the system handle the swipe if possible.
+                                draggingSphere = false;
                                 return false;
                             }
                         }
                     } else {
+                        // Live Wallpaper mode: only allow interaction if touch started inside the sphere
                         if (camera != null) {
-                            com.badlogic.gdx.math.collision.Ray ray = camera.getPickRay(screenX, screenY);
-                            float radius = effectiveRadius * 1.3f;
-                            if (!com.badlogic.gdx.math.Intersector.intersectRaySphere(ray, com.badlogic.gdx.math.Vector3.Zero, radius, tmpVec)) {
-                                edgeClaimedGesture = true;
-                            } else {
-                                edgeClaimedGesture = false;
+                            com.badlogic.gdx.math.Vector3 projCenter = new com.badlogic.gdx.math.Vector3(0, 0, 0);
+                            camera.project(projCenter);
+                            float projScreenY = Gdx.graphics.getHeight() - projCenter.y;
+                            
+                            com.badlogic.gdx.math.Vector3 edge3d = new com.badlogic.gdx.math.Vector3(effectiveRadius * 1.3f, 0, 0);
+                            camera.project(edge3d);
+                            float hitRadiusPixels = Math.abs(edge3d.x - projCenter.x);
+                            
+                            float dx = screenX - projCenter.x;
+                            float dy = screenY - projScreenY;
+                            float dist = (float) Math.sqrt(dx * dx + dy * dy);
+                            
+                            draggingSphere = dist <= hitRadiusPixels;
+                            
+                            if (DEBUG) {
+                                android.util.Log.d(TAG, "ACTION_DOWN -> dist: " + dist + ", hitRadius: " + hitRadiusPixels + " => draggingSphere: " + draggingSphere);
                             }
                         } else {
-                            edgeClaimedGesture = true;
+                            draggingSphere = false;
                         }
                     }
 
@@ -2305,7 +2325,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 // Clear our outer pinch state that super cannot reach.
                 pinchActive = false;
                 userInteracting = false;
-                edgeClaimedGesture = false;
+                draggingSphere = false;
                 // Reset page-inference gesture state on cancellation.
                 panInProgress = false;
                 gestureCounted = false;
