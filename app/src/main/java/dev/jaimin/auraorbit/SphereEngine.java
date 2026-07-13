@@ -2254,9 +2254,17 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                             }
                         }
                     } else {
-                        float hFrac = (float) screenY / Math.max(1, Gdx.graphics.getHeight());
-                        edgeClaimedGesture = hFrac < EDGE_EXCLUSION_FRACTION
-                                || hFrac > 1f - EDGE_EXCLUSION_FRACTION;
+                        if (camera != null) {
+                            com.badlogic.gdx.math.collision.Ray ray = camera.getPickRay(screenX, screenY);
+                            float radius = effectiveRadius * 1.3f;
+                            if (!com.badlogic.gdx.math.Intersector.intersectRaySphere(ray, com.badlogic.gdx.math.Vector3.Zero, radius, tmpVec)) {
+                                edgeClaimedGesture = true;
+                            } else {
+                                edgeClaimedGesture = false;
+                            }
+                        } else {
+                            edgeClaimedGesture = true;
+                        }
                     }
 
                     // ── Gesture rotation snapshot for launcher-claim revert ──────
