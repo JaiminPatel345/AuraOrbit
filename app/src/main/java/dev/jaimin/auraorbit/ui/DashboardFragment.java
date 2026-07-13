@@ -86,18 +86,20 @@ public class DashboardFragment extends Fragment {
 
         // FPS
         TextView tvFpsValue = view.findViewById(R.id.tv_fps_value);
-        int currentFps = prefs.getInt("pref_target_fps", 60);
+        String currentFpsStr = prefs.getString("pref_target_fps", "60");
+        int currentFps = 60;
+        try { currentFps = Integer.parseInt(currentFpsStr); } catch (Exception ignored) {}
         if (tvFpsValue != null) tvFpsValue.setText(currentFps + " FPS");
 
         View btnFps = view.findViewById(R.id.btn_fps);
         if (btnFps != null) {
             btnFps.setOnClickListener(v -> {
                 String[] options = {"30 FPS", "60 FPS", "90 FPS", "120 FPS"};
-                int[] values = {30, 60, 90, 120};
-                int current = prefs.getInt("pref_target_fps", 60);
+                String[] values = {"30", "60", "90", "120"};
+                String current = prefs.getString("pref_target_fps", "60");
                 int checkedItem = 1;
                 for (int i = 0; i < values.length; i++) {
-                    if (values[i] == current) {
+                    if (values[i].equals(current)) {
                         checkedItem = i;
                         break;
                     }
@@ -106,7 +108,7 @@ public class DashboardFragment extends Fragment {
                 new MaterialAlertDialogBuilder(ctx)
                         .setTitle("Select Target FPS")
                         .setSingleChoiceItems(options, checkedItem, (dialog, which) -> {
-                            prefs.edit().putInt("pref_target_fps", values[which]).apply();
+                            prefs.edit().putString("pref_target_fps", values[which]).apply();
                             if (tvFpsValue != null) tvFpsValue.setText(values[which] + " FPS");
                             dialog.dismiss();
                         })
