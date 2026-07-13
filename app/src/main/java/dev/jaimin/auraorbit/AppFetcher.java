@@ -85,7 +85,7 @@ public class AppFetcher {
      * SharedPreferences key for the set of selected package names.
      * Stored as a StringSet.
      */
-    public static final String PREF_SELECTED_APPS = "selected_app_packages";
+    public static final String PREF_SELECTED_APPS = "pref_permanent_sphere_apps";
 
     /** Cache of loaded app icon Bitmaps to make activity launches instantaneous. */
     private static final java.util.Map<String, Bitmap> sIconCache = new java.util.concurrent.ConcurrentHashMap<>();
@@ -170,6 +170,9 @@ public class AppFetcher {
         // fast O(1) lookup map keyed by package name.
         Map<String, WidgetStore.Widget> packageToWidget =
                 WidgetStore.packageToWidget(WidgetStore.load(prefs));
+
+        // ─── Combine Permanent Sphere and Widget apps ───────────────────
+        selectedPackages.addAll(packageToWidget.keySet());
 
         // ─── Build AppNode list ─────────────────────────────────────────
         List<AppNode> nodes = new ArrayList<>();

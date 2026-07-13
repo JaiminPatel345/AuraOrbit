@@ -985,8 +985,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         StringBuilder sb = new StringBuilder();
 
         // selected_app_packages — sort for deterministic ordering
-        Set<String> selectedApps = prefs.getStringSet("selected_app_packages", new java.util.HashSet<>());
+        Set<String> selectedApps = prefs.getStringSet(AppFetcher.PREF_SELECTED_APPS, new java.util.HashSet<>());
         sb.append(new TreeSet<>(selectedApps)).append('|');
+
+        sb.append(prefs.getBoolean("pref_permanent_sphere_enabled", false)).append('|');
 
         sb.append(prefs.getString(WidgetStore.PREF_GROUPS_JSON, "")).append('|');
         sb.append(prefs.getBoolean("pref_show_background", true)).append('|');
@@ -1135,6 +1137,24 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             java.util.List<AppFetcher.AppNode> filtered = new java.util.ArrayList<>();
             for (AppFetcher.AppNode node : appNodes) {
                 if (pinnedGroupName.equals(node.widgetId)) {
+                    filtered.add(node);
+                } else {
+                    if (node.iconTexture != null) node.iconTexture.dispose();
+                }
+            }
+            appNodes = filtered;
+        } else if (!activityMode && !prefs.getBoolean("pref_permanent_sphere_enabled", false)) {
+            // Live wallpaper is disabled, hide all apps
+            for (AppFetcher.AppNode node : appNodes) {
+                if (node.iconTexture != null) node.iconTexture.dispose();
+            }
+            appNodes = new java.util.ArrayList<>();
+        } else {
+            // Permanent Sphere (or SphereModeActivity preview of Permanent Sphere)
+            java.util.Set<String> permApps = prefs.getStringSet(AppFetcher.PREF_SELECTED_APPS, new java.util.HashSet<>());
+            java.util.List<AppFetcher.AppNode> filtered = new java.util.ArrayList<>();
+            for (AppFetcher.AppNode node : appNodes) {
+                if (permApps.contains(node.packageName)) {
                     filtered.add(node);
                 } else {
                     if (node.iconTexture != null) node.iconTexture.dispose();

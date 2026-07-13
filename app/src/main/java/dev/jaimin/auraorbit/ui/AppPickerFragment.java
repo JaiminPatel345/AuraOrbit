@@ -149,6 +149,13 @@ public class AppPickerFragment extends Fragment {
             }
         });
 
+        View btnSave = root.findViewById(R.id.btn_save);
+        if (btnSave != null) {
+            btnSave.setOnClickListener(v -> {
+                requireActivity().getSupportFragmentManager().popBackStack();
+            });
+        }
+
         // Kick off the background data load.
         loadAppsAsync(prefs);
     }

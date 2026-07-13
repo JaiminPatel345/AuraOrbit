@@ -38,6 +38,13 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_save"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="Save" />
+
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView

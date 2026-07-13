@@ -1,0 +1,740 @@
+commit 07a73a41a56751fb6efde136d0626f5dad062682
+Author: Jaimin Detroja <124363976+JaiminPatel345@users.noreply.github.com>
+Date:   Sat Jul 11 21:25:32 2026 +0530
+
+    fix: default widget configuration now opens Dashboard instead of Groups
+
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index c70cfde..35f172d 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -93,6 +93,9 @@
+                 <action android:name="android.intent.action.MAIN" />
+                 <category android:name="android.intent.category.LAUNCHER" />
+             </intent-filter>
++            <intent-filter>
++                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
++            </intent-filter>
+         </activity>
+ 
+         <activity
+
+commit a48e4f0994b238b37a973c3b27fa6f93922b9132
+Author: Jaimin Detroja <124363976+JaiminPatel345@users.noreply.github.com>
+Date:   Tue Jun 30 22:19:19 2026 +0530
+
+    feat: add circular background blur radius and strength controls
+
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index 3e0e7c2..c70cfde 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -118,6 +118,13 @@
+             android:name=".WidgetPinnedReceiver"
+             android:exported="false" />
+ 
++
++        <activity
++            android:name=".SphereBlurEditorActivity"
++            android:theme="@style/Theme.AuraOrbit.TransparentFullscreen"
++            android:screenOrientation="portrait"
++            android:exported="false" />
++
+         <activity
+             android:name=".DeletedWidgetActivity"
+             android:theme="@android:style/Theme.Translucent.NoTitleBar"
+
+commit 5133c51561b146a554cb16b776fbb6e0d26f31a5
+Author: Jaimin Detroja <124363976+JaiminPatel345@users.noreply.github.com>
+Date:   Tue Jun 30 01:02:40 2026 +0530
+
+    Feat: Add interactive sphere position editor with scale and drag support
+
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index d564b7f..3e0e7c2 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -95,7 +95,10 @@
+             </intent-filter>
+         </activity>
+ 
+-        
++        <activity
++            android:name=".SpherePositionEditorActivity"
++            android:exported="false"
++            android:theme="@style/Theme.Material3.Light.NoActionBar" />
+ 
+         <!-- ═══════════════════════════════════════════════════════════════
+              4. WIDGET PROVIDER (Transparent Popup Architecture)
+
+commit 63bd5a829a35e030058810aa35eeca134528e57d
+Author: Jaimin Detroja <124363976+JaiminPatel345@users.noreply.github.com>
+Date:   Tue Jun 30 00:39:26 2026 +0530
+
+    Fix #25: Implement device wallpaper selection, improve background UI, and implement BackgroundStore
+
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index 4bae35d..d564b7f 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -19,7 +19,7 @@
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+     xmlns:tools="http://schemas.android.com/tools">
+ 
+-    
++    <uses-permission android:name="android.permission.SET_WALLPAPER" />
+ 
+     <!-- ─── Feature Declarations ─────────────────────────────────────────── -->
+     <!--
+
+commit c2fdfdeb56e48bb13018f7b20790808b65ee9d41
+Author: Jaimin Detroja <124363976+JaiminPatel345@users.noreply.github.com>
+Date:   Tue Jun 9 11:42:35 2026 +0530
+
+    Fix: Use transparent theme and dedicated Activity for deleted widget popup
+
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index c8912ee..4bae35d 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -115,6 +115,11 @@
+             android:name=".WidgetPinnedReceiver"
+             android:exported="false" />
+ 
++        <activity
++            android:name=".DeletedWidgetActivity"
++            android:theme="@android:style/Theme.Translucent.NoTitleBar"
++            android:exported="false" />
++
+     </application>
+ 
+ </manifest>
+
+commit 6c4d36c80a640e2086a2bfcc2e3f18d633644399
+Author: Jaimin Detroja <124363976+JaiminPatel345@users.noreply.github.com>
+Date:   Tue Jun 9 09:08:23 2026 +0530
+
+    Implement Method 2: Dynamic group widgets via pinning
+
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index e4f2411..c8912ee 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -111,6 +111,10 @@
+                 android:resource="@xml/sphere_widget_info" />
+         </receiver>
+ 
++        <receiver
++            android:name=".WidgetPinnedReceiver"
++            android:exported="false" />
++
+     </application>
+ 
+ </manifest>
+
+commit 57cd03571e8ade4755a21dde7afb757977b4c405
+Author: Jaimin Detroja <124363976+JaiminPatel345@users.noreply.github.com>
+Date:   Tue Jun 9 00:42:42 2026 +0530
+
+    Isolate SphereModeActivity task
+
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index bff2d31..e4f2411 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -66,6 +66,9 @@
+             android:theme="@style/Theme.AuraOrbit.SphereMode"
+             android:exported="true"
+             android:screenOrientation="portrait"
++            android:taskAffinity=".SphereTask"
++            android:excludeFromRecents="true"
++            android:launchMode="singleInstance"
+             android:configChanges="orientation|screenSize|keyboardHidden">
+         </activity>
+ 
+
+commit 143ff4acdccf59f8c3386f3a4128b6cae63e4131
+Author: Jaimin Detroja <124363976+JaiminPatel345@users.noreply.github.com>
+Date:   Tue Jun 9 00:37:31 2026 +0530
+
+    Remove unused wallpaper/accessibility features and UI settings
+
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index 72f4ed0..bff2d31 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -19,19 +19,7 @@
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+     xmlns:tools="http://schemas.android.com/tools">
+ 
+-    <!-- ─── Storage Permissions ──────────────────────────────────────────── -->
+-    <!--
+-         MANAGE_EXTERNAL_STORAGE ("All files access") is required on API 30+
+-         to read the current system wallpaper via WallpaperManager.getDrawable()
+-         when OUR live wallpaper is the active wallpaper. On Android 13+,
+-         WallpaperManager.getDrawable() throws SecurityException without this
+-         permission even though the drawable is read-only. This is intentional
+-         for this personal/sideload app. tools:ignore suppresses Play Store
+-         linting (not applicable here).
+-    -->
+-    <uses-permission
+-        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+-        tools:ignore="ScopedStorage" />
++    
+ 
+     <!-- ─── Feature Declarations ─────────────────────────────────────────── -->
+     <!--
+@@ -40,10 +28,7 @@
+     -->
+     <uses-feature android:glEsVersion="0x00020000" android:required="true" />
+ 
+-    <!--
+-         Declare the live wallpaper feature so the Play Store filters correctly.
+-    -->
+-    <uses-feature android:name="android.software.live_wallpaper" android:required="true" />
++    
+ 
+     <!-- Package-visibility: we only need apps with a launcher activity.
+          This replaces QUERY_ALL_PACKAGES (Play-policy restricted). -->
+@@ -61,29 +46,7 @@
+         android:supportsRtl="true"
+         android:theme="@style/Theme.AuraOrbit">
+ 
+-        <!-- ═══════════════════════════════════════════════════════════════
+-             1. LIVE WALLPAPER SERVICE
+-             
+-             This is the entry point that Android's Wallpaper Picker invokes.
+-             - BIND_WALLPAPER permission prevents other apps from binding to it.
+-             - The intent-filter advertises this as a WallpaperService.
+-             - The meta-data points to res/xml/wallpaper.xml which declares
+-               the settings Activity and thumbnail.
+-             ═══════════════════════════════════════════════════════════════ -->
+-        <service
+-            android:name=".MyWallpaperService"
+-            android:label="@string/app_name"
+-            android:permission="android.permission.BIND_WALLPAPER"
+-            android:exported="true">
+-
+-            <intent-filter>
+-                <action android:name="android.service.wallpaper.WallpaperService" />
+-            </intent-filter>
+-
+-            <meta-data
+-                android:name="android.service.wallpaper"
+-                android:resource="@xml/wallpaper" />
+-        </service>
++        
+ 
+         <!-- ═══════════════════════════════════════════════════════════════
+              2. SPHERE MODE ACTIVITY (launcher entry point)
+@@ -104,10 +67,6 @@
+             android:exported="true"
+             android:screenOrientation="portrait"
+             android:configChanges="orientation|screenSize|keyboardHidden">
+-            <intent-filter>
+-                <action android:name="android.intent.action.MAIN" />
+-                <category android:name="android.intent.category.LAUNCHER" />
+-            </intent-filter>
+         </activity>
+ 
+         <!-- ═══════════════════════════════════════════════════════════════
+@@ -127,38 +86,13 @@
+             android:label="@string/settings_title"
+             android:theme="@style/Theme.AuraOrbit.Settings"
+             android:exported="true">
+-        </activity>
+-
+-        <!-- ═══════════════════════════════════════════════════════════════
+-             3. LAUNCHER STATE ACCESSIBILITY SERVICE (opt-in)
+-
+-             Fixes #10 + #11: On One UI, live wallpapers receive no page-offset
+-             or drawer-state callbacks. This accessibility service reads the
+-             Samsung launcher's page indicator so the sphere knows the exact
+-             home page and whether the app drawer is open, suppressing spurious
+-             app launches through the drawer.
+-
+-             Scope: com.sec.android.app.launcher only (declared in
+-             res/xml/launcher_state_service.xml). Reads only page indicator
+-             contentDescriptions — no user data is accessed.
+-
+-             The service is opt-in: it does nothing until the user enables it
+-             from Settings → Accessibility → AuraOrbit.
+-             ═══════════════════════════════════════════════════════════════ -->
+-        <service
+-            android:name=".LauncherStateService"
+-            android:label="@string/app_name"
+-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+-            android:exported="true">
+-
+             <intent-filter>
+-                <action android:name="android.accessibilityservice.AccessibilityService" />
++                <action android:name="android.intent.action.MAIN" />
++                <category android:name="android.intent.category.LAUNCHER" />
+             </intent-filter>
++        </activity>
+ 
+-            <meta-data
+-                android:name="android.accessibilityservice"
+-                android:resource="@xml/launcher_state_service" />
+-        </service>
++        
+ 
+         <!-- ═══════════════════════════════════════════════════════════════
+              4. WIDGET PROVIDER (Transparent Popup Architecture)
+
+commit 440036fea3ce302b23881983e17159559c366978
+Author: Jaimin Detroja <124363976+JaiminPatel345@users.noreply.github.com>
+Date:   Tue Jun 9 00:23:08 2026 +0530
+
+    Implement Transparent Pop-Up Architecture via App Widget
+
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index 1e43581..72f4ed0 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -160,6 +160,20 @@
+                 android:resource="@xml/launcher_state_service" />
+         </service>
+ 
++        <!-- ═══════════════════════════════════════════════════════════════
++             4. WIDGET PROVIDER (Transparent Popup Architecture)
++             ═══════════════════════════════════════════════════════════════ -->
++        <receiver
++            android:name=".SphereWidgetProvider"
++            android:exported="true">
++            <intent-filter>
++                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
++            </intent-filter>
++            <meta-data
++                android:name="android.appwidget.provider"
++                android:resource="@xml/sphere_widget_info" />
++        </receiver>
++
+     </application>
+ 
+ </manifest>
+
+commit 85f39e45b53d5ddfb3d47bcbbb7cbe057a16866c
+Author: Jaimin Detroja <124363976+JaiminPatel345@users.noreply.github.com>
+Date:   Sun Jun 7 17:50:52 2026 +0530
+
+    feat: Sphere Mode — fullscreen activity with exclusive gesture ownership
+    
+    Fixes #16
+    
+    - Add SphereEngine(Context, boolean activityMode) constructor (existing
+      one delegates with false); activityMode=true bypasses all wallpaper
+      defenses: page visibility pinned to 1, tap-to-launch direct (no
+      command gating), edge exclusion disabled, zoom-revert skipped,
+      page-swipe counting skipped.
+    - New SphereModeActivity (extends AndroidApplication): mirrors
+      MyWallpaperService's libGDX config, fullscreen immersive via
+      WindowInsetsControllerCompat, floating gear button (40dp, alpha 0.6)
+      in top-right launches LiveWallpaperSettings, re-hides bars on focus
+      return.
+    - Manifest: SphereModeActivity declared with MAIN/LAUNCHER filter
+      (portrait, configChanges); LiveWallpaperSettings keeps exported=true
+      but loses MAIN/LAUNCHER (wallpaper.xml settings link unchanged).
+    - Theme.AuraOrbit.SphereMode added (NoActionBar, black window background).
+    - strings.xml: sphere_mode_open_settings content description.
+    
+    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index 847129d..1e43581 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -86,28 +86,49 @@
+         </service>
+ 
+         <!-- ═══════════════════════════════════════════════════════════════
+-             2. SETTINGS ACTIVITY
+-             
+-             Launched from the wallpaper picker's "Settings" button.
+-             The user configures:
+-               - Which apps to display on the sphere
+-               - App grouping (folders with colors)
+-               - Whether to retain the system wallpaper as background
+-               - Active home screen page for rendering
+-             
+-             exported=true so the wallpaper picker can launch it via Intent.
++             2. SPHERE MODE ACTIVITY (launcher entry point)
++
++             The app icon opens this fullscreen sphere activity. The sphere
++             renders with the same SphereEngine as the wallpaper, but the
++             activity owns ALL input — no launcher gesture conflict.
++
++             MAIN + LAUNCHER: app icon opens Sphere Mode (not Settings).
++             LiveWallpaperSettings remains accessible via the gear button in
++             Sphere Mode and via the wallpaper picker's Settings link
++             (wallpaper.xml still points to LiveWallpaperSettings).
+              ═══════════════════════════════════════════════════════════════ -->
+         <activity
+-            android:name=".LiveWallpaperSettings"
+-            android:label="@string/settings_title"
+-            android:theme="@style/Theme.AuraOrbit.Settings"
+-            android:exported="true">
++            android:name=".SphereModeActivity"
++            android:label="@string/app_name"
++            android:theme="@style/Theme.AuraOrbit.SphereMode"
++            android:exported="true"
++            android:screenOrientation="portrait"
++            android:configChanges="orientation|screenSize|keyboardHidden">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+                 <category android:name="android.intent.category.LAUNCHER" />
+             </intent-filter>
+         </activity>
+ 
++        <!-- ═══════════════════════════════════════════════════════════════
++             3. SETTINGS ACTIVITY
++
++             Launched from:
++               - The gear button inside SphereModeActivity (explicit Intent).
++               - The wallpaper picker's "Settings" button (via wallpaper.xml
++                 which still points to LiveWallpaperSettings — unchanged).
++
++             The MAIN/LAUNCHER filter has been MOVED to SphereModeActivity.
++             LiveWallpaperSettings remains exported so the wallpaper picker
++             and explicit intents from SphereModeActivity can still reach it.
++             ═══════════════════════════════════════════════════════════════ -->
++        <activity
++            android:name=".LiveWallpaperSettings"
++            android:label="@string/settings_title"
++            android:theme="@style/Theme.AuraOrbit.Settings"
++            android:exported="true">
++        </activity>
++
+         <!-- ═══════════════════════════════════════════════════════════════
+              3. LAUNCHER STATE ACCESSIBILITY SERVICE (opt-in)
+ 
+
+commit ffd820c619923f5c8719428913903bfc9bc22b4e
+Author: Jaimin Detroja <124363976+JaiminPatel345@users.noreply.github.com>
+Date:   Sun Jun 7 12:23:55 2026 +0530
+
+    feat: launcher-state accessibility service — exact page + drawer detection on One UI
+    
+    Fixes #10
+    Fixes #11
+    
+    New: LauncherStateService (AccessibilityService) restricted to
+    com.sec.android.app.launcher. Reads the One UI page indicator
+    ("Page N of M. " contentDescription), classifies home vs. drawer
+    surface by ancestor resource-id, and publishes results to
+    LauncherState (volatile statics — same process, cross-thread safe).
+    
+    SphereEngine integration:
+    - updatePageVisibility(): a11y is the highest-priority page source
+      (after preview guard, before offsets-live, before dead-reckoning).
+      Falls through gracefully when service is not enabled or update is
+      stale (>5 s) — no wedged states.
+    - tap() direct-tap fallback: suppressed when drawer is fresh-open
+      (isA11yDrawerOpenFresh). Zoom-based guard kept as fallback.
+    - onWallpaperTapCommand: belt-and-suspenders drawer check on GL thread.
+    - commitPageSwipe(): skips dead-reckoning counter when drawer is open
+      so drawer swipes do not drift the home-page estimate.
+    
+    Settings (opt-in UX):
+    - New "Launcher Integration" PreferenceCategory with
+      pref_exact_page_detection Preference; state-dependent title/summary
+      refreshed in onResume via AccessibilityManager query.
+    - Click → Settings.ACTION_ACCESSIBILITY_SETTINGS (try/catch + Toast).
+    
+    Manifest: service with BIND_ACCESSIBILITY_SERVICE permission,
+    intent-filter, and meta-data pointing to launcher_state_service.xml.
+    
+    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index ea65814..847129d 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -108,6 +108,37 @@
+             </intent-filter>
+         </activity>
+ 
++        <!-- ═══════════════════════════════════════════════════════════════
++             3. LAUNCHER STATE ACCESSIBILITY SERVICE (opt-in)
++
++             Fixes #10 + #11: On One UI, live wallpapers receive no page-offset
++             or drawer-state callbacks. This accessibility service reads the
++             Samsung launcher's page indicator so the sphere knows the exact
++             home page and whether the app drawer is open, suppressing spurious
++             app launches through the drawer.
++
++             Scope: com.sec.android.app.launcher only (declared in
++             res/xml/launcher_state_service.xml). Reads only page indicator
++             contentDescriptions — no user data is accessed.
++
++             The service is opt-in: it does nothing until the user enables it
++             from Settings → Accessibility → AuraOrbit.
++             ═══════════════════════════════════════════════════════════════ -->
++        <service
++            android:name=".LauncherStateService"
++            android:label="@string/app_name"
++            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
++            android:exported="true">
++
++            <intent-filter>
++                <action android:name="android.accessibilityservice.AccessibilityService" />
++            </intent-filter>
++
++            <meta-data
++                android:name="android.accessibilityservice"
++                android:resource="@xml/launcher_state_service" />
++        </service>
++
+     </application>
+ 
+ </manifest>
+
+commit fcc2113b469fb3eb5da909e1858387fa0c93d539
+Author: Jaimin Detroja <124363976+JaiminPatel345@users.noreply.github.com>
+Date:   Sun Jun 7 10:34:40 2026 +0530
+
+    feat: mirror system wallpaper as background when no custom photo (All-files-access)
+    
+    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index 8a5f02b..ea65814 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -16,7 +16,22 @@
+          the Android Photo Picker (ACTION_PICK_IMAGES), which grants one-time URI
+          access without needing broad storage permissions.
+      ═══════════════════════════════════════════════════════════════════════════ -->
+-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:tools="http://schemas.android.com/tools">
++
++    <!-- ─── Storage Permissions ──────────────────────────────────────────── -->
++    <!--
++         MANAGE_EXTERNAL_STORAGE ("All files access") is required on API 30+
++         to read the current system wallpaper via WallpaperManager.getDrawable()
++         when OUR live wallpaper is the active wallpaper. On Android 13+,
++         WallpaperManager.getDrawable() throws SecurityException without this
++         permission even though the drawable is read-only. This is intentional
++         for this personal/sideload app. tools:ignore suppresses Play Store
++         linting (not applicable here).
++    -->
++    <uses-permission
++        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
++        tools:ignore="ScopedStorage" />
+ 
+     <!-- ─── Feature Declarations ─────────────────────────────────────────── -->
+     <!--
+
+commit af8cb9a022fb53f43d17367071cf486e54dc8b14
+Author: Jaimin Detroja <124363976+JaiminPatel345@users.noreply.github.com>
+Date:   Sun Jun 7 02:58:26 2026 +0530
+
+    fix: bound background decode to 2048px (sample-size off-by-one) + doc nits
+    
+    - BackgroundStore.computeSampleSize: test current inSampleSize against maxDimension
+      (not inSampleSize*2), so images exactly at 4096px decode at sample 2 (not 1).
+      Made package-private for unit testing.
+    - BackgroundStoreTest: regression tests covering 7 named cases + invariant sweep
+      (1..10000 step 97) verifying decoded dim ≤ 2048, power-of-2, and minimality.
+    - Removed unused top-level androidx.preference.PreferenceManager import (bumpVersion
+      uses the fully-qualified name directly).
+    - Fixed stale Javadoc on clear(): "system wallpaper" → "built-in dark gradient".
+    - AndroidManifest.xml header comment: replaced QUERY_ALL_PACKAGES /
+      READ_EXTERNAL_STORAGE references with accurate description of queries-based
+      package visibility and Photo Picker storage access (comment-only change).
+    
+    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index 07b6ac2..8a5f02b 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -1,14 +1,20 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <!-- ═══════════════════════════════════════════════════════════════════════════
+      AndroidManifest.xml — AuraOrbit Live Wallpaper
+-     
++
+      Declares:
+-       1. MyWallpaperService   — The live wallpaper service that hosts libGDX.
++       1. MyWallpaperService    — The live wallpaper service that hosts libGDX.
+        2. LiveWallpaperSettings — Preference Activity for app selection & grouping.
+-     
+-     Permissions:
+-       - QUERY_ALL_PACKAGES: Required to enumerate installed apps for selection.
+-       - READ_EXTERNAL_STORAGE: Fallback for system wallpaper retrieval on older APIs.
++
++     Package visibility:
++       - Uses a <queries> intent filter (MAIN + LAUNCHER) to enumerate installed
++         apps with launcher icons. No QUERY_ALL_PACKAGES permission is needed
++         (and it is Play-policy restricted anyway).
++
++     Storage:
++       - No READ_EXTERNAL_STORAGE permission. Custom backgrounds are selected via
++         the Android Photo Picker (ACTION_PICK_IMAGES), which grants one-time URI
++         access without needing broad storage permissions.
+      ═══════════════════════════════════════════════════════════════════════════ -->
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+ 
+
+commit 33b1c7fe5ff02436cefb6dfc86f01dd5848c9e90
+Author: Jaimin Detroja <124363976+JaiminPatel345@users.noreply.github.com>
+Date:   Sun Jun 7 02:49:41 2026 +0530
+
+    feat: Material 3 resources, layouts, manifest queries
+    
+    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index ebb71e8..07b6ac2 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -12,13 +12,6 @@
+      ═══════════════════════════════════════════════════════════════════════════ -->
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+ 
+-    <!-- ─── Permissions ──────────────────────────────────────────────────── -->
+-    <!-- 
+-         QUERY_ALL_PACKAGES is required to use PackageManager.getInstalledApplications()
+-         on Android 11+ where package visibility filtering is enforced.
+-    -->
+-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+-
+     <!-- ─── Feature Declarations ─────────────────────────────────────────── -->
+     <!--
+          Declare OpenGL ES 2.0 as required. libGDX requires at minimum GL ES 2.0,
+@@ -26,11 +19,20 @@
+     -->
+     <uses-feature android:glEsVersion="0x00020000" android:required="true" />
+ 
+-    <!-- 
++    <!--
+          Declare the live wallpaper feature so the Play Store filters correctly.
+     -->
+     <uses-feature android:name="android.software.live_wallpaper" android:required="true" />
+ 
++    <!-- Package-visibility: we only need apps with a launcher activity.
++         This replaces QUERY_ALL_PACKAGES (Play-policy restricted). -->
++    <queries>
++        <intent>
++            <action android:name="android.intent.action.MAIN" />
++            <category android:name="android.intent.category.LAUNCHER" />
++        </intent>
++    </queries>
++
+     <application
+         android:allowBackup="false"
+         android:icon="@mipmap/ic_launcher"
+
+commit cd07d7e11bc0b5c97a3e787c3006212510a77553
+Author: Jaimin Detroja <124363976+JaiminPatel345@users.noreply.github.com>
+Date:   Sun Jun 7 02:11:38 2026 +0530
+
+    feat: complete AuraOrbit live wallpaper implementation
+    
+    - Implemented full libGDX 3D engine with Fibonacci sphere layout
+    - Unlocked 120Hz display refresh rate via Android 11+ API
+    - Added programmatic LiveWallpaperSettings Activity for app & group management
+    - Included adaptive launcher icon and fallback mipmaps
+    - Integrated smooth quaternion-based rotation and momentum physics
+    - Fixed group backdrop mesh rendering
+    - Added Gradle wrapper (8.9) and dependencies
+    - Updated README with feature overview and build instructions
+
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+new file mode 100644
+index 0000000..ebb71e8
+--- /dev/null
++++ b/app/src/main/AndroidManifest.xml
+@@ -0,0 +1,90 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- ═══════════════════════════════════════════════════════════════════════════
++     AndroidManifest.xml — AuraOrbit Live Wallpaper
++     
++     Declares:
++       1. MyWallpaperService   — The live wallpaper service that hosts libGDX.
++       2. LiveWallpaperSettings — Preference Activity for app selection & grouping.
++     
++     Permissions:
++       - QUERY_ALL_PACKAGES: Required to enumerate installed apps for selection.
++       - READ_EXTERNAL_STORAGE: Fallback for system wallpaper retrieval on older APIs.
++     ═══════════════════════════════════════════════════════════════════════════ -->
++<manifest xmlns:android="http://schemas.android.com/apk/res/android">
++
++    <!-- ─── Permissions ──────────────────────────────────────────────────── -->
++    <!-- 
++         QUERY_ALL_PACKAGES is required to use PackageManager.getInstalledApplications()
++         on Android 11+ where package visibility filtering is enforced.
++    -->
++    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
++
++    <!-- ─── Feature Declarations ─────────────────────────────────────────── -->
++    <!--
++         Declare OpenGL ES 2.0 as required. libGDX requires at minimum GL ES 2.0,
++         and we use it for all 3D rendering (DecalBatch, MeshBuilder, etc.).
++    -->
++    <uses-feature android:glEsVersion="0x00020000" android:required="true" />
++
++    <!-- 
++         Declare the live wallpaper feature so the Play Store filters correctly.
++    -->
++    <uses-feature android:name="android.software.live_wallpaper" android:required="true" />
++
++    <application
++        android:allowBackup="false"
++        android:icon="@mipmap/ic_launcher"
++        android:label="@string/app_name"
++        android:supportsRtl="true"
++        android:theme="@style/Theme.AuraOrbit">
++
++        <!-- ═══════════════════════════════════════════════════════════════
++             1. LIVE WALLPAPER SERVICE
++             
++             This is the entry point that Android's Wallpaper Picker invokes.
++             - BIND_WALLPAPER permission prevents other apps from binding to it.
++             - The intent-filter advertises this as a WallpaperService.
++             - The meta-data points to res/xml/wallpaper.xml which declares
++               the settings Activity and thumbnail.
++             ═══════════════════════════════════════════════════════════════ -->
++        <service
++            android:name=".MyWallpaperService"
++            android:label="@string/app_name"
++            android:permission="android.permission.BIND_WALLPAPER"
++            android:exported="true">
++
++            <intent-filter>
++                <action android:name="android.service.wallpaper.WallpaperService" />
++            </intent-filter>
++
++            <meta-data
++                android:name="android.service.wallpaper"
++                android:resource="@xml/wallpaper" />
++        </service>
++
++        <!-- ═══════════════════════════════════════════════════════════════
++             2. SETTINGS ACTIVITY
++             
++             Launched from the wallpaper picker's "Settings" button.
++             The user configures:
++               - Which apps to display on the sphere
++               - App grouping (folders with colors)
++               - Whether to retain the system wallpaper as background
++               - Active home screen page for rendering
++             
++             exported=true so the wallpaper picker can launch it via Intent.
++             ═══════════════════════════════════════════════════════════════ -->
++        <activity
++            android:name=".LiveWallpaperSettings"
++            android:label="@string/settings_title"
++            android:theme="@style/Theme.AuraOrbit.Settings"
++            android:exported="true">
++            <intent-filter>
++                <action android:name="android.intent.action.MAIN" />
++                <category android:name="android.intent.category.LAUNCHER" />
++            </intent-filter>
++        </activity>
++
++    </application>
++
++</manifest>
