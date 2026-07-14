@@ -187,6 +187,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * guard that did not exist before — wallpaper-mode behavior is unchanged.
      */
     private final boolean activityMode;
+    private boolean touchStartedOutsideSphere = false;
+    private boolean permanentSphereEnabled = false;
 
     // ─── Camera & Rendering ─────────────────────────────────────────────
     private PerspectiveCamera camera;
@@ -921,6 +923,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * @param prefs  SharedPreferences to read from
      */
     private void readConfig(SharedPreferences prefs) {
+        permanentSphereEnabled = prefs.getBoolean("pref_permanent_sphere_enabled", false);
+
         // Background visibility (replaces old pref_keep_wallpaper)
         showBackground = prefs.getBoolean("pref_show_background", true);
 
@@ -983,6 +987,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private String configSnapshot() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         StringBuilder sb = new StringBuilder();
+
+        sb.append(prefs.getBoolean("pref_permanent_sphere_enabled", false)).append('|');
 
         // selected_app_packages — sort for deterministic ordering
         Set<String> selectedApps = prefs.getStringSet("selected_app_packages", new java.util.HashSet<>());
@@ -1930,6 +1936,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
              */
             @Override
             public boolean pan(float x, float y, float deltaX, float deltaY) {
+                if (touchStartedOutsideSphere) return false;
+
                 // ─── Two-finger drag has priority — suppress one-finger pan ─
                 // GestureDetector may still fire pan() for the first pointer
                 // while a two-finger drag is active.  We must ignore it here
@@ -2016,6 +2024,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
              */
             @Override
             public boolean fling(float velocityX, float velocityY, int button) {
+                if (touchStartedOutsideSphere) {
+                    touchStartedOutsideSphere = false;
+                    return false;
+                }
                 userInteracting = false;
 
                 // ─── Edge exclusion: no momentum from system-born gestures ───
@@ -2069,6 +2081,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
             @Override
             public boolean panStop(float x, float y, int pointer, int button) {
+                if (touchStartedOutsideSphere) {
+                    touchStartedOutsideSphere = false;
+                    return false;
+                }
                 userInteracting = false;
 
                 // ─── Edge exclusion: system-born gesture ends without effects ─
@@ -2218,6 +2234,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                     // exclusion zones are needed; every gesture is ours.
                     if (activityMode) {
                         edgeClaimedGesture = false;
+                        touchStartedOutsideSphere = false;
                         
                         // If touch starts outside the sphere (with 30% padding), close immediately 
                         // so the user can interact with their launcher (e.g. swipe notifications).
@@ -2237,6 +2254,15 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                         float hFrac = (float) screenY / Math.max(1, Gdx.graphics.getHeight());
                         edgeClaimedGesture = hFrac < EDGE_EXCLUSION_FRACTION
                                 || hFrac > 1f - EDGE_EXCLUSION_FRACTION;
+
+                        if (camera != null) {
+                            com.badlogic.gdx.math.collision.Ray ray = camera.getPickRay(screenX, screenY);
+                            float radius = sphereRadius;
+                            boolean hit = com.badlogic.gdx.math.Intersector.intersectRaySphere(ray, com.badlogic.gdx.math.Vector3.Zero, radius, tmpVec);
+                            touchStartedOutsideSphere = !hit;
+                        } else {
+                            touchStartedOutsideSphere = false;
+                        }
                     }
 
                     // ── Gesture rotation snapshot for launcher-claim revert ──────
@@ -2284,6 +2310,14 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 totalDx = 0f;
                 totalDy = 0f;
                 return super.touchCancelled(screenX, screenY, pointer, button);
+            }
+
+            @Override
+            public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+                if (pointer == 0) {
+                    touchStartedOutsideSphere = false;
+                }
+                return super.touchUp(screenX, screenY, pointer, button);
             }
         };
 
@@ -2483,21 +2517,23 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             renderBackground();
         }
 
+        boolean shouldDrawSphere = activityMode || pinnedGroupName != null || permanentSphereEnabled;
+
         // ─── Layer 2: Group Backdrop Meshes ─────────────────────────────
-        if (groupBackdrops != null && groupBackdrops.size > 0 && pageVisibility > 0.01f) {
+        if (shouldDrawSphere && groupBackdrops != null && groupBackdrops.size > 0 && pageVisibility > 0.01f) {
             renderGroupBackdrops();
         }
 
         // ─── Layer 3: App Icon Decals (Billboarded) ─────────────────────
         // Guard also on returnAnim > 0.01f to avoid rendering fully-transparent
         // decals during the first few frames of the return animation.
-        if (decals != null && decals.size > 0 && pageVisibility > 0.01f && returnAnim > 0.01f) {
+        if (shouldDrawSphere && decals != null && decals.size > 0 && pageVisibility > 0.01f && returnAnim > 0.01f) {
             renderDecals();
         }
 
         // ─── Layer 4: Empty-state hint ───────────────────────────────────
         // Drawn on top of everything when no apps are configured.
-        if (appNodes == null || appNodes.isEmpty()) {
+        if (shouldDrawSphere && (appNodes == null || appNodes.isEmpty())) {
             if (!activityMode) {
                 renderEmptyHint();
             }
@@ -2723,6 +2759,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                     }
                 });
             }
+            return;
+        }
+
+        if (!activityMode && userInteracting) {
+            targetVisibility = 1f;
+            pageVisibility = MathUtils.lerp(pageVisibility, targetVisibility, delta * 8f);
+            if (dbg) logVisDebug("USER-INTERACTING", targetVisibility);
             return;
         }
 
