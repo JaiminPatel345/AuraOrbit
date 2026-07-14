@@ -53,7 +53,7 @@ import java.util.Set;
  *    SecurityException on Android 13+ when AuraOrbit itself was the active
  *    wallpaper.
  *
- * 3. **Group Configuration Parsing**: Delegates to GroupStore to map package
+ * 3. **Group Configuration Parsing**: Delegates to WidgetStore to map package
  *    names to group IDs/colors for the SphereEngine's visual clustering system.
  *
  * ─── Thread Safety ──────────────────────────────────────────────────────────
@@ -141,8 +141,8 @@ public class AppFetcher {
      *
      * ─── Group Assignment ────────────────────────────────────────────────────
      *
-     * Group data is read via {@link GroupStore#load(SharedPreferences)} and then
-     * inverted into a package→Group map by {@link GroupStore#packageToGroup(List)}.
+     * Group data is read via {@link WidgetStore#load(SharedPreferences)} and then
+     * inverted into a package→Group map by {@link WidgetStore#packageToWidget(List)}.
      * This replaces the old per-key schema (groups_list / group_*_color / group_*_apps)
      * which required N+1 pref reads and two Map allocations; the new approach uses
      * a single JSON read and a single pass over the group list.
@@ -164,12 +164,12 @@ public class AppFetcher {
 
         Log.i(TAG, "Fetching " + selectedPackages.size() + " selected apps");
 
-        // ─── Read group assignments via GroupStore ───────────────────────
-        // GroupStore.load() handles both the new JSON schema and legacy key
-        // migration transparently. packageToGroup() inverts the list into a
+        // ─── Read group assignments via WidgetStore ───────────────────────
+        // WidgetStore.load() handles both the new JSON schema and legacy key
+        // migration transparently. packageToWidget() inverts the list into a
         // fast O(1) lookup map keyed by package name.
-        Map<String, GroupStore.Group> packageToGroup =
-                GroupStore.packageToGroup(GroupStore.load(prefs));
+        Map<String, WidgetStore.Widget> packageToWidget =
+                WidgetStore.packageToWidget(WidgetStore.load(prefs));
 
         // ─── Build AppNode list ─────────────────────────────────────────
         List<AppNode> nodes = new ArrayList<>();
@@ -202,8 +202,8 @@ public class AppFetcher {
                     // Do NOT recycle the bitmap here anymore! It is cached.
                 }
 
-                // ─── Assign group metadata via GroupStore ────────────────
-                GroupStore.Group g = packageToGroup.get(packageName);
+                // ─── Assign group metadata via WidgetStore ────────────────
+                WidgetStore.Widget g = packageToWidget.get(packageName);
                 if (g != null) {
                     node.groupId = g.name;
                     node.groupColorHex = g.color;

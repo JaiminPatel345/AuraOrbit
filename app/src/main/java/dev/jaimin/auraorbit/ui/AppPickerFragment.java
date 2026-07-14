@@ -39,7 +39,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import dev.jaimin.auraorbit.AppFetcher;
-import dev.jaimin.auraorbit.GroupStore;
+import dev.jaimin.auraorbit.WidgetStore;
 import dev.jaimin.auraorbit.R;
 
 /**
@@ -49,7 +49,7 @@ import dev.jaimin.auraorbit.R;
  *
  * Inflates {@code fragment_app_picker} (ids: {@code search_input}, {@code app_list}).
  * Each row uses {@code row_app} (ids: {@code app_icon}, {@code app_label},
- * {@code app_group_badge}, {@code app_check}).
+ * {@code app_widget_badge}, {@code app_check}).
  *
  * ─── Data loading ────────────────────────────────────────────────────────────
  *
@@ -161,7 +161,7 @@ public class AppPickerFragment extends Fragment {
     // ─────────────────────────────────────────────────────────────────────
 
     /**
-     * Loads all launchable apps, their labels, icons, and group membership
+     * Loads all launchable apps, their labels, icons, and widget membership
      * on a background thread, then hands the result to the adapter on the
      * main thread.
      *
@@ -178,9 +178,9 @@ public class AppPickerFragment extends Fragment {
             List<ResolveInfo> resolvedApps = AppFetcher.getAllLaunchableApps(appCtx);
             dev.jaimin.auraorbit.IconPackManager iconPackManager = dev.jaimin.auraorbit.IconPackManager.getInstance(appCtx);
 
-            // Build the group reverse-lookup once for O(1) per-app lookup.
-            List<GroupStore.Group> groups = GroupStore.load(prefs);
-            Map<String, GroupStore.Group> pkgToGroup = GroupStore.packageToGroup(groups);
+            // Build the widget reverse-lookup once for O(1) per-app lookup.
+            List<WidgetStore.Widget> widgets = WidgetStore.load(prefs);
+            Map<String, WidgetStore.Widget> pkgToWidget = WidgetStore.packageToWidget(widgets);
 
             // Read the current selection so we can pre-check rows.
             Set<String> selectedSet = prefs.getStringSet(
@@ -198,11 +198,11 @@ public class AppPickerFragment extends Fragment {
                     icon = ri.loadIcon(pm);
                 }
 
-                // Determine group membership (null → no badge shown).
-                GroupStore.Group owningGroup = pkgToGroup.get(pkg);
-                String groupName = owningGroup != null ? owningGroup.name : null;
+                // Determine widget membership (null → no badge shown).
+                WidgetStore.Widget owningWidget = pkgToWidget.get(pkg);
+                String widgetName = owningWidget != null ? owningWidget.name : null;
 
-                AppRow row = new AppRow(pkg, label, icon, groupName,
+                AppRow row = new AppRow(pkg, label, icon, widgetName,
                         selectedSet.contains(pkg));
                 rows.add(row);
             }
@@ -298,16 +298,16 @@ public class AppPickerFragment extends Fragment {
         final String packageName;
         final String label;
         final Drawable icon;
-        /** Display name of the group this app belongs to, or {@code null}. */
-        @Nullable final String groupName;
+        /** Display name of the widget this app belongs to, or {@code null}. */
+        @Nullable final String widgetName;
         boolean checked;
 
         AppRow(String packageName, String label, Drawable icon,
-               @Nullable String groupName, boolean checked) {
+               @Nullable String widgetName, boolean checked) {
             this.packageName = packageName;
             this.label       = label;
             this.icon        = icon;
-            this.groupName   = groupName;
+            this.widgetName   = widgetName;
             this.checked     = checked;
         }
     }
@@ -391,15 +391,15 @@ public class AppPickerFragment extends Fragment {
             holder.icon.setImageDrawable(row.icon);
             holder.label.setText(row.label);
 
-            // ─── Group badge ──────────────────────────────────────────────
+            // ─── Widget badge ──────────────────────────────────────────────
             // Must explicitly handle BOTH visibility states on every bind
             // because RecyclerView recycles views — a row that was VISIBLE
-            // before must be reset to GONE if the new data has no group.
-            if (row.groupName != null) {
-                holder.groupBadge.setText(row.groupName);
-                holder.groupBadge.setVisibility(View.VISIBLE);
+            // before must be reset to GONE if the new data has no widget.
+            if (row.widgetName != null) {
+                holder.widgetBadge.setText(row.widgetName);
+                holder.widgetBadge.setVisibility(View.VISIBLE);
             } else {
-                holder.groupBadge.setVisibility(View.GONE);
+                holder.widgetBadge.setVisibility(View.GONE);
             }
 
             // Detach listener before setting state to avoid re-entrant calls.
@@ -443,14 +443,14 @@ public class AppPickerFragment extends Fragment {
         final class VH extends RecyclerView.ViewHolder {
             final ImageView icon;
             final TextView  label;
-            final TextView  groupBadge;
+            final TextView  widgetBadge;
             final CheckBox  check;
 
             VH(@NonNull View itemView) {
                 super(itemView);
                 icon       = itemView.findViewById(R.id.app_icon);
                 label      = itemView.findViewById(R.id.app_label);
-                groupBadge = itemView.findViewById(R.id.app_group_badge);
+                widgetBadge = itemView.findViewById(R.id.app_widget_badge);
                 check      = itemView.findViewById(R.id.app_check);
             }
         }

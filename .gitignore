@@ -22,3 +22,5 @@ log.txt
 *.dm
 /app/release/
 /apk/
+
+temp/

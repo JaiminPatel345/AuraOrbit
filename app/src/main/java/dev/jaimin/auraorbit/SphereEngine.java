@@ -757,7 +757,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      */
     private static final Set<String> RELEVANT_KEYS = Set.of(
             "selected_app_packages",
-            GroupStore.PREF_GROUPS_JSON,
+            WidgetStore.PREF_WIDGETS_JSON,
             "pref_show_background",
             BackgroundStore.PREF_BACKGROUND_VERSION,
             "pref_sphere_radius",
@@ -988,7 +988,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         Set<String> selectedApps = prefs.getStringSet("selected_app_packages", new java.util.HashSet<>());
         sb.append(new TreeSet<>(selectedApps)).append('|');
 
-        sb.append(prefs.getString(GroupStore.PREF_GROUPS_JSON, "")).append('|');
+        sb.append(prefs.getString(WidgetStore.PREF_WIDGETS_JSON, "")).append('|');
         sb.append(prefs.getBoolean("pref_show_background", true)).append('|');
         sb.append(prefs.getInt(BackgroundStore.PREF_BACKGROUND_VERSION, 0)).append('|');
         sb.append(prefs.getInt("pref_sphere_radius", 50)).append('|');
@@ -1030,7 +1030,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * ─── What is rebuilt ─────────────────────────────────────────────────
      *
      * - All app icon textures (disposed then re-fetched from PackageManager)
-     * - Group backdrop 3D models (disposed then rebuilt from new GroupStore data)
+     * - Group backdrop 3D models (disposed then rebuilt from new WidgetStore data)
      * - Background texture (disposed then reloaded from BackgroundStore)
      * - Uniform Fibonacci node distribution (recalculated with new effectiveRadius)
      * - Decals (recreated with new iconSize)
