@@ -286,7 +286,7 @@ public class DashboardFragment extends Fragment {
         buildColorRow((android.widget.LinearLayout) view.findViewById(R.id.color_row));
 
         MaterialSwitch switchTransparent = view.findViewById(R.id.switch_transparent_widget);
-        switchTransparent.setChecked(prefs.getBoolean("pref_widget_transparent", true));
+        switchTransparent.setChecked(prefs.getBoolean("pref_widget_transparent", false));
         switchTransparent.setOnCheckedChangeListener((buttonView, isChecked) -> {
             prefs.edit().putBoolean("pref_widget_transparent", isChecked).apply();
             SphereWidgetProvider.updateAllWidgets(requireContext());
@@ -529,7 +529,7 @@ public class DashboardFragment extends Fragment {
     private void updateLivePreview() {
         if (!isAdded()) return;
 
-        boolean transparent = prefs.getBoolean("pref_widget_transparent", true);
+        boolean transparent = prefs.getBoolean("pref_widget_transparent", false);
         boolean useThemeColor = prefs.getBoolean("pref_widget_use_theme_color", true);
         boolean hideLogo = prefs.getBoolean("pref_widget_hide_logo", false);
         boolean hideText = prefs.getBoolean("pref_widget_hide_text", false);

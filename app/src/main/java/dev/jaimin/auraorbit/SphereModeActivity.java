@@ -227,10 +227,6 @@ public class SphereModeActivity extends AndroidApplication {
         // Swipe-to-reveal: transient bars appear on edge swipe then auto-hide.
         controller.setSystemBarsBehavior(
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-
-        // Hide both status bar and navigation bar immediately.
-        controller.hide(WindowInsetsCompat.Type.statusBars()
-                | WindowInsetsCompat.Type.navigationBars());
     }
 
 

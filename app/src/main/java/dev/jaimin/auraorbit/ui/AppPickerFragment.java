@@ -136,6 +136,12 @@ public class AppPickerFragment extends Fragment {
             }
         });
 
+        // Wire up the Save button at the bottom.
+        root.findViewById(R.id.btn_save).setOnClickListener(v -> {
+            android.widget.Toast.makeText(requireContext(), "Saved!", android.widget.Toast.LENGTH_SHORT).show();
+            getParentFragmentManager().popBackStack();
+        });
+
         // Kick off the background data load.
         loadAppsAsync(prefs);
     }
