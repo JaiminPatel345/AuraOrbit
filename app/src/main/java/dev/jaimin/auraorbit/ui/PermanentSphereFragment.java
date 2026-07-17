@@ -31,8 +31,8 @@ import java.util.concurrent.Executors;
 import dev.jaimin.auraorbit.BackgroundStore;
 import dev.jaimin.auraorbit.MyWallpaperService;
 import dev.jaimin.auraorbit.R;
-import dev.jaimin.auraorbit.SphereBlurEditorActivity;
 import dev.jaimin.auraorbit.SpherePositionEditorActivity;
+import dev.jaimin.auraorbit.GestureRadiusEditorActivity;
 
 public class PermanentSphereFragment extends Fragment {
 
@@ -44,8 +44,7 @@ public class PermanentSphereFragment extends Fragment {
     private TextView tvBackgroundStatus;
     private TextView tvSpherePositionStatus;
     private TextView tvAppsCount;
-    private TextView tvBlurStatus;
-    private boolean isPickingDeviceWallpaper = false;
+    private TextView tvGestureRadiusValue;
     private View sectionSphereSettings;
 
     private ActivityResultLauncher<PickVisualMediaRequest> pickMedia;
@@ -103,40 +102,33 @@ public class PermanentSphereFragment extends Fragment {
             startActivity(new android.content.Intent(requireContext(), SpherePositionEditorActivity.class));
         });
 
-        // Sphere Background
-        tvBackgroundStatus = view.findViewById(R.id.tv_background_status);
+        // Device Wallpaper
+        tvBackgroundStatus = view.findViewById(R.id.tv_wallpaper_status);
         updateBackgroundStatus();
-        view.findViewById(R.id.btn_app_background).setOnClickListener(v -> {
+        view.findViewById(R.id.btn_set_device_wallpaper).setOnClickListener(v -> {
             if (BackgroundStore.exists(requireContext())) {
                 new MaterialAlertDialogBuilder(requireContext())
-                        .setItems(new CharSequence[]{"Choose new photo", "Remove photo", "Cancel"}, (dialog, which) -> {
+                        .setItems(new CharSequence[]{"Choose new wallpaper", "Remove wallpaper / Reset to Default", "Cancel"}, (dialog, which) -> {
                             if (which == 0) {
-                                isPickingDeviceWallpaper = false;
                                 launchPicker();
                             } else if (which == 1) {
                                 BackgroundStore.clear(requireContext());
+                                try {
+                                    android.app.WallpaperManager.getInstance(requireContext()).clear();
+                                    Toast.makeText(requireContext(), "Device wallpaper reset to default!", Toast.LENGTH_SHORT).show();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
                                 updateBackgroundStatus();
                             }
                         })
                         .show();
             } else {
-                isPickingDeviceWallpaper = false;
                 launchPicker();
             }
         });
 
-        // Device Wallpaper
-        view.findViewById(R.id.btn_set_device_wallpaper).setOnClickListener(v -> {
-            isPickingDeviceWallpaper = true;
-            launchPicker();
-        });
 
-        // Background Blur
-        tvBlurStatus = view.findViewById(R.id.tv_blur_status);
-        updateBlurStatusText(tvBlurStatus, prefs.getInt("pref_blur_radius", 50));
-        view.findViewById(R.id.btn_sphere_blur).setOnClickListener(v -> {
-            startActivity(new android.content.Intent(requireContext(), SphereBlurEditorActivity.class));
-        });
 
         // Icon Size slider
         Slider sliderIconSize = view.findViewById(R.id.slider_icon_size);
@@ -151,6 +143,107 @@ public class PermanentSphereFragment extends Fragment {
         sliderSpeed.addOnChangeListener((slider, value, fromUser) -> {
             if (fromUser) prefs.edit().putInt("pref_rotation_speed", (int) value).apply();
         });
+
+        // Page Settings
+        MaterialSwitch switchDynamicLastPage = view.findViewById(R.id.switch_dynamic_last_page);
+        View layoutActivePage = view.findViewById(R.id.layout_active_page);
+        TextView tvActivePageValue = view.findViewById(R.id.tv_active_page_value);
+        com.google.android.material.button.MaterialButton btnDecrementActivePage = view.findViewById(R.id.btn_decrement_active_page);
+        com.google.android.material.button.MaterialButton btnIncrementActivePage = view.findViewById(R.id.btn_increment_active_page);
+
+        View layoutTotalPages = view.findViewById(R.id.layout_total_pages);
+        TextView tvTotalPagesValue = view.findViewById(R.id.tv_total_pages_value);
+        com.google.android.material.button.MaterialButton btnDecrementTotalPages = view.findViewById(R.id.btn_decrement_total_pages);
+        com.google.android.material.button.MaterialButton btnIncrementTotalPages = view.findViewById(R.id.btn_increment_total_pages);
+
+        boolean dynamicLastPage = prefs.getBoolean("pref_dynamic_last_page", false);
+        switchDynamicLastPage.setChecked(dynamicLastPage);
+        layoutActivePage.setVisibility(dynamicLastPage ? View.GONE : View.VISIBLE);
+
+        switchDynamicLastPage.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            prefs.edit().putBoolean("pref_dynamic_last_page", isChecked).apply();
+            layoutActivePage.setVisibility(isChecked ? View.GONE : View.VISIBLE);
+        });
+
+        // Active Page Stepper
+        int activePage = prefs.getInt("pref_active_page", 1);
+        tvActivePageValue.setText(String.valueOf(activePage));
+        btnDecrementActivePage.setOnClickListener(v -> {
+            int val = prefs.getInt("pref_active_page", 1);
+            int newVal = Math.max(1, val - 1);
+            if (newVal != val) {
+                prefs.edit().putInt("pref_active_page", newVal).apply();
+                tvActivePageValue.setText(String.valueOf(newVal));
+            }
+        });
+        btnIncrementActivePage.setOnClickListener(v -> {
+            int val = prefs.getInt("pref_active_page", 1);
+            int newVal = Math.min(9, val + 1);
+            if (newVal != val) {
+                prefs.edit().putInt("pref_active_page", newVal).apply();
+                tvActivePageValue.setText(String.valueOf(newVal));
+            }
+        });
+
+        // Total Pages Stepper
+        int totalPages = prefs.getInt("pref_total_pages", 3);
+        tvTotalPagesValue.setText(String.valueOf(totalPages));
+        btnDecrementTotalPages.setOnClickListener(v -> {
+            int val = prefs.getInt("pref_total_pages", 3);
+            int newVal = Math.max(1, val - 1);
+            if (newVal != val) {
+                prefs.edit().putInt("pref_total_pages", newVal).apply();
+                tvTotalPagesValue.setText(String.valueOf(newVal));
+            }
+        });
+        btnIncrementTotalPages.setOnClickListener(v -> {
+            int val = prefs.getInt("pref_total_pages", 3);
+            int newVal = Math.min(9, val + 1);
+            if (newVal != val) {
+                prefs.edit().putInt("pref_total_pages", newVal).apply();
+                tvTotalPagesValue.setText(String.valueOf(newVal));
+            }
+        });
+
+        // Block Launcher Gestures switch and Clickable Radius Row
+        View btnGestureCaptureRadius = view.findViewById(R.id.btn_gesture_capture_radius);
+        tvGestureRadiusValue = view.findViewById(R.id.tv_gesture_radius_value);
+
+        com.google.android.material.materialswitch.MaterialSwitch switchBlockLauncherGestures = view.findViewById(R.id.switch_block_launcher_gestures);
+        if (switchBlockLauncherGestures != null) {
+            boolean hasPerm = android.provider.Settings.canDrawOverlays(requireContext());
+            boolean blockEnabled = prefs.getBoolean("pref_block_launcher_gestures", false);
+            switchBlockLauncherGestures.setChecked(blockEnabled);
+            if (btnGestureCaptureRadius != null) {
+                btnGestureCaptureRadius.setVisibility((blockEnabled && hasPerm) ? View.VISIBLE : View.GONE);
+            }
+
+            switchBlockLauncherGestures.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (isChecked) {
+                    if (!android.provider.Settings.canDrawOverlays(requireContext())) {
+                        Toast.makeText(requireContext(), "Please allow AuraOrbit to draw over other apps to enable gesture blocking.", Toast.LENGTH_LONG).show();
+                        android.content.Intent intent = new android.content.Intent(
+                                android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                android.net.Uri.parse("package:" + requireContext().getPackageName())
+                        );
+                        startActivity(intent);
+                        prefs.edit().putBoolean("pref_block_launcher_gestures", true).apply();
+                    } else {
+                        prefs.edit().putBoolean("pref_block_launcher_gestures", true).apply();
+                        if (btnGestureCaptureRadius != null) btnGestureCaptureRadius.setVisibility(View.VISIBLE);
+                    }
+                } else {
+                    prefs.edit().putBoolean("pref_block_launcher_gestures", false).apply();
+                    if (btnGestureCaptureRadius != null) btnGestureCaptureRadius.setVisibility(View.GONE);
+                }
+            });
+        }
+
+        if (btnGestureCaptureRadius != null) {
+            btnGestureCaptureRadius.setOnClickListener(v -> {
+                startActivity(new android.content.Intent(requireContext(), GestureRadiusEditorActivity.class));
+            });
+        }
     }
 
     @Override
@@ -161,8 +254,26 @@ public class PermanentSphereFragment extends Fragment {
         updateSpherePositionStatus();
         updateAppsCount();
 
-        if (tvBlurStatus != null) {
-            updateBlurStatusText(tvBlurStatus, prefs.getInt("pref_blur_radius", 50));
+
+
+        // Keep Block Launcher Gestures switch in sync with system settings
+        boolean hasOverlayPerm = android.provider.Settings.canDrawOverlays(requireContext());
+        boolean blockEnabled = prefs.getBoolean("pref_block_launcher_gestures", false);
+        if (!hasOverlayPerm && blockEnabled) {
+            prefs.edit().putBoolean("pref_block_launcher_gestures", false).apply();
+            blockEnabled = false;
+        }
+        com.google.android.material.materialswitch.MaterialSwitch switchBlock = requireView().findViewById(R.id.switch_block_launcher_gestures);
+        if (switchBlock != null) {
+            switchBlock.setChecked(blockEnabled);
+        }
+        View btnGestureCaptureRadius = requireView().findViewById(R.id.btn_gesture_capture_radius);
+        if (btnGestureCaptureRadius != null) {
+            btnGestureCaptureRadius.setVisibility((blockEnabled && hasOverlayPerm) ? View.VISIBLE : View.GONE);
+        }
+        if (tvGestureRadiusValue != null) {
+            int radiusVal = prefs.getInt("pref_gesture_capture_scale_percent", 100);
+            tvGestureRadiusValue.setText(radiusVal + "%");
         }
     }
 
@@ -191,14 +302,7 @@ public class PermanentSphereFragment extends Fragment {
         tvSpherePositionStatus.setText(display);
     }
 
-    private void updateBlurStatusText(TextView tv, int amount) {
-        if (tv == null) return;
-        if (amount == 0) tv.setText("No Blur");
-        else if (amount <= 33) tv.setText("Sphere Background Only");
-        else if (amount <= 66) tv.setText("Nearby Area");
-        else if (amount < 100) tv.setText("Almost Full Screen");
-        else tv.setText("Full Screen Blur");
-    }
+
 
     private void updateAppsCount() {
         if (tvAppsCount == null) return;
@@ -218,19 +322,6 @@ public class PermanentSphereFragment extends Fragment {
 
     private void saveBackground(@Nullable Uri uri) {
         if (uri == null) return;
-        if (isPickingDeviceWallpaper) {
-            try {
-                android.app.WallpaperManager wm = android.app.WallpaperManager.getInstance(requireContext());
-                java.io.InputStream is = requireContext().getContentResolver().openInputStream(uri);
-                wm.setStream(is);
-                if (is != null) is.close();
-                Toast.makeText(requireContext(), "Device wallpaper updated!", Toast.LENGTH_SHORT).show();
-            } catch (Exception e) {
-                e.printStackTrace();
-                Toast.makeText(requireContext(), "Failed to set wallpaper", Toast.LENGTH_SHORT).show();
-            }
-            return;
-        }
 
         Context appCtx = requireContext().getApplicationContext();
         Handler mainThread = new Handler(Looper.getMainLooper());
@@ -241,10 +332,32 @@ public class PermanentSphereFragment extends Fragment {
                 if (ok) {
                     updateBackgroundStatus();
                 } else {
-                    Toast.makeText(requireContext(), "Failed to save image. Please try another one.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(requireContext(), "Failed to save wallpaper background image internally.", Toast.LENGTH_LONG).show();
                 }
             });
         });
+
+        // 2. Set as system static wallpaper
+        try {
+            android.app.WallpaperManager wm = android.app.WallpaperManager.getInstance(requireContext());
+            java.io.InputStream is = requireContext().getContentResolver().openInputStream(uri);
+            wm.setStream(is);
+            if (is != null) is.close();
+            Toast.makeText(requireContext(), "Device wallpaper set! Re-enable AuraOrbit to see the 3D sphere.", Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(requireContext(), "Failed to set system wallpaper.", Toast.LENGTH_SHORT).show();
+        }
+
+        // 3. Prompt user to re-enable AuraOrbit Live Wallpaper
+        try {
+            android.content.Intent intent = new android.content.Intent(android.app.WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER);
+            intent.putExtra(android.app.WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
+                    new android.content.ComponentName(requireContext(), MyWallpaperService.class));
+            startActivity(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void navigateTo(@NonNull Fragment fragment) {

@@ -229,32 +229,264 @@
                         android:layout_marginTop="20dp"
                         android:layout_marginBottom="16dp" />
 
-                    <!-- Background & Wallpaper Section Title -->
+                    <!-- Page Settings Section Title -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Background &amp; Wallpaper"
+                        android:text="Page Settings"
                         android:textColor="?attr/colorPrimary"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:layout_marginTop="8dp"
                         android:layout_marginBottom="16dp" />
 
-                    <!-- Sphere Background Row -->
+                    <!-- Dynamic Last Page Switch Row -->
                     <LinearLayout
-                        android:id="@+id/btn_app_background"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
+                        android:layout_marginBottom="16dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Dynamic Last Page"
+                                android:textColor="?android:attr/textColorPrimary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Automatically show the sphere on the last page"
+                                android:textSize="14sp"
+                                android:textColor="?android:attr/textColorSecondary"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switch_dynamic_last_page"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp" />
+                    </LinearLayout>
+
+                    <!-- Sphere Page Stepper Row -->
+                    <LinearLayout
+                        android:id="@+id/layout_active_page"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="16dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Sphere Page"
+                                android:textColor="?android:attr/textColorPrimary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Home screen page that shows the sphere (1-based)"
+                                android:textSize="14sp"
+                                android:textColor="?android:attr/textColorSecondary"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+
+                        <!-- Stepper controls -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:layout_marginStart="16dp">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_decrement_active_page"
+                                style="?attr/materialIconButtonOutlinedStyle"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:insetLeft="0dp"
+                                android:insetTop="0dp"
+                                android:insetRight="0dp"
+                                android:insetBottom="0dp"
+                                android:minWidth="40dp"
+                                android:minHeight="40dp"
+                                app:icon="@drawable/ic_remove" />
+
+                            <TextView
+                                android:id="@+id/tv_active_page_value"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:minWidth="32dp"
+                                android:gravity="center"
+                                android:text="1"
+                                android:textAppearance="?attr/textAppearanceTitleMedium"
+                                android:textColor="?android:attr/textColorPrimary"
+                                android:paddingHorizontal="4dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_increment_active_page"
+                                style="?attr/materialIconButtonOutlinedStyle"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:insetLeft="0dp"
+                                android:insetTop="0dp"
+                                android:insetRight="0dp"
+                                android:insetBottom="0dp"
+                                android:minWidth="40dp"
+                                android:minHeight="40dp"
+                                app:icon="@drawable/ic_add" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Total Pages Stepper Row -->
+                    <LinearLayout
+                        android:id="@+id/layout_total_pages"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="16dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Total Home Pages"
+                                android:textColor="?android:attr/textColorPrimary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Used to keep sphere visible when swiping at screen edges"
+                                android:textSize="14sp"
+                                android:textColor="?android:attr/textColorSecondary"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+
+                        <!-- Stepper controls -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:layout_marginStart="16dp">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_decrement_total_pages"
+                                style="?attr/materialIconButtonOutlinedStyle"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:insetLeft="0dp"
+                                android:insetTop="0dp"
+                                android:insetRight="0dp"
+                                android:insetBottom="0dp"
+                                android:minWidth="40dp"
+                                android:minHeight="40dp"
+                                app:icon="@drawable/ic_remove" />
+
+                            <TextView
+                                android:id="@+id/tv_total_pages_value"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:minWidth="32dp"
+                                android:gravity="center"
+                                android:text="3"
+                                android:textAppearance="?attr/textAppearanceTitleMedium"
+                                android:textColor="?android:attr/textColorPrimary"
+                                android:paddingHorizontal="4dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_increment_total_pages"
+                                style="?attr/materialIconButtonOutlinedStyle"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:insetLeft="0dp"
+                                android:insetTop="0dp"
+                                android:insetRight="0dp"
+                                android:insetBottom="0dp"
+                                android:minWidth="40dp"
+                                android:minHeight="40dp"
+                                app:icon="@drawable/ic_add" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Block Launcher Gestures Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="8dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Block Launcher Gestures"
+                                android:textColor="?android:attr/textColorPrimary"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Prevent launcher scrolling or notification shade pull-down on sphere. Requires overlay permission."
+                                android:textSize="14sp"
+                                android:textColor="?android:attr/textColorSecondary"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switch_block_launcher_gestures"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp" />
+                    </LinearLayout>
+
+                    <!-- Gesture Capture Radius Row -->
+                    <LinearLayout
+                        android:id="@+id/btn_gesture_capture_radius"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginTop="20dp"
                         android:background="?attr/selectableItemBackground"
                         android:clickable="true"
-                        android:focusable="true">
+                        android:focusable="true"
+                        android:visibility="gone">
 
                         <ImageView
                             android:layout_width="40dp"
                             android:layout_height="40dp"
-                            android:src="@drawable/ic_widget_planet"
+                            android:src="@android:drawable/ic_menu_crop"
                             android:padding="8dp"
                             android:background="@drawable/rounded_bg_solid"
                             app:tint="?attr/colorPrimary" />
@@ -269,15 +501,15 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Sphere Background"
+                                android:text="Gesture Capture Radius"
                                 android:textColor="?android:attr/textColorPrimary"
                                 android:textSize="16sp" />
 
                             <TextView
-                                android:id="@+id/tv_background_status"
+                                android:id="@+id/tv_gesture_radius_value"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Default"
+                                android:text="100%"
                                 android:textSize="14sp"
                                 android:textColor="?android:attr/textColorSecondary" />
                         </LinearLayout>
@@ -289,6 +521,25 @@
                             app:tint="?attr/colorOnSurfaceVariant" />
                     </LinearLayout>
 
+                    <!-- Divider -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="?android:attr/listDivider"
+                        android:layout_marginTop="20dp"
+                        android:layout_marginBottom="16dp" />
+
+                    <!-- Background & Wallpaper Section Title -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Background &amp; Wallpaper"
+                        android:textColor="?attr/colorPrimary"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="16dp" />
+
                     <!-- Device Wallpaper Row -->
                     <LinearLayout
                         android:id="@+id/btn_set_device_wallpaper"
@@ -296,7 +547,6 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:layout_marginTop="20dp"
                         android:background="?attr/selectableItemBackground"
                         android:clickable="true"
                         android:focusable="true">
@@ -324,6 +574,7 @@
                                 android:textSize="16sp" />
 
                             <TextView
+                                android:id="@+id/tv_wallpaper_status"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Set home screen wallpaper"
@@ -338,55 +589,8 @@
                             app:tint="?attr/colorOnSurfaceVariant" />
                     </LinearLayout>
 
-                    <!-- Background Blur Row -->
-                    <LinearLayout
-                        android:id="@+id/btn_sphere_blur"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="20dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true">
 
-                        <ImageView
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:src="@android:drawable/ic_menu_view"
-                            android:padding="8dp"
-                            android:background="@drawable/rounded_bg_solid"
-                            app:tint="?attr/colorPrimary" />
 
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:layout_marginStart="16dp">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Background Blur"
-                                android:textColor="?android:attr/textColorPrimary"
-                                android:textSize="16sp" />
-
-                            <TextView
-                                android:id="@+id/tv_blur_status"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="No Blur"
-                                android:textSize="14sp"
-                                android:textColor="?android:attr/textColorSecondary" />
-                        </LinearLayout>
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@android:drawable/ic_menu_edit"
-                            app:tint="?attr/colorOnSurfaceVariant" />
-                    </LinearLayout>
 
                     <!-- Divider -->
                     <View

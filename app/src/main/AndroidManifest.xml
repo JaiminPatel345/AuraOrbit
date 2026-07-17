@@ -20,6 +20,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <!-- ─── Feature Declarations ─────────────────────────────────────────── -->
     <!--
@@ -145,6 +146,12 @@
         <activity
             android:name=".DeletedWidgetActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:exported="false" />
+
+        <activity
+            android:name=".GestureRadiusEditorActivity"
+            android:theme="@style/Theme.AuraOrbit.TransparentFullscreen"
+            android:screenOrientation="portrait"
             android:exported="false" />
 
     </application>
