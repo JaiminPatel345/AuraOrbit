@@ -94,13 +94,8 @@ public class LiveWallpaperSettings extends AppCompatActivity {
             Intent resultValue = new Intent();
             resultValue.putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
             setResult(RESULT_OK, resultValue);
-
-            android.content.SharedPreferences prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
-            String groupName = prefs.getString("widget_group_" + appWidgetId, null);
-            android.util.Log.d("AuraOrbit", "CONFIGURE groupName for widget=" + groupName);
-            if (groupName != null) {
-                intent.putExtra("open_group", groupName);
-            }
+            finish();
+            return;
         }
 
         // Inflate the activity layout that owns the MaterialToolbar + settings_container.
