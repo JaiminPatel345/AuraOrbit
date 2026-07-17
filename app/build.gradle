@@ -10,8 +10,8 @@ android {
         applicationId "dev.jaimin.auraorbit"
         minSdk rootProject.ext.androidMinSdk
         targetSdk rootProject.ext.androidTargetSdk
-        versionCode 8
-        versionName "2.3.1"
+        versionCode 9
+        versionName "2.4.0"
     }
 
     signingConfigs {
