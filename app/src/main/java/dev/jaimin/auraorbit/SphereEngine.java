@@ -766,6 +766,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             "pref_icon_size",
             "pref_rotation_speed",
             "pref_active_page",
+            "pref_dynamic_last_page",
+            "pref_total_pages",
             "pref_target_fps"
     );
 
@@ -932,7 +934,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // User-facing value is 1-based (UI: 1 = first page, SeekBar range 1..9).
         // Internally we use 0-based index for all page-visibility math.
         // Default raw value 1 → internal 0 (first page).
-        activePage = Math.max(0, prefs.getInt("pref_active_page", 1) - 1);
+        boolean dynamicLastPage = prefs.getBoolean("pref_dynamic_last_page", false);
+        int totalPages = prefs.getInt("pref_total_pages", 3);
+        if (dynamicLastPage) {
+            activePage = Math.max(0, totalPages - 1);
+        } else {
+            activePage = Math.max(0, prefs.getInt("pref_active_page", 1) - 1);
+        }
 
         // Sphere radius: pref value 20–100 mapped to world units 3.0–8.0
         int radiusPref = prefs.getInt("pref_sphere_radius", 50);
@@ -1008,6 +1016,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         sb.append(speedPref).append('|');
         
         sb.append(prefs.getInt("pref_active_page", 1)).append('|'); // raw 1-based value (UI default)
+        sb.append(prefs.getBoolean("pref_dynamic_last_page", false)).append('|');
+        sb.append(prefs.getInt("pref_total_pages", 3)).append('|');
         
         String fpsPref = prefs.getString("pref_target_fps", "120");
         if (pinnedGroupName != null) fpsPref = prefs.getString("pref_target_fps_" + pinnedGroupName, fpsPref);
@@ -1845,6 +1855,24 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * intercepts both touchCancelled and touchDown so the outer pinchActive
      * flag is always consistent with the actual touch state.
      */
+    private boolean shouldIgnoreInput() {
+        if (activityMode) {
+            return false;
+        }
+        if (isPreviewMode) {
+            return false;
+        }
+        // If wallpaper is zoomed out (app drawer or recents open)
+        if (wallpaperZoom > 0.2f) {
+            return true;
+        }
+        // If accessibility service reports drawer is open
+        if (isA11yDrawerOpenFresh()) {
+            return true;
+        }
+        return false;
+    }
+
     private void setupInput() {
         // Subclass GestureDetector to intercept touchCancelled and touchDown
         // before the gesture listener sees them.  Signature verified against
@@ -1880,14 +1908,12 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
              */
             @Override
             public boolean tap(float x, float y, int count, int button) {
+                if (shouldIgnoreInput()) return false;
                 // ─── Activity mode: exclusive input — launch directly ─────
                 // Inside our own activity the sphere owns all input. No launcher
                 // gesture conflict, no command gating, no zoom/drawer guards.
                 if (activityMode) {
-                    boolean hit = raycastAndLaunch(x, y);
-                    if (!hit && context instanceof android.app.Activity) {
-                        Gdx.app.postRunnable(() -> ((android.app.Activity) context).finish());
-                    }
+                    raycastAndLaunch(x, y);
                     return true;
                 }
 
@@ -1936,6 +1962,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
              */
             @Override
             public boolean pan(float x, float y, float deltaX, float deltaY) {
+                if (shouldIgnoreInput()) return false;
                 if (touchStartedOutsideSphere) return false;
 
                 // ─── Two-finger drag has priority — suppress one-finger pan ─
@@ -2024,6 +2051,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
              */
             @Override
             public boolean fling(float velocityX, float velocityY, int button) {
+                if (shouldIgnoreInput()) return false;
                 if (touchStartedOutsideSphere) {
                     touchStartedOutsideSphere = false;
                     return false;
@@ -2081,6 +2109,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
             @Override
             public boolean panStop(float x, float y, int pointer, int button) {
+                if (shouldIgnoreInput()) return false;
                 if (touchStartedOutsideSphere) {
                     touchStartedOutsideSphere = false;
                     return false;
@@ -2135,6 +2164,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             @Override
             public boolean pinch(Vector2 initialPointer1, Vector2 initialPointer2,
                                  Vector2 pointer1, Vector2 pointer2) {
+                if (shouldIgnoreInput()) return false;
                 // Midpoint of the two current pointer positions (screen pixels).
                 float midX = (pointer1.x + pointer2.x) * 0.5f;
                 float midY = (pointer1.y + pointer2.y) * 0.5f;
@@ -2211,6 +2241,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
              */
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+                if (shouldIgnoreInput()) return false;
                 if (pointer == 0) {
                     // New gesture starts: clear any stale pinch state so the next
                     // pinch() re-arms from the current midpoint (no rotation jolt).
@@ -2235,21 +2266,6 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                     if (activityMode) {
                         edgeClaimedGesture = false;
                         touchStartedOutsideSphere = false;
-                        
-                        // If touch starts outside the sphere (with 30% padding), close immediately 
-                        // so the user can interact with their launcher (e.g. swipe notifications).
-                        if (camera != null) {
-                            com.badlogic.gdx.math.collision.Ray ray = camera.getPickRay(screenX, screenY);
-                            float radius = sphereRadius * 1.3f;
-                            if (!com.badlogic.gdx.math.Intersector.intersectRaySphere(ray, com.badlogic.gdx.math.Vector3.Zero, radius, tmpVec)) {
-                                if (context instanceof android.app.Activity) {
-                                    Gdx.app.postRunnable(() -> ((android.app.Activity) context).finish());
-                                }
-                                // Return false so we don't consume the touch, 
-                                // letting the system handle the swipe if possible.
-                                return false;
-                            }
-                        }
                     } else {
                         float hFrac = (float) screenY / Math.max(1, Gdx.graphics.getHeight());
                         edgeClaimedGesture = hFrac < EDGE_EXCLUSION_FRACTION
@@ -2314,6 +2330,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
             @Override
             public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+                if (shouldIgnoreInput()) return false;
                 if (pointer == 0) {
                     touchStartedOutsideSphere = false;
                 }
@@ -2429,7 +2446,17 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // totalDx for path A.  Both are negative for left-swipe (→ next page).
         float directionSignal = velocityFlick ? velocityX : totalDx;
         int delta = directionSignal < 0 ? 1 : -1;
-        inferredPage = MathUtils.clamp(inferredPage + delta, 0, 8);
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
+        int totalPages = sharedPrefs.getInt("pref_total_pages", 3);
+        if (xOffsetStep > 0f && offsetsLive) {
+            totalPages = Math.round(1f / xOffsetStep) + 1;
+        } else if (LauncherStateService.LauncherState.serviceConnected 
+                && (System.nanoTime() - LauncherStateService.LauncherState.updatedNanos) < 5_000_000_000L
+                && LauncherStateService.LauncherState.pageCount > 0) {
+            totalPages = LauncherStateService.LauncherState.pageCount;
+        }
+        int maxPageIdx = Math.max(0, totalPages - 1);
+        inferredPage = MathUtils.clamp(inferredPage + delta, 0, maxPageIdx);
 
         Log.d(TAG, "commitPageSwipe: totalDx=" + totalDx + " velocityX=" + velocityX
                 + " path=" + (velocityFlick ? "FLING" : "DRAG")
@@ -2769,94 +2796,56 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             return;
         }
 
-        // ─── Highest-priority source: accessibility service (opt-in, One UI) ──
-        // When LauncherStateService is connected AND its last update is fresh
-        // (within 5 seconds), use the exact page reported by the page indicator
-        // instead of dead-reckoning or offsets.  Falls through when stale or
-        // when the service is not enabled by the user.
-        //
-        // LauncherState.page is 0-based (converted from the 1-based indicator).
-        // activePage is 0-based.  The same falloff formula used by the offset
-        // and dead-reckoning paths keeps behaviour identical.
-        //
-        // Statics are volatile — reads on the GL thread see writes from the
-        // service's main thread without explicit synchronization.
+
         final long A11Y_FRESHNESS_NS = 5_000_000_000L; // 5 s
         boolean a11yFresh = LauncherStateService.LauncherState.serviceConnected
                 && (System.nanoTime() - LauncherStateService.LauncherState.updatedNanos)
                    < A11Y_FRESHNESS_NS;
-        if (a11yFresh) {
-            int a11yPage = LauncherStateService.LauncherState.page;
-            // One UI home page indicator only exists mid-swipe (the dots fade out at
-            // rest, removing/blanking the node).  Before the first swipe, the service
-            // reports page=0 which means "no data yet", NOT "first page".  Treat
-            // page < 1 as no data and fall through to the next source so the sphere
-            // is visible instead of collapsing immediately after the wallpaper applies.
-            if (a11yPage >= 1) {
-                // Sync dead-reckoning so it takes over seamlessly if the service dies
-                // or data goes stale between swipes.
-                inferredPage = a11yPage - 1; // convert back to 0-based
-                float pageDistance = Math.abs(a11yPage - 1 - activePage);
-                targetVisibility = MathUtils.clamp(1f - (pageDistance - 0.3f) * 1.5f, 0f, 1f);
-                // Smooth lerp to target
-                pageVisibility = MathUtils.lerp(pageVisibility, targetVisibility, delta * 8f);
-                if (dbg) logVisDebug("A11Y", targetVisibility);
-                return;
-            }
-            // a11yPage == 0: service is connected and fresh but has never parsed a
-            // page indicator — fall through to offsets / dead-reckoning below.
-        }
 
-        // ─── Determine whether launcher offsets are currently live ────────────
-        // Offsets are "live" when the launcher has ever reported a valid step AND
-        // a step > 0 arrived within the last 10 seconds.
-        //
-        // Rationale for the recency window: on real offset-reporting launchers
-        // (Pixel Launcher, etc.) xOffsetStep events arrive continuously while the
-        // user swipes, so lastOffsetTimeNanos is always fresh and offsets stay live
-        // indefinitely.  On offset-silent launchers (e.g. Samsung One UI) no events
-        // ever arrive and offsetEverSeen stays false — dead-reckoning is used from
-        // the start.  A problematic third case is OEM transitions that emit a single
-        // spurious offset event with step > 0: without the recency window that one
-        // event would permanently latch the engine onto the offset path with stale
-        // values (symptom: sphere frozen visible-everywhere or hidden-everywhere).
-        // With a 10-second window the spurious event expires and dead-reckoning
-        // resumes automatically.
-        //
-        // nanoTime arithmetic: both values are from System.nanoTime() so the
-        // subtraction is monotonic and safe from clock-skew.  lastOffsetTimeNanos
-        // is initialised to Long.MIN_VALUE/2 so the initial age is safely huge.
+        // Fetch preference values
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
+        boolean dynamicLastPage = sharedPrefs.getBoolean("pref_dynamic_last_page", false);
+        int totalPages = sharedPrefs.getInt("pref_total_pages", 3);
+        int targetActivePage = activePage;
+
         boolean offsetsLive = offsetEverSeen
                 && (System.nanoTime() - lastOffsetTimeNanos) < 10_000_000_000L;
 
         if (xOffsetStep > 0f && offsetsLive) {
-            // ─── Real offset path: launcher reports page positions ──────────
-            // Calculate current page number from continuous offset.
-            float currentPage = currentXOffset / xOffsetStep;
-            float pageDistance = Math.abs(currentPage - activePage);
+            int livePageCount = Math.round(1f / xOffsetStep) + 1;
+            if (dynamicLastPage) {
+                targetActivePage = livePageCount - 1;
+            }
+        } else if (a11yFresh && LauncherStateService.LauncherState.pageCount > 0) {
+            if (dynamicLastPage) {
+                targetActivePage = LauncherStateService.LauncherState.pageCount - 1;
+            }
+        } else {
+            if (dynamicLastPage) {
+                targetActivePage = Math.max(0, totalPages - 1);
+            }
+        }
 
-            // Full visibility when within 0.3 pages, fading to 0 beyond 1 page.
-            // Clamp floor is 0f (not 0.1f) so the sphere fully disappears on
-            // non-active pages — the user configured this sphere for one page only.
-            // Falloff slope 1.5 (not 1.4): at exactly pageDistance = 1.0 the
-            // target must reach 0 — with 1.4 it left a 2% ghost (1−0.7×1.4=0.02)
-            // visible on the adjacent page.
+        if (a11yFresh) {
+            int a11yPage = LauncherStateService.LauncherState.page;
+            if (a11yPage >= 1) {
+                inferredPage = a11yPage - 1; // convert back to 0-based
+                float pageDistance = Math.abs(a11yPage - 1 - targetActivePage);
+                targetVisibility = MathUtils.clamp(1f - (pageDistance - 0.3f) * 1.5f, 0f, 1f);
+                pageVisibility = MathUtils.lerp(pageVisibility, targetVisibility, delta * 8f);
+                if (dbg) logVisDebug("A11Y", targetVisibility);
+                return;
+            }
+        }
+
+        if (xOffsetStep > 0f && offsetsLive) {
+            float currentPage = currentXOffset / xOffsetStep;
+            float pageDistance = Math.abs(currentPage - targetActivePage);
             targetVisibility = MathUtils.clamp(1f - (pageDistance - 0.3f) * 1.5f, 0f, 1f);
         } else if (!offsetsLive) {
-            // ─── Dead-reckoning path: offset-silent launcher (e.g. Samsung One UI) ─
-            // The launcher has never reported a valid step, OR the last valid step
-            // was more than 10 seconds ago (spurious-event guard).  Use the inferred
-            // page count maintained by commitPageSwipe().  Apply the same falloff
-            // formula so the "Sphere page" preference is functional on One UI.
-            // Dead-reckoning caveat: partial swipes / multi-page flings may drift;
-            // clamping at [0,8] in commitPageSwipe re-syncs at the boundaries.
-            float pageDistance = Math.abs(inferredPage - activePage);
+            float pageDistance = Math.abs(inferredPage - targetActivePage);
             targetVisibility = MathUtils.clamp(1f - (pageDistance - 0.3f) * 1.5f, 0f, 1f);
         } else {
-            // ─── Transient zero-step: offsets are live but step momentarily 0 ──
-            // Launcher normally reports offsets but the step is transiently zero
-            // (e.g. during a launcher animation or home-screen reset).  Keep the
-            // sphere visible to avoid a brief invisible flash.
             targetVisibility = 1f;
         }
 
@@ -3699,9 +3688,14 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // On offset-reporting launchers (Pixel Launcher, etc.) this field is
             // unused — the assignment is harmless.
             if (!LauncherStateService.LauncherState.serviceConnected) {
-                inferredPage = activePage;
+                SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
+                boolean dynamicLastPage = sharedPrefs.getBoolean("pref_dynamic_last_page", false);
+                int totalPages = sharedPrefs.getInt("pref_total_pages", 3);
+                int targetActivePage = dynamicLastPage ? Math.max(0, totalPages - 1) : activePage;
+
+                inferredPage = targetActivePage;
                 Log.d(TAG, "setVisible: re-anchored inferredPage=" + inferredPage
-                        + " (activePage=" + activePage + ")");
+                        + " (activePage=" + targetActivePage + ")");
             } else {
                 Log.d(TAG, "setVisible: skipped re-anchor, relying on LauncherStateService");
             }

@@ -45,7 +45,7 @@ public class PermanentSphereFragment extends Fragment {
     private TextView tvSpherePositionStatus;
     private TextView tvAppsCount;
     private TextView tvBlurStatus;
-    private boolean isPickingDeviceWallpaper = false;
+
     private View sectionSphereSettings;
 
     private ActivityResultLauncher<PickVisualMediaRequest> pickMedia;
@@ -103,32 +103,30 @@ public class PermanentSphereFragment extends Fragment {
             startActivity(new android.content.Intent(requireContext(), SpherePositionEditorActivity.class));
         });
 
-        // Sphere Background
-        tvBackgroundStatus = view.findViewById(R.id.tv_background_status);
+        // Device Wallpaper
+        tvBackgroundStatus = view.findViewById(R.id.tv_wallpaper_status);
         updateBackgroundStatus();
-        view.findViewById(R.id.btn_app_background).setOnClickListener(v -> {
+        view.findViewById(R.id.btn_set_device_wallpaper).setOnClickListener(v -> {
             if (BackgroundStore.exists(requireContext())) {
                 new MaterialAlertDialogBuilder(requireContext())
-                        .setItems(new CharSequence[]{"Choose new photo", "Remove photo", "Cancel"}, (dialog, which) -> {
+                        .setItems(new CharSequence[]{"Choose new wallpaper", "Remove wallpaper / Reset to Default", "Cancel"}, (dialog, which) -> {
                             if (which == 0) {
-                                isPickingDeviceWallpaper = false;
                                 launchPicker();
                             } else if (which == 1) {
                                 BackgroundStore.clear(requireContext());
+                                try {
+                                    android.app.WallpaperManager.getInstance(requireContext()).clear();
+                                    Toast.makeText(requireContext(), "Device wallpaper reset to default!", Toast.LENGTH_SHORT).show();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
                                 updateBackgroundStatus();
                             }
                         })
                         .show();
             } else {
-                isPickingDeviceWallpaper = false;
                 launchPicker();
             }
-        });
-
-        // Device Wallpaper
-        view.findViewById(R.id.btn_set_device_wallpaper).setOnClickListener(v -> {
-            isPickingDeviceWallpaper = true;
-            launchPicker();
         });
 
         // Background Blur
@@ -150,6 +148,67 @@ public class PermanentSphereFragment extends Fragment {
         sliderSpeed.setValue(prefs.getInt("pref_rotation_speed", 100));
         sliderSpeed.addOnChangeListener((slider, value, fromUser) -> {
             if (fromUser) prefs.edit().putInt("pref_rotation_speed", (int) value).apply();
+        });
+
+        // Page Settings
+        MaterialSwitch switchDynamicLastPage = view.findViewById(R.id.switch_dynamic_last_page);
+        View layoutActivePage = view.findViewById(R.id.layout_active_page);
+        TextView tvActivePageValue = view.findViewById(R.id.tv_active_page_value);
+        com.google.android.material.button.MaterialButton btnDecrementActivePage = view.findViewById(R.id.btn_decrement_active_page);
+        com.google.android.material.button.MaterialButton btnIncrementActivePage = view.findViewById(R.id.btn_increment_active_page);
+
+        View layoutTotalPages = view.findViewById(R.id.layout_total_pages);
+        TextView tvTotalPagesValue = view.findViewById(R.id.tv_total_pages_value);
+        com.google.android.material.button.MaterialButton btnDecrementTotalPages = view.findViewById(R.id.btn_decrement_total_pages);
+        com.google.android.material.button.MaterialButton btnIncrementTotalPages = view.findViewById(R.id.btn_increment_total_pages);
+
+        boolean dynamicLastPage = prefs.getBoolean("pref_dynamic_last_page", false);
+        switchDynamicLastPage.setChecked(dynamicLastPage);
+        layoutActivePage.setVisibility(dynamicLastPage ? View.GONE : View.VISIBLE);
+
+        switchDynamicLastPage.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            prefs.edit().putBoolean("pref_dynamic_last_page", isChecked).apply();
+            layoutActivePage.setVisibility(isChecked ? View.GONE : View.VISIBLE);
+        });
+
+        // Active Page Stepper
+        int activePage = prefs.getInt("pref_active_page", 1);
+        tvActivePageValue.setText(String.valueOf(activePage));
+        btnDecrementActivePage.setOnClickListener(v -> {
+            int val = prefs.getInt("pref_active_page", 1);
+            int newVal = Math.max(1, val - 1);
+            if (newVal != val) {
+                prefs.edit().putInt("pref_active_page", newVal).apply();
+                tvActivePageValue.setText(String.valueOf(newVal));
+            }
+        });
+        btnIncrementActivePage.setOnClickListener(v -> {
+            int val = prefs.getInt("pref_active_page", 1);
+            int newVal = Math.min(9, val + 1);
+            if (newVal != val) {
+                prefs.edit().putInt("pref_active_page", newVal).apply();
+                tvActivePageValue.setText(String.valueOf(newVal));
+            }
+        });
+
+        // Total Pages Stepper
+        int totalPages = prefs.getInt("pref_total_pages", 3);
+        tvTotalPagesValue.setText(String.valueOf(totalPages));
+        btnDecrementTotalPages.setOnClickListener(v -> {
+            int val = prefs.getInt("pref_total_pages", 3);
+            int newVal = Math.max(1, val - 1);
+            if (newVal != val) {
+                prefs.edit().putInt("pref_total_pages", newVal).apply();
+                tvTotalPagesValue.setText(String.valueOf(newVal));
+            }
+        });
+        btnIncrementTotalPages.setOnClickListener(v -> {
+            int val = prefs.getInt("pref_total_pages", 3);
+            int newVal = Math.min(9, val + 1);
+            if (newVal != val) {
+                prefs.edit().putInt("pref_total_pages", newVal).apply();
+                tvTotalPagesValue.setText(String.valueOf(newVal));
+            }
         });
     }
 
@@ -218,19 +277,6 @@ public class PermanentSphereFragment extends Fragment {
 
     private void saveBackground(@Nullable Uri uri) {
         if (uri == null) return;
-        if (isPickingDeviceWallpaper) {
-            try {
-                android.app.WallpaperManager wm = android.app.WallpaperManager.getInstance(requireContext());
-                java.io.InputStream is = requireContext().getContentResolver().openInputStream(uri);
-                wm.setStream(is);
-                if (is != null) is.close();
-                Toast.makeText(requireContext(), "Device wallpaper updated!", Toast.LENGTH_SHORT).show();
-            } catch (Exception e) {
-                e.printStackTrace();
-                Toast.makeText(requireContext(), "Failed to set wallpaper", Toast.LENGTH_SHORT).show();
-            }
-            return;
-        }
 
         Context appCtx = requireContext().getApplicationContext();
         Handler mainThread = new Handler(Looper.getMainLooper());
@@ -241,10 +287,32 @@ public class PermanentSphereFragment extends Fragment {
                 if (ok) {
                     updateBackgroundStatus();
                 } else {
-                    Toast.makeText(requireContext(), "Failed to save image. Please try another one.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(requireContext(), "Failed to save wallpaper background image internally.", Toast.LENGTH_LONG).show();
                 }
             });
         });
+
+        // 2. Set as system static wallpaper
+        try {
+            android.app.WallpaperManager wm = android.app.WallpaperManager.getInstance(requireContext());
+            java.io.InputStream is = requireContext().getContentResolver().openInputStream(uri);
+            wm.setStream(is);
+            if (is != null) is.close();
+            Toast.makeText(requireContext(), "Device wallpaper set! Re-enable AuraOrbit to see the 3D sphere.", Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(requireContext(), "Failed to set system wallpaper.", Toast.LENGTH_SHORT).show();
+        }
+
+        // 3. Prompt user to re-enable AuraOrbit Live Wallpaper
+        try {
+            android.content.Intent intent = new android.content.Intent(android.app.WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER);
+            intent.putExtra(android.app.WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
+                    new android.content.ComponentName(requireContext(), MyWallpaperService.class));
+            startActivity(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void navigateTo(@NonNull Fragment fragment) {
