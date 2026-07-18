@@ -83,23 +83,59 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
         super.onDestroy();
     }
 
-    public void updateOverlay(boolean interactive, int centerX, int centerY, int size) {
+    public void updateOverlay(boolean interactive, int ignoredX, int ignoredY, int ignoredSize) {
         boolean blockEnabled = prefs.getBoolean("pref_block_launcher_gestures", false);
-        android.util.Log.d("MyWallpaperService", "updateOverlay: blockEnabled=" + blockEnabled + ", interactive=" + interactive + ", size=" + size);
-
-        if (!blockEnabled || !interactive || size <= 0) {
-            removeOverlay();
-            return;
-        }
-
         boolean canDraw = Settings.canDrawOverlays(this);
-        android.util.Log.d("MyWallpaperService", "updateOverlay: canDrawOverlays=" + canDraw);
-        if (!canDraw) {
+
+        if (!blockEnabled || !canDraw || !interactive) {
+            removeOverlay();
             return;
         }
 
         new Handler(Looper.getMainLooper()).post(() -> {
             WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+            
+            // Read latest preferences to compute physical screen size and position
+            int radiusPref = prefs.getInt("pref_sphere_radius", 50);
+            int iconPref = prefs.getInt("pref_icon_size", 50);
+            float scale = prefs.getFloat("pref_sphere_scale", 1.0f);
+            String posType = prefs.getString("pref_sphere_position", "center");
+            int currentPercent = prefs.getInt("pref_gesture_capture_scale_percent", 100);
+
+            android.util.DisplayMetrics metrics = getResources().getDisplayMetrics();
+            int screenWidth = metrics.widthPixels;
+            int screenHeight = metrics.heightPixels;
+
+            // Compute actual visual sizes in physical pixels
+            float worldRadius = 3.0f + 5.0f * (radiusPref / 100f);
+            float worldIconSize = 0.6f + 1.4f * (iconPref / 100f);
+            float effRadius = worldRadius + worldIconSize * 0.75f;
+            float baseDiameter = (effRadius * 2f * (screenWidth / 16f)) * scale;
+            int size = (int) (baseDiameter * (currentPercent / 100f));
+
+            if (size <= 0) {
+                removeOverlay();
+                return;
+            }
+
+            // Position calculations in physical pixels
+            int centerX, centerY;
+            if ("custom".equals(posType)) {
+                float customX = prefs.getFloat("pref_sphere_x", 0f);
+                float customY = prefs.getFloat("pref_sphere_y", (screenHeight - screenWidth) / 2f);
+                centerX = (int) (customX + (screenWidth * scale) / 2f);
+                centerY = (int) (customY + (screenWidth * scale) / 2f);
+            } else if ("top".equals(posType)) {
+                centerX = screenWidth / 2;
+                centerY = (int) (screenHeight * 0.25f);
+            } else if ("bottom".equals(posType)) {
+                centerX = screenWidth / 2;
+                centerY = (int) (screenHeight * 0.75f);
+            } else { // "center"
+                centerX = screenWidth / 2;
+                centerY = screenHeight / 2;
+            }
+
             if (overlayView == null) {
                 overlayView = new TouchOverlayView(this);
             }
@@ -119,7 +155,7 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
             overlayParams.x = centerX - size / 2;
             overlayParams.y = centerY - size / 2;
 
-             try {
+            try {
                 if (!isOverlayAdded) {
                     android.util.Log.d("MyWallpaperService", "Adding overlay view of size " + size + " at (" + overlayParams.x + "," + overlayParams.y + ")");
                     wm.addView(overlayView, overlayParams);
