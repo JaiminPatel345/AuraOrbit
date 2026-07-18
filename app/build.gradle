@@ -87,6 +87,9 @@ dependencies {
     // ─── Settings UI / Activity Result APIs ───────────────────────────
     implementation 'androidx.activity:activity:1.9.3'
 
+    // ─── Hidden API Bypass ─────────────────────────────────────────────
+    implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:4.3'
+
     // ─── Unit tests (GroupStore runs on host JVM; org.json is stubbed
     //     in android.jar, so pull the real artifact for tests) ─────────
     testImplementation 'junit:junit:4.13.2'
