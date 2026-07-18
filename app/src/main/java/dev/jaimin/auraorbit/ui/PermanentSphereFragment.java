@@ -1,3 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+
 package dev.jaimin.auraorbit.ui;
 
 import android.content.Context;
@@ -25,6 +37,7 @@ import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.slider.Slider;
 
 import java.util.Set;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -33,8 +46,8 @@ import dev.jaimin.auraorbit.MyWallpaperService;
 import dev.jaimin.auraorbit.R;
 import dev.jaimin.auraorbit.SpherePositionEditorActivity;
 import dev.jaimin.auraorbit.GestureRadiusEditorActivity;
+import dev.jaimin.auraorbit.SphereBlurEditorActivity;
 import dev.jaimin.auraorbit.AppFetcher;
-import java.util.List;
 
 public class PermanentSphereFragment extends Fragment {
 
@@ -47,6 +60,7 @@ public class PermanentSphereFragment extends Fragment {
     private TextView tvSpherePositionStatus;
     private TextView tvAppsCount;
     private TextView tvGestureRadiusValue;
+    private TextView tvBlurStatus;
     private View sectionSphereSettings;
 
     private ActivityResultLauncher<PickVisualMediaRequest> pickMedia;
@@ -130,7 +144,12 @@ public class PermanentSphereFragment extends Fragment {
             }
         });
 
-
+        // Background Blur
+        tvBlurStatus = view.findViewById(R.id.tv_blur_status);
+        updateBlurStatusText(tvBlurStatus, prefs.getInt("pref_blur_radius", 50));
+        view.findViewById(R.id.btn_sphere_blur).setOnClickListener(v -> {
+            startActivity(new android.content.Intent(requireContext(), SphereBlurEditorActivity.class));
+        });
 
         // Icon Size slider
         Slider sliderIconSize = view.findViewById(R.id.slider_icon_size);
@@ -206,7 +225,6 @@ public class PermanentSphereFragment extends Fragment {
                 tvTotalPagesValue.setText(String.valueOf(newVal));
             }
         });
-
         // Block Launcher Gestures switch and Clickable Radius Row
         View btnGestureCaptureRadius = view.findViewById(R.id.btn_gesture_capture_radius);
         tvGestureRadiusValue = view.findViewById(R.id.tv_gesture_radius_value);
@@ -386,6 +404,15 @@ public class PermanentSphereFragment extends Fragment {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void updateBlurStatusText(TextView tv, int amount) {
+        if (tv == null) return;
+        if (amount == 0) tv.setText("No Blur");
+        else if (amount <= 33) tv.setText("Sphere Background Only");
+        else if (amount <= 66) tv.setText("Nearby Area");
+        else if (amount < 100) tv.setText("Almost Full Screen");
+        else tv.setText("Full Screen Blur");
     }
 
     private void navigateTo(@NonNull Fragment fragment) {

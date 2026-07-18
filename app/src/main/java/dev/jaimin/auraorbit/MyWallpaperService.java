@@ -73,6 +73,8 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
         }
     }
 
+
+
     @Override
     public void onCreateApplication() {
         super.onCreateApplication();
