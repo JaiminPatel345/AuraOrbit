@@ -18,12 +18,49 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
     private WindowManager.LayoutParams overlayParams;
     private boolean isOverlayAdded = false;
     private SharedPreferences prefs;
+    public static volatile boolean isActivityActive = false;
 
     @Override
     public void onCreate() {
         super.onCreate();
         bypassHiddenApiRestrictions();
         prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
+
+        getApplication().registerActivityLifecycleCallbacks(new android.app.Application.ActivityLifecycleCallbacks() {
+            private int resumedActivities = 0;
+
+            @Override
+            public void onActivityCreated(android.app.Activity activity, android.os.Bundle savedInstanceState) {}
+
+            @Override
+            public void onActivityStarted(android.app.Activity activity) {}
+
+            @Override
+            public void onActivityResumed(android.app.Activity activity) {
+                resumedActivities++;
+                isActivityActive = true;
+                android.util.Log.d("MyWallpaperService", "Activity resumed: " + activity.getClass().getSimpleName() + ", total active: " + resumedActivities);
+                removeOverlay();
+            }
+
+            @Override
+            public void onActivityPaused(android.app.Activity activity) {
+                resumedActivities = Math.max(0, resumedActivities - 1);
+                if (resumedActivities == 0) {
+                    isActivityActive = false;
+                }
+                android.util.Log.d("MyWallpaperService", "Activity paused: " + activity.getClass().getSimpleName() + ", total active: " + resumedActivities);
+            }
+
+            @Override
+            public void onActivityStopped(android.app.Activity activity) {}
+
+            @Override
+            public void onActivitySaveInstanceState(android.app.Activity activity, android.os.Bundle outState) {}
+
+            @Override
+            public void onActivityDestroyed(android.app.Activity activity) {}
+        });
     }
 
     private void bypassHiddenApiRestrictions() {
@@ -98,7 +135,7 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
         boolean blockEnabled = prefs.getBoolean("pref_block_launcher_gestures", false);
         boolean canDraw = Settings.canDrawOverlays(this);
 
-        if (!blockEnabled || !canDraw || !interactive) {
+        if (isActivityActive || !blockEnabled || !canDraw || !interactive) {
             removeOverlay();
             return;
         }

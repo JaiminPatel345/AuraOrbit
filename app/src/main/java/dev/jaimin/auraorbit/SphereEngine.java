@@ -1944,6 +1944,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         if (isPreviewMode) {
             return false;
         }
+        // If an app activity is active, ignore wallpaper touches
+        if (MyWallpaperService.isActivityActive) {
+            return true;
+        }
         // If the sphere is not visible on the current page, ignore touch input
         if (pageVisibility < 0.9f) {
             return true;
