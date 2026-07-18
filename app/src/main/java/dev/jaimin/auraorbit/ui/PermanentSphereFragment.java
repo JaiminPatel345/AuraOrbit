@@ -223,7 +223,8 @@ public class PermanentSphereFragment extends Fragment {
                 btnGestureCaptureRadius.setVisibility((blockEnabled && hasPerm) ? View.VISIBLE : View.GONE);
             }
             if (layoutDebugGestureBounds != null) {
-                layoutDebugGestureBounds.setVisibility((blockEnabled && hasPerm) ? View.VISIBLE : View.GONE);
+                // COMMENTED OUT: layoutDebugGestureBounds.setVisibility((blockEnabled && hasPerm) ? View.VISIBLE : View.GONE);
+                layoutDebugGestureBounds.setVisibility(View.GONE);
             }
 
             switchBlockLauncherGestures.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -239,12 +240,12 @@ public class PermanentSphereFragment extends Fragment {
                     } else {
                         prefs.edit().putBoolean("pref_block_launcher_gestures", true).apply();
                         if (btnGestureCaptureRadius != null) btnGestureCaptureRadius.setVisibility(View.VISIBLE);
-                        if (layoutDebugGestureBounds != null) layoutDebugGestureBounds.setVisibility(View.VISIBLE);
+                        // COMMENTED OUT: if (layoutDebugGestureBounds != null) layoutDebugGestureBounds.setVisibility(View.VISIBLE);
                     }
                 } else {
                     prefs.edit().putBoolean("pref_block_launcher_gestures", false).apply();
                     if (btnGestureCaptureRadius != null) btnGestureCaptureRadius.setVisibility(View.GONE);
-                    if (layoutDebugGestureBounds != null) layoutDebugGestureBounds.setVisibility(View.GONE);
+                    // COMMENTED OUT: if (layoutDebugGestureBounds != null) layoutDebugGestureBounds.setVisibility(View.GONE);
                 }
             });
         }
@@ -290,7 +291,8 @@ public class PermanentSphereFragment extends Fragment {
         }
         View layoutDebugGestureBounds = requireView().findViewById(R.id.layout_debug_gesture_bounds);
         if (layoutDebugGestureBounds != null) {
-            layoutDebugGestureBounds.setVisibility((blockEnabled && hasOverlayPerm) ? View.VISIBLE : View.GONE);
+            // COMMENTED OUT: layoutDebugGestureBounds.setVisibility((blockEnabled && hasOverlayPerm) ? View.VISIBLE : View.GONE);
+            layoutDebugGestureBounds.setVisibility(View.GONE);
         }
         com.google.android.material.materialswitch.MaterialSwitch switchDebugBounds = requireView().findViewById(R.id.switch_debug_gesture_bounds);
         if (switchDebugBounds != null) {
