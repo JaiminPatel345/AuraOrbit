@@ -53,7 +53,11 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
         @Override
         public void onVisibilityChanged(boolean visible) {
             super.onVisibilityChanged(visible);
-            if (!visible) {
+            if (visible) {
+                if (app != null && app.getApplicationListener() instanceof SphereEngine) {
+                    ((SphereEngine) app.getApplicationListener()).setPreviewModeAuthoritative(isPreview());
+                }
+            } else {
                 removeOverlay();
             }
         }
