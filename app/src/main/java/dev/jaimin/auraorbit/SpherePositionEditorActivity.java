@@ -24,6 +24,7 @@ public class SpherePositionEditorActivity extends AndroidApplication {
     
     private float currentScale = 1.0f;
     private int screenWidth;
+    private int screenHeight;
     private SharedPreferences prefs;
 
     private String xPref;
@@ -50,6 +51,7 @@ public class SpherePositionEditorActivity extends AndroidApplication {
 
         DisplayMetrics metrics = getResources().getDisplayMetrics();
         screenWidth = metrics.widthPixels;
+        screenHeight = metrics.heightPixels;
 
         String groupName = getIntent().getStringExtra("group_name");
         scalePref = groupName != null ? "pref_sphere_scale_" + groupName : "pref_sphere_scale";
@@ -59,8 +61,22 @@ public class SpherePositionEditorActivity extends AndroidApplication {
 
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
         currentScale = prefs.getFloat(scalePref, 1.0f);
-        currentX = prefs.getFloat(xPref, 0f);
-        currentY = prefs.getFloat(yPref, (metrics.heightPixels - screenWidth)/2f);
+        
+        // Initialize currentX/Y based on the active posType at startup to prevent jumping on first drag
+        String posType = prefs.getString(posPref, "center");
+        if ("custom".equals(posType)) {
+            currentX = prefs.getFloat(xPref, 0f);
+            currentY = prefs.getFloat(yPref, (screenHeight - screenWidth) / 2f);
+        } else if ("top".equals(posType)) {
+            currentX = (screenWidth * (1f - currentScale)) / 2f;
+            currentY = screenHeight * 0.25f - (screenWidth * currentScale) / 2f;
+        } else if ("bottom".equals(posType)) {
+            currentX = (screenWidth * (1f - currentScale)) / 2f;
+            currentY = screenHeight * 0.75f - (screenWidth * currentScale) / 2f;
+        } else { // "center"
+            currentX = (screenWidth * (1f - currentScale)) / 2f;
+            currentY = screenHeight / 2f - (screenWidth * currentScale) / 2f;
+        }
 
         // ─── Initialize LibGDX 3D View ───────────────────────────────────
         AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
@@ -100,6 +116,19 @@ public class SpherePositionEditorActivity extends AndroidApplication {
         sliderScale.setValue(currentScale);
         sliderScale.addOnChangeListener((slider, value, fromUser) -> {
             currentScale = value;
+            
+            // Constrain positions on scale changes so at least 10% remains visible
+            float sphereDiameter = screenWidth * currentScale;
+            float minMargin = 0.1f * sphereDiameter;
+            
+            float minX = -0.9f * sphereDiameter;
+            float maxX = screenWidth - minMargin;
+            currentX = Math.max(minX, Math.min(maxX, currentX));
+            
+            float minY = -0.9f * sphereDiameter;
+            float maxY = screenHeight - minMargin;
+            currentY = Math.max(minY, Math.min(maxY, currentY));
+            
             sphereEngine.updateCameraPositionAndScale(currentX, currentY, currentScale);
         });
 
@@ -114,8 +143,24 @@ public class SpherePositionEditorActivity extends AndroidApplication {
                 case MotionEvent.ACTION_MOVE:
                     float deltaX = event.getRawX() - dX;
                     float deltaY = event.getRawY() - dY;
-                    currentX = startX + deltaX;
-                    currentY = startY + deltaY;
+                    
+                    float nextX = startX + deltaX;
+                    float nextY = startY + deltaY;
+                    
+                    float sphereDiameter = screenWidth * currentScale;
+                    float minMargin = 0.1f * sphereDiameter;
+                    
+                    // Clamp coordinates so at least 10% of the sphere is visible on screen
+                    float minX = -0.9f * sphereDiameter;
+                    float maxX = screenWidth - minMargin;
+                    nextX = Math.max(minX, Math.min(maxX, nextX));
+                    
+                    float minY = -0.9f * sphereDiameter;
+                    float maxY = screenHeight - minMargin;
+                    nextY = Math.max(minY, Math.min(maxY, nextY));
+                    
+                    currentX = nextX;
+                    currentY = nextY;
                     
                     sphereEngine.updateCameraPositionAndScale(currentX, currentY, currentScale);
                     break;
