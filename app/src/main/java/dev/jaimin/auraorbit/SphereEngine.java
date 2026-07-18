@@ -1238,9 +1238,11 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         Log.i(TAG, "applyConfig: done — " + appNodes.size() + " apps, effectiveRadius=" + effectiveRadius);
     }
 
-    public void updateCameraTranslation(float customX, float customY) {
+    public void updateCameraPositionAndScale(float customX, float customY, float newScale) {
         com.badlogic.gdx.Gdx.app.postRunnable(() -> {
             if (camera == null) return;
+            sphereScale = newScale;
+            
             int screenW = context.getResources().getDisplayMetrics().widthPixels;
             int screenH = context.getResources().getDisplayMetrics().heightPixels;
             

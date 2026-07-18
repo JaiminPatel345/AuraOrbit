@@ -100,10 +100,7 @@ public class SpherePositionEditorActivity extends AndroidApplication {
         sliderScale.setValue(currentScale);
         sliderScale.addOnChangeListener((slider, value, fromUser) -> {
             currentScale = value;
-            prefs.edit()
-                 .putFloat(scalePref, currentScale)
-                 .apply();
-            com.badlogic.gdx.Gdx.app.postRunnable(sphereEngine::applyConfig);
+            sphereEngine.updateCameraPositionAndScale(currentX, currentY, currentScale);
         });
 
         sphereMock.setOnTouchListener((view, event) -> {
@@ -120,7 +117,7 @@ public class SpherePositionEditorActivity extends AndroidApplication {
                     currentX = startX + deltaX;
                     currentY = startY + deltaY;
                     
-                    sphereEngine.updateCameraTranslation(currentX, currentY);
+                    sphereEngine.updateCameraPositionAndScale(currentX, currentY, currentScale);
                     break;
                 default:
                     return false;
