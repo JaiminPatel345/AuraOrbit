@@ -1,97 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/scroll_view"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:clipToPadding="false"
-    android:paddingBottom="40dp">
+    android:layout_height="match_parent">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll_view"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="20dp">
+        android:layout_height="match_parent"
+        android:layout_above="@+id/bottom_bar_container"
+        android:clipToPadding="false"
+        android:paddingBottom="16dp">
 
-        <!-- Actions -->
-        <LinearLayout
-            android:id="@+id/actions_container"
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:orientation="horizontal"
-            android:gravity="center"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
+            android:padding="20dp">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_delete"
-                style="@style/Widget.Material3.Button.TextButton"
+            <!-- Add Apps Card -->
+            <TextView
+                android:id="@+id/tv_apps_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/btn_delete_widget"
-                app:icon="@android:drawable/ic_menu_delete"
-                app:iconTint="#E53935"
-                android:textColor="#E53935"
-                android:visibility="gone" />
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_edit_apps"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Edit Apps"
-                android:visibility="gone"
-                style="@style/Widget.Material3.Button.TonalButton"
-                app:icon="@android:drawable/ic_menu_edit" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_pin_widget"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Pin Widget"
-                android:visibility="gone"
-                style="@style/Widget.Material3.Button.TextButton"
-                app:icon="@drawable/ic_pin" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_save_new_widget"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Save"
-                android:visibility="gone"
-                style="@style/Widget.Material3.Button"
-                app:icon="@android:drawable/ic_menu_save" />
-
-            <ImageButton
-                android:id="@+id/btn_info_pin_widget"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_marginStart="-4dp"
-                android:padding="6dp"
-                android:src="@drawable/ic_info"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:scaleType="fitCenter"
-                android:visibility="gone" />
-
-        </LinearLayout>
-
-        <!-- Add Apps Card -->
-        <TextView
-            android:id="@+id/tv_apps_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Select Apps"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="?android:attr/textColorPrimary"
-            app:layout_constraintTop_toBottomOf="@id/actions_container"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="16dp"/>
+                android:text="Select Apps"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="?android:attr/textColorPrimary"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="8dp"/>
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/card_apps"
@@ -712,4 +649,84 @@
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-</androidx.core.widget.NestedScrollView>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Sticky Bottom Bar -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/bottom_bar_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        app:cardCornerRadius="0dp"
+        app:cardElevation="8dp"
+        app:strokeWidth="0dp"
+        app:cardBackgroundColor="?attr/colorSurface">
+
+        <LinearLayout
+            android:id="@+id/actions_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:padding="16dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_delete"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/btn_delete_widget"
+                app:icon="@android:drawable/ic_menu_delete"
+                app:iconTint="#E53935"
+                android:textColor="#E53935"
+                android:visibility="gone" />
+
+            <View
+                android:id="@+id/actions_spacer"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_edit_apps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Edit Apps"
+                android:visibility="gone"
+                style="@style/Widget.Material3.Button.TonalButton"
+                app:icon="@android:drawable/ic_menu_edit" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_pin_widget"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pin Widget"
+                android:visibility="gone"
+                style="@style/Widget.Material3.Button.TextButton"
+                app:icon="@drawable/ic_pin" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_save_new_widget"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Save Widget"
+                android:visibility="gone"
+                style="@style/Widget.Material3.Button"
+                app:icon="@android:drawable/ic_menu_save" />
+
+            <ImageButton
+                android:id="@+id/btn_info_pin_widget"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="-4dp"
+                android:padding="6dp"
+                android:src="@drawable/ic_info"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:scaleType="fitCenter"
+                android:visibility="gone" />
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+</RelativeLayout>

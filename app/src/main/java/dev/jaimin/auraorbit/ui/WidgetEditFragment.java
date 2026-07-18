@@ -473,20 +473,35 @@ public class WidgetEditFragment extends Fragment {
                         ViewGroup dp = (ViewGroup) cardApps.getParent();
                         if (dp != null) dp.removeView(cardApps);
                         cardApps.setVisibility(View.GONE);
-                        ((ViewGroup) root.findViewById(R.id.actions_container).getParent()).addView(cardApps, ((ViewGroup) root.findViewById(R.id.actions_container).getParent()).indexOfChild(tvAppsTitle) + 1);
+                        ViewGroup constraintLayout = (ViewGroup) tvAppsTitle.getParent();
+                        if (constraintLayout != null) {
+                            constraintLayout.addView(cardApps, constraintLayout.indexOfChild(tvAppsTitle) + 1);
+                        }
                     })
                     .show();
             });
         }
         
         MaterialButton btnSaveNewGroup = root.findViewById(R.id.btn_save_new_widget);
+        View actionsSpacer = root.findViewById(R.id.actions_spacer);
         if (originalWidgetName == null) {
             btnSaveNewGroup.setVisibility(View.VISIBLE);
+            if (actionsSpacer != null) {
+                actionsSpacer.setVisibility(View.GONE);
+            }
             btnSaveNewGroup.setOnClickListener(v -> {
                 if (saveData()) {
                     btnSaveNewGroup.setVisibility(View.GONE);
+                    if (actionsSpacer != null) {
+                        actionsSpacer.setVisibility(View.VISIBLE);
+                    }
                 }
             });
+        } else {
+            btnSaveNewGroup.setVisibility(View.GONE);
+            if (actionsSpacer != null) {
+                actionsSpacer.setVisibility(View.VISIBLE);
+            }
         }
 
         // ─── Member search ────────────────────────────────────────────────
