@@ -237,6 +237,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private float sphereRadius;            // Slider-defined maximum sphere radius (world units)
     private float iconSize;                // Configurable icon dimensions
     private float rotationSpeedFactor;     // Multiplier for auto-spin and fling
+    private float sphereScale = 1.0f;      // Custom size multiplier from position editor
 
     /**
      * Adaptive layout radius — computed after apps are loaded in buildScene.
@@ -1144,6 +1145,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 dy = -offsetY * (16f / vpW);
             }
         }
+        sphereScale = scale;
 
         float camDist = computeCameraDistance(vpW, vpH) / scale;
         camera.position.set(-dx, -dy, camDist);
@@ -3788,6 +3790,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                         dy = -offsetY * (16f / width);
                     }
                 }
+                sphereScale = scale;
                 float camDist = computeCameraDistance(width, height) / scale;
                 camera.position.set(-dx, -dy, camDist);
                 camera.lookAt(-dx, -dy, 0f);

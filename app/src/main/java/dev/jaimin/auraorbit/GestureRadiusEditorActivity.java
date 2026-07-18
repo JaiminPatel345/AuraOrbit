@@ -64,7 +64,8 @@ public class GestureRadiusEditorActivity extends AppCompatActivity {
         float effRadius = worldRadius + worldIconSize * 0.75f;
         
         // Base sizes scaled by user's sphere size multiplier
-        sphereDiameter = (worldRadius * 2f * (screenWidth / 16f)) * scale;
+        // Base sizes matching SpherePositionEditorActivity
+        float sphereVisualDiameter = screenWidth * scale;
         baseDiameter = (effRadius * 2f * (screenWidth / 16f)) * scale;
 
         // Position calculations
@@ -87,13 +88,13 @@ public class GestureRadiusEditorActivity extends AppCompatActivity {
 
         // Apply visual sizes and positions to Sphere Mock
         FrameLayout.LayoutParams sphereParams = (FrameLayout.LayoutParams) sphereMock.getLayoutParams();
-        sphereParams.width = (int) sphereDiameter;
-        sphereParams.height = (int) sphereDiameter;
+        sphereParams.width = (int) sphereVisualDiameter;
+        sphereParams.height = (int) sphereVisualDiameter;
         sphereMock.setLayoutParams(sphereParams);
         
         sphereMock.post(() -> {
-            sphereMock.setX(centerX - sphereDiameter / 2f);
-            sphereMock.setY(centerY - sphereDiameter / 2f);
+            sphereMock.setX(centerX - sphereVisualDiameter / 2f);
+            sphereMock.setY(centerY - sphereVisualDiameter / 2f);
         });
 
         updateGestureZone();
