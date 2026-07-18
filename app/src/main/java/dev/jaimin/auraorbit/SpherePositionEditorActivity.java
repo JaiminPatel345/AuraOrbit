@@ -7,13 +7,15 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
+import com.badlogic.gdx.backends.android.AndroidApplication;
+import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.google.android.material.slider.Slider;
 
-public class SpherePositionEditorActivity extends AppCompatActivity {
+public class SpherePositionEditorActivity extends AndroidApplication {
 
-    private View sphereMock;
+    private FrameLayout sphereMock;
+    private SphereEngine sphereEngine;
     private float dX, dY;
     
     private float currentScale = 1.0f;
@@ -35,13 +37,6 @@ public class SpherePositionEditorActivity extends AppCompatActivity {
                         | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
 
         sphereMock = findViewById(R.id.sphere_mock);
-        sphereMock.setOutlineProvider(new android.view.ViewOutlineProvider() {
-            @Override
-            public void getOutline(View view, android.graphics.Outline outline) {
-                outline.setOval(0, 0, view.getWidth(), view.getHeight());
-            }
-        });
-        sphereMock.setClipToOutline(true);
         Slider sliderScale = findViewById(R.id.slider_scale);
 
         DisplayMetrics metrics = getResources().getDisplayMetrics();
@@ -56,6 +51,38 @@ public class SpherePositionEditorActivity extends AppCompatActivity {
         currentScale = prefs.getFloat(scalePref, 1.0f);
         float initX = prefs.getFloat(xPref, 0f);
         float initY = prefs.getFloat(yPref, (metrics.heightPixels - screenWidth)/2f);
+
+        // ─── Initialize LibGDX 3D View ───────────────────────────────────
+        AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
+        config.useAccelerometer = false;
+        config.useCompass = false;
+        config.useGyroscope = false;
+        config.depth = 16;
+        config.stencil = 0;
+        config.numSamples = 0;
+        config.r = 8;
+        config.g = 8;
+        config.b = 8;
+        config.a = 8;
+
+        sphereEngine = new SphereEngine(this, true, groupName);
+        View glView = initializeForView(sphereEngine, config);
+        
+        // Pass touches through the glView so dragging is handled by sphereMock container
+        glView.setClickable(false);
+        glView.setFocusable(false);
+        glView.setOnTouchListener((v, event) -> false);
+
+        if (graphics.getView() instanceof android.view.SurfaceView) {
+            android.view.SurfaceView surfaceView = (android.view.SurfaceView) graphics.getView();
+            surfaceView.getHolder().setFormat(android.graphics.PixelFormat.TRANSLUCENT);
+            surfaceView.setZOrderOnTop(true);
+        }
+
+        sphereMock.addView(glView, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+        ));
 
         updateSphereSize();
         

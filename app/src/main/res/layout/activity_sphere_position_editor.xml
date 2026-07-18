@@ -6,11 +6,10 @@
     android:background="#88000000">
 
     <!-- Sphere Mock -->
-    <View
+    <FrameLayout
         android:id="@+id/sphere_mock"
         android:layout_width="300dp"
         android:layout_height="300dp"
-        android:background="@drawable/real_sphere"
         android:layout_gravity="top|start" />
 
     <!-- Top Bar (Buttons) -->

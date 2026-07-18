@@ -7,13 +7,15 @@ import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
+import com.badlogic.gdx.backends.android.AndroidApplication;
+import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.google.android.material.slider.Slider;
 
-public class GestureRadiusEditorActivity extends AppCompatActivity {
+public class GestureRadiusEditorActivity extends AndroidApplication {
 
-    private View sphereMock;
+    private FrameLayout sphereMock;
+    private SphereEngine sphereEngine;
     private View gestureZoneMock;
     private TextView tvPercentValue;
     private SharedPreferences prefs;
@@ -21,7 +23,6 @@ public class GestureRadiusEditorActivity extends AppCompatActivity {
     private int screenWidth;
     private int screenHeight;
     private float baseDiameter;
-    private float sphereDiameter;
     private float currentPercent = 100f;
 
     private float centerX;
@@ -42,13 +43,6 @@ public class GestureRadiusEditorActivity extends AppCompatActivity {
                         | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
 
         sphereMock = findViewById(R.id.sphere_mock);
-        sphereMock.setOutlineProvider(new android.view.ViewOutlineProvider() {
-            @Override
-            public void getOutline(View view, android.graphics.Outline outline) {
-                outline.setOval(0, 0, view.getWidth(), view.getHeight());
-            }
-        });
-        sphereMock.setClipToOutline(true);
         gestureZoneMock = findViewById(R.id.gesture_zone_mock);
         tvPercentValue = findViewById(R.id.tv_percent_value);
         Slider sliderCaptureRadius = findViewById(R.id.slider_capture_radius);
@@ -71,7 +65,6 @@ public class GestureRadiusEditorActivity extends AppCompatActivity {
         float effRadius = worldRadius + worldIconSize * 0.75f;
         
         // Base sizes scaled by user's sphere size multiplier
-        // Base sizes matching SpherePositionEditorActivity
         float sphereVisualDiameter = screenWidth * scale;
         baseDiameter = (effRadius * 2f * (screenWidth / 16f)) * scale;
 
@@ -92,6 +85,38 @@ public class GestureRadiusEditorActivity extends AppCompatActivity {
             centerX = screenWidth / 2f;
             centerY = screenHeight / 2f;
         }
+
+        // ─── Initialize LibGDX 3D View ───────────────────────────────────
+        AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
+        config.useAccelerometer = false;
+        config.useCompass = false;
+        config.useGyroscope = false;
+        config.depth = 16;
+        config.stencil = 0;
+        config.numSamples = 0;
+        config.r = 8;
+        config.g = 8;
+        config.b = 8;
+        config.a = 8;
+
+        String groupName = getIntent().getStringExtra("group_name");
+        sphereEngine = new SphereEngine(this, true, groupName);
+        View glView = initializeForView(sphereEngine, config);
+        
+        glView.setClickable(false);
+        glView.setFocusable(false);
+        glView.setOnTouchListener((v, event) -> false);
+
+        if (graphics.getView() instanceof android.view.SurfaceView) {
+            android.view.SurfaceView surfaceView = (android.view.SurfaceView) graphics.getView();
+            surfaceView.getHolder().setFormat(android.graphics.PixelFormat.TRANSLUCENT);
+            surfaceView.setZOrderOnTop(true);
+        }
+
+        sphereMock.addView(glView, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+        ));
 
         // Apply visual sizes and positions to Sphere Mock
         FrameLayout.LayoutParams sphereParams = (FrameLayout.LayoutParams) sphereMock.getLayoutParams();
