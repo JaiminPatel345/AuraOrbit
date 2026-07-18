@@ -1928,6 +1928,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         if (isPreviewMode) {
             return false;
         }
+        // If the sphere is not visible on the current page, ignore touch input
+        if (pageVisibility < 0.9f) {
+            return true;
+        }
         // If wallpaper is zoomed out (app drawer or recents open)
         if (wallpaperZoom > 0.2f) {
             return true;
