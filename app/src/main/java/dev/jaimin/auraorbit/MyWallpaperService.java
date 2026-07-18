@@ -109,7 +109,7 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
             overlayParams.x = centerX - size / 2;
             overlayParams.y = centerY - size / 2;
 
-            try {
+             try {
                 if (!isOverlayAdded) {
                     android.util.Log.d("MyWallpaperService", "Adding overlay view of size " + size + " at (" + overlayParams.x + "," + overlayParams.y + ")");
                     wm.addView(overlayView, overlayParams);
@@ -118,6 +118,7 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
                     android.util.Log.d("MyWallpaperService", "Updating overlay view to size " + size + " at (" + overlayParams.x + "," + overlayParams.y + ")");
                     wm.updateViewLayout(overlayView, overlayParams);
                 }
+                overlayView.postInvalidate();
             } catch (Exception e) {
                 android.util.Log.e("MyWallpaperService", "Error in wm.addView / updateViewLayout", e);
             }
@@ -142,8 +143,59 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
     }
 
     private class TouchOverlayView extends View {
+        private final android.graphics.Paint debugPaint = new android.graphics.Paint();
+        {
+            debugPaint.setColor(0xFFFF0000); // Red color
+            debugPaint.setStyle(android.graphics.Paint.Style.STROKE);
+            debugPaint.setStrokeWidth(6f);
+            debugPaint.setPathEffect(new android.graphics.DashPathEffect(new float[]{15f, 15f}, 0f));
+        }
+
         public TouchOverlayView(Context context) {
             super(context);
+            // Ensure onDraw is called for debug bounds rendering
+            setWillNotDraw(false);
+
+            // Circular Touch Interception Region using reflection to bypass hidden API compile restrictions
+            try {
+                Class<?> listenerClass = Class.forName("android.view.ViewTreeObserver$OnComputeInternalInsetsListener");
+                Class<?> insetsClass = Class.forName("android.view.ViewTreeObserver$InternalInsetsInfo");
+                java.lang.reflect.Method addListenerMethod = getViewTreeObserver().getClass().getMethod(
+                        "addOnComputeInternalInsetsListener", listenerClass);
+                
+                Object listener = java.lang.reflect.Proxy.newProxyInstance(
+                        getClass().getClassLoader(),
+                        new Class<?>[]{listenerClass},
+                        (proxy, method, args1) -> {
+                            if ("onComputeInternalInsets".equals(method.getName())) {
+                                Object insets = args1[0];
+                                
+                                // insets.touchableRegion.setEmpty()
+                                java.lang.reflect.Field regionField = insetsClass.getField("touchableRegion");
+                                android.graphics.Region touchableRegion = (android.graphics.Region) regionField.get(insets);
+                                touchableRegion.setEmpty();
+                                
+                                // insets.setTouchableInsets(InternalInsetsInfo.TOUCHABLE_INSETS_REGION)
+                                // TOUCHABLE_INSETS_REGION is constant 3
+                                java.lang.reflect.Method setInsetsMethod = insetsClass.getMethod("setTouchableInsets", int.class);
+                                setInsetsMethod.invoke(insets, 3);
+                                
+                                // Create circular path and region
+                                android.graphics.Path path = new android.graphics.Path();
+                                float r = getWidth() / 2f;
+                                path.addCircle(r, r, r, android.graphics.Path.Direction.CW);
+                                android.graphics.Region region = new android.graphics.Region(0, 0, getWidth(), getHeight());
+                                region.setPath(path, region);
+                                touchableRegion.set(region);
+                            }
+                            return null;
+                        }
+                );
+                
+                addListenerMethod.invoke(getViewTreeObserver(), listener);
+            } catch (Exception e) {
+                android.util.Log.e("MyWallpaperService", "Error setting circular touch bounds via reflection", e);
+            }
         }
 
         @Override
@@ -159,6 +211,14 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
                 }
             }
             return false;
+        }
+
+        @Override
+        protected void onDraw(android.graphics.Canvas canvas) {
+            super.onDraw(canvas);
+            if (prefs != null && prefs.getBoolean("pref_debug_gesture_bounds", false)) {
+                canvas.drawCircle(getWidth() / 2f, getHeight() / 2f, getWidth() / 2f - 3f, debugPaint);
+            }
         }
     }
 }

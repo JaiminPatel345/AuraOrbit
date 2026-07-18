@@ -209,6 +209,9 @@ public class PermanentSphereFragment extends Fragment {
         View btnGestureCaptureRadius = view.findViewById(R.id.btn_gesture_capture_radius);
         tvGestureRadiusValue = view.findViewById(R.id.tv_gesture_radius_value);
 
+        View layoutDebugGestureBounds = view.findViewById(R.id.layout_debug_gesture_bounds);
+        com.google.android.material.materialswitch.MaterialSwitch switchDebugGestureBounds = view.findViewById(R.id.switch_debug_gesture_bounds);
+
         com.google.android.material.materialswitch.MaterialSwitch switchBlockLauncherGestures = view.findViewById(R.id.switch_block_launcher_gestures);
         if (switchBlockLauncherGestures != null) {
             boolean hasPerm = android.provider.Settings.canDrawOverlays(requireContext());
@@ -216,6 +219,9 @@ public class PermanentSphereFragment extends Fragment {
             switchBlockLauncherGestures.setChecked(blockEnabled);
             if (btnGestureCaptureRadius != null) {
                 btnGestureCaptureRadius.setVisibility((blockEnabled && hasPerm) ? View.VISIBLE : View.GONE);
+            }
+            if (layoutDebugGestureBounds != null) {
+                layoutDebugGestureBounds.setVisibility((blockEnabled && hasPerm) ? View.VISIBLE : View.GONE);
             }
 
             switchBlockLauncherGestures.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -231,11 +237,20 @@ public class PermanentSphereFragment extends Fragment {
                     } else {
                         prefs.edit().putBoolean("pref_block_launcher_gestures", true).apply();
                         if (btnGestureCaptureRadius != null) btnGestureCaptureRadius.setVisibility(View.VISIBLE);
+                        if (layoutDebugGestureBounds != null) layoutDebugGestureBounds.setVisibility(View.VISIBLE);
                     }
                 } else {
                     prefs.edit().putBoolean("pref_block_launcher_gestures", false).apply();
                     if (btnGestureCaptureRadius != null) btnGestureCaptureRadius.setVisibility(View.GONE);
+                    if (layoutDebugGestureBounds != null) layoutDebugGestureBounds.setVisibility(View.GONE);
                 }
+            });
+        }
+
+        if (switchDebugGestureBounds != null) {
+            switchDebugGestureBounds.setChecked(prefs.getBoolean("pref_debug_gesture_bounds", false));
+            switchDebugGestureBounds.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                prefs.edit().putBoolean("pref_debug_gesture_bounds", isChecked).apply();
             });
         }
 
@@ -270,6 +285,14 @@ public class PermanentSphereFragment extends Fragment {
         View btnGestureCaptureRadius = requireView().findViewById(R.id.btn_gesture_capture_radius);
         if (btnGestureCaptureRadius != null) {
             btnGestureCaptureRadius.setVisibility((blockEnabled && hasOverlayPerm) ? View.VISIBLE : View.GONE);
+        }
+        View layoutDebugGestureBounds = requireView().findViewById(R.id.layout_debug_gesture_bounds);
+        if (layoutDebugGestureBounds != null) {
+            layoutDebugGestureBounds.setVisibility((blockEnabled && hasOverlayPerm) ? View.VISIBLE : View.GONE);
+        }
+        com.google.android.material.materialswitch.MaterialSwitch switchDebugBounds = requireView().findViewById(R.id.switch_debug_gesture_bounds);
+        if (switchDebugBounds != null) {
+            switchDebugBounds.setChecked(prefs.getBoolean("pref_debug_gesture_bounds", false));
         }
         if (tvGestureRadiusValue != null) {
             int radiusVal = prefs.getInt("pref_gesture_capture_scale_percent", 100);
