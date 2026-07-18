@@ -158,8 +158,13 @@ public class AppFetcher {
         Set<String> selectedPackages = prefs.getStringSet(PREF_SELECTED_APPS, new HashSet<>());
 
         if (selectedPackages.isEmpty()) {
-            Log.w(TAG, "No apps selected — returning empty list");
-            return new ArrayList<>();
+            List<ResolveInfo> launchable = getAllLaunchableApps(context);
+            selectedPackages = new java.util.HashSet<>();
+            for (ResolveInfo info : launchable) {
+                if (info.activityInfo != null && info.activityInfo.packageName != null) {
+                    selectedPackages.add(info.activityInfo.packageName);
+                }
+            }
         }
 
         Log.i(TAG, "Fetching " + selectedPackages.size() + " selected apps");
