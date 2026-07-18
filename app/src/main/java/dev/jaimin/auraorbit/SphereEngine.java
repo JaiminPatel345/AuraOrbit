@@ -1204,7 +1204,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         lastGestureEndNanos = Long.MIN_VALUE / 2;
 
         // ─── Re-fetch apps, redistribute, recreate decals and backdrops ──
-        appNodes = AppFetcher.fetchSelectedApps(context);
+        appNodes = AppFetcher.fetchSelectedApps(context, pinnedGroupName);
         
         if (pinnedGroupName != null) {
             java.util.List<AppFetcher.AppNode> filtered = new java.util.ArrayList<>();

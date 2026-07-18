@@ -1124,11 +1124,7 @@ public class WidgetEditFragment extends Fragment {
             WidgetLogoStore.saveFromUri(requireContext(), pendingLogoUri, newName);
         }
 
-        // Ensure apps added to this widget are also visible on the sphere
-        Set<String> selectedApps = new HashSet<>(prefs.getStringSet(AppFetcher.PREF_SELECTED_APPS, new HashSet<>()));
-        if (selectedApps.addAll(workingMembers)) {
-            prefs.edit().putStringSet(AppFetcher.PREF_SELECTED_APPS, selectedApps).apply();
-        }
+
 
         if (originalWidgetName == null) {
             // Automatically prompt the user to pin the widget to their home screen for new widgets

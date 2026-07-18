@@ -150,19 +150,29 @@ public class AppFetcher {
      * @param context  Android context for PackageManager access
      * @return List of AppNode objects ready for sphere placement, sorted by group
      */
-    public static List<AppNode> fetchSelectedApps(Context context) {
+    public static List<AppNode> fetchSelectedApps(Context context, String pinnedGroupName) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         PackageManager pm = context.getPackageManager();
 
         // ─── Read selected package names ────────────────────────────────
-        Set<String> selectedPackages = prefs.getStringSet(PREF_SELECTED_APPS, new HashSet<>());
+        Set<String> selectedPackages = new HashSet<>();
 
-        if (selectedPackages.isEmpty()) {
-            List<ResolveInfo> launchable = getAllLaunchableApps(context);
-            selectedPackages = new java.util.HashSet<>();
-            for (ResolveInfo info : launchable) {
-                if (info.activityInfo != null && info.activityInfo.packageName != null) {
-                    selectedPackages.add(info.activityInfo.packageName);
+        if (pinnedGroupName != null) {
+            // Load apps selected for this specific widget
+            List<WidgetStore.Widget> widgets = WidgetStore.load(prefs);
+            WidgetStore.Widget w = WidgetStore.find(widgets, pinnedGroupName);
+            if (w != null) {
+                selectedPackages.addAll(w.packages);
+            }
+        } else {
+            // Load apps selected for the permanent sphere
+            selectedPackages.addAll(prefs.getStringSet(PREF_SELECTED_APPS, new HashSet<>()));
+            if (selectedPackages.isEmpty()) {
+                List<ResolveInfo> launchable = getAllLaunchableApps(context);
+                for (ResolveInfo info : launchable) {
+                    if (info.activityInfo != null && info.activityInfo.packageName != null) {
+                        selectedPackages.add(info.activityInfo.packageName);
+                    }
                 }
             }
         }
