@@ -28,12 +28,22 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
 
     private void bypassHiddenApiRestrictions() {
         try {
+            // Get getDeclaredMethod of Class class using standard reflection
+            java.lang.reflect.Method getDeclaredMethodMethod = Class.class.getDeclaredMethod("getDeclaredMethod", String.class, Class[].class);
+            
+            // Invoke getDeclaredMethod to get dalvik.system.VMRuntime.getRuntime
             Class<?> vmRuntimeClass = Class.forName("dalvik.system.VMRuntime");
-            java.lang.reflect.Method getRuntimeMethod = vmRuntimeClass.getDeclaredMethod("getRuntime");
+            java.lang.reflect.Method getRuntimeMethod = (java.lang.reflect.Method) getDeclaredMethodMethod.invoke(vmRuntimeClass, "getRuntime", new Class[0]);
+            
+            // Invoke getRuntime to get the VMRuntime instance
             Object vmRuntime = getRuntimeMethod.invoke(null);
-            java.lang.reflect.Method setHiddenApiExemptionsMethod = vmRuntimeClass.getDeclaredMethod("setHiddenApiExemptions", String[].class);
+            
+            // Invoke getDeclaredMethod to get setHiddenApiExemptions
+            java.lang.reflect.Method setHiddenApiExemptionsMethod = (java.lang.reflect.Method) getDeclaredMethodMethod.invoke(vmRuntimeClass, "setHiddenApiExemptions", new Class[]{String[].class});
+            
+            // Exempt all hidden APIs
             setHiddenApiExemptionsMethod.invoke(vmRuntime, new Object[]{new String[]{"L"}});
-            android.util.Log.d("MyWallpaperService", "Successfully bypassed hidden API restrictions");
+            android.util.Log.d("MyWallpaperService", "Successfully bypassed hidden API restrictions via meta-reflection");
         } catch (Exception e) {
             android.util.Log.e("MyWallpaperService", "Failed to bypass hidden API restrictions", e);
         }
