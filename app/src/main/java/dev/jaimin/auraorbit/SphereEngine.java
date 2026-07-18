@@ -1238,6 +1238,27 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         Log.i(TAG, "applyConfig: done — " + appNodes.size() + " apps, effectiveRadius=" + effectiveRadius);
     }
 
+    public void updateCameraTranslation(float customX, float customY) {
+        com.badlogic.gdx.Gdx.app.postRunnable(() -> {
+            if (camera == null) return;
+            int screenW = context.getResources().getDisplayMetrics().widthPixels;
+            int screenH = context.getResources().getDisplayMetrics().heightPixels;
+            
+            float centerX = customX + (screenW * sphereScale) / 2f;
+            float centerY = customY + (screenW * sphereScale) / 2f;
+            float offsetX = centerX - screenW / 2f;
+            float offsetY = centerY - screenH / 2f;
+            
+            float dx = offsetX * (16f / screenW);
+            float dy = -offsetY * (16f / screenW);
+            
+            float camDist = computeCameraDistance(screenW, screenH) / sphereScale;
+            camera.position.set(-dx, -dy, camDist);
+            camera.lookAt(-dx, -dy, 0f);
+            camera.update();
+        });
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     //  Gradient Texture Builder
     // ═══════════════════════════════════════════════════════════════════════

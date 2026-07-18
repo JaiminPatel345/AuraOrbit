@@ -11,22 +11,20 @@ import androidx.preference.PreferenceManager;
 import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.google.android.material.slider.Slider;
+import dev.jaimin.auraorbit.ui.InterceptingFrameLayout;
 
 public class SpherePositionEditorActivity extends AndroidApplication {
 
-    private FrameLayout sphereMock;
+    private InterceptingFrameLayout sphereMock;
     private SphereEngine sphereEngine;
     
     private float dX, dY;
     private float startX, startY;
+    private float currentX, currentY;
     
     private float currentScale = 1.0f;
     private int screenWidth;
     private SharedPreferences prefs;
-
-    private float originalX;
-    private float originalY;
-    private float originalScale;
 
     private String xPref;
     private String yPref;
@@ -61,9 +59,8 @@ public class SpherePositionEditorActivity extends AndroidApplication {
 
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
         currentScale = prefs.getFloat(scalePref, 1.0f);
-        originalX = prefs.getFloat(xPref, 0f);
-        originalY = prefs.getFloat(yPref, (metrics.heightPixels - screenWidth)/2f);
-        originalScale = currentScale;
+        currentX = prefs.getFloat(xPref, 0f);
+        currentY = prefs.getFloat(yPref, (metrics.heightPixels - screenWidth)/2f);
 
         // ─── Initialize LibGDX 3D View ───────────────────────────────────
         AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
@@ -114,17 +111,16 @@ public class SpherePositionEditorActivity extends AndroidApplication {
                 case MotionEvent.ACTION_DOWN:
                     dX = event.getRawX();
                     dY = event.getRawY();
-                    startX = prefs.getFloat(xPref, 0f);
-                    startY = prefs.getFloat(yPref, (metrics.heightPixels - screenWidth)/2f);
+                    startX = currentX;
+                    startY = currentY;
                     break;
                 case MotionEvent.ACTION_MOVE:
                     float deltaX = event.getRawX() - dX;
                     float deltaY = event.getRawY() - dY;
-                    prefs.edit()
-                         .putFloat(xPref, startX + deltaX)
-                         .putFloat(yPref, startY + deltaY)
-                         .apply();
-                    com.badlogic.gdx.Gdx.app.postRunnable(sphereEngine::applyConfig);
+                    currentX = startX + deltaX;
+                    currentY = startY + deltaY;
+                    
+                    sphereEngine.updateCameraTranslation(currentX, currentY);
                     break;
                 default:
                     return false;
@@ -132,18 +128,13 @@ public class SpherePositionEditorActivity extends AndroidApplication {
             return true;
         });
 
-        findViewById(R.id.btn_cancel).setOnClickListener(v -> {
-            // Restore original parameters
-            prefs.edit()
-                 .putFloat(xPref, originalX)
-                 .putFloat(yPref, originalY)
-                 .putFloat(scalePref, originalScale)
-                 .apply();
-            finish();
-        });
+        findViewById(R.id.btn_cancel).setOnClickListener(v -> finish());
         
         findViewById(R.id.btn_save).setOnClickListener(v -> {
             prefs.edit()
+                 .putFloat(xPref, currentX)
+                 .putFloat(yPref, currentY)
+                 .putFloat(scalePref, currentScale)
                  .putString(posPref, "custom")
                  .apply();
             finish();

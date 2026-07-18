@@ -83,9 +83,19 @@ public class AppPickerFragment extends Fragment {
         SharedPreferences prefs =
                 PreferenceManager.getDefaultSharedPreferences(requireContext());
 
-        // Initialize localSelectedApps with currently saved packages
+        // Initialize localSelectedApps with currently saved packages (or all apps by default)
         localSelectedApps.clear();
-        localSelectedApps.addAll(prefs.getStringSet(AppFetcher.PREF_SELECTED_APPS, new HashSet<>()));
+        Set<String> savedApps = prefs.getStringSet(AppFetcher.PREF_SELECTED_APPS, null);
+        if (savedApps == null || savedApps.isEmpty()) {
+            List<ResolveInfo> launchable = AppFetcher.getAllLaunchableApps(requireContext());
+            for (ResolveInfo info : launchable) {
+                if (info.activityInfo != null && info.activityInfo.packageName != null) {
+                    localSelectedApps.add(info.activityInfo.packageName);
+                }
+            }
+        } else {
+            localSelectedApps.addAll(savedApps);
+        }
 
         // Create adapter with empty list; background loader populates it
         adapter = new AppAdapter();

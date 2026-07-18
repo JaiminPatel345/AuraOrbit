@@ -33,6 +33,8 @@ import dev.jaimin.auraorbit.MyWallpaperService;
 import dev.jaimin.auraorbit.R;
 import dev.jaimin.auraorbit.SpherePositionEditorActivity;
 import dev.jaimin.auraorbit.GestureRadiusEditorActivity;
+import dev.jaimin.auraorbit.AppFetcher;
+import java.util.List;
 
 public class PermanentSphereFragment extends Fragment {
 
@@ -331,7 +333,8 @@ public class PermanentSphereFragment extends Fragment {
         if (tvAppsCount == null) return;
         Set<String> apps = prefs.getStringSet("selected_app_packages", null);
         if (apps == null || apps.isEmpty()) {
-            tvAppsCount.setText("No apps selected");
+            List<android.content.pm.ResolveInfo> launchable = AppFetcher.getAllLaunchableApps(requireContext());
+            tvAppsCount.setText(launchable.size() + " apps selected (default)");
         } else {
             tvAppsCount.setText(apps.size() + " apps selected");
         }
