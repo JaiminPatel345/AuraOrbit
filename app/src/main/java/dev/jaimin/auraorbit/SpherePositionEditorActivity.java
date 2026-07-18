@@ -16,11 +16,22 @@ public class SpherePositionEditorActivity extends AndroidApplication {
 
     private FrameLayout sphereMock;
     private SphereEngine sphereEngine;
+    
     private float dX, dY;
+    private float startX, startY;
     
     private float currentScale = 1.0f;
     private int screenWidth;
     private SharedPreferences prefs;
+
+    private float originalX;
+    private float originalY;
+    private float originalScale;
+
+    private String xPref;
+    private String yPref;
+    private String scalePref;
+    private String posPref;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -43,14 +54,16 @@ public class SpherePositionEditorActivity extends AndroidApplication {
         screenWidth = metrics.widthPixels;
 
         String groupName = getIntent().getStringExtra("group_name");
-        String scalePref = groupName != null ? "pref_sphere_scale_" + groupName : "pref_sphere_scale";
-        String xPref = groupName != null ? "pref_sphere_x_" + groupName : "pref_sphere_x";
-        String yPref = groupName != null ? "pref_sphere_y_" + groupName : "pref_sphere_y";
+        scalePref = groupName != null ? "pref_sphere_scale_" + groupName : "pref_sphere_scale";
+        xPref = groupName != null ? "pref_sphere_x_" + groupName : "pref_sphere_x";
+        yPref = groupName != null ? "pref_sphere_y_" + groupName : "pref_sphere_y";
+        posPref = groupName != null ? "pref_sphere_position_" + groupName : "pref_sphere_position";
 
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
         currentScale = prefs.getFloat(scalePref, 1.0f);
-        float initX = prefs.getFloat(xPref, 0f);
-        float initY = prefs.getFloat(yPref, (metrics.heightPixels - screenWidth)/2f);
+        originalX = prefs.getFloat(xPref, 0f);
+        originalY = prefs.getFloat(yPref, (metrics.heightPixels - screenWidth)/2f);
+        originalScale = currentScale;
 
         // ─── Initialize LibGDX 3D View ───────────────────────────────────
         AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
@@ -66,6 +79,8 @@ public class SpherePositionEditorActivity extends AndroidApplication {
         config.a = 8;
 
         sphereEngine = new SphereEngine(this, true, groupName);
+        sphereEngine.applyPositionAndScale = true; // Tell engine to translate camera like wallpaper mode
+        
         View glView = initializeForView(sphereEngine, config);
         
         // Pass touches through the glView so dragging is handled by sphereMock container
@@ -84,28 +99,31 @@ public class SpherePositionEditorActivity extends AndroidApplication {
                 FrameLayout.LayoutParams.MATCH_PARENT
         ));
 
-        updateSphereSize();
-        
-        sphereMock.post(() -> {
-            sphereMock.setX(initX);
-            sphereMock.setY(initY);
-        });
-
         sliderScale.setValue(currentScale);
         sliderScale.addOnChangeListener((slider, value, fromUser) -> {
             currentScale = value;
-            updateSphereSize();
+            prefs.edit()
+                 .putFloat(scalePref, currentScale)
+                 .apply();
+            com.badlogic.gdx.Gdx.app.postRunnable(sphereEngine::applyConfig);
         });
 
         sphereMock.setOnTouchListener((view, event) -> {
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
-                    dX = view.getX() - event.getRawX();
-                    dY = view.getY() - event.getRawY();
+                    dX = event.getRawX();
+                    dY = event.getRawY();
+                    startX = prefs.getFloat(xPref, 0f);
+                    startY = prefs.getFloat(yPref, (metrics.heightPixels - screenWidth)/2f);
                     break;
                 case MotionEvent.ACTION_MOVE:
-                    view.setX(event.getRawX() + dX);
-                    view.setY(event.getRawY() + dY);
+                    float deltaX = event.getRawX() - dX;
+                    float deltaY = event.getRawY() - dY;
+                    prefs.edit()
+                         .putFloat(xPref, startX + deltaX)
+                         .putFloat(yPref, startY + deltaY)
+                         .apply();
+                    com.badlogic.gdx.Gdx.app.postRunnable(sphereEngine::applyConfig);
                     break;
                 default:
                     return false;
@@ -113,28 +131,21 @@ public class SpherePositionEditorActivity extends AndroidApplication {
             return true;
         });
 
-        findViewById(R.id.btn_cancel).setOnClickListener(v -> finish());
-        findViewById(R.id.btn_save).setOnClickListener(v -> {
-            String saveGroupName = getIntent().getStringExtra("group_name");
-            String saveXPref = saveGroupName != null ? "pref_sphere_x_" + saveGroupName : "pref_sphere_x";
-            String saveYPref = saveGroupName != null ? "pref_sphere_y_" + saveGroupName : "pref_sphere_y";
-            String saveScalePref = saveGroupName != null ? "pref_sphere_scale_" + saveGroupName : "pref_sphere_scale";
-            String savePosPref = saveGroupName != null ? "pref_sphere_position_" + saveGroupName : "pref_sphere_position";
-            
+        findViewById(R.id.btn_cancel).setOnClickListener(v -> {
+            // Restore original parameters
             prefs.edit()
-                 .putFloat(saveXPref, sphereMock.getX())
-                 .putFloat(saveYPref, sphereMock.getY())
-                 .putFloat(saveScalePref, currentScale)
-                 .putString(savePosPref, "custom")
+                 .putFloat(xPref, originalX)
+                 .putFloat(yPref, originalY)
+                 .putFloat(scalePref, originalScale)
                  .apply();
             finish();
         });
-    }
-    
-    private void updateSphereSize() {
-        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) sphereMock.getLayoutParams();
-        params.width = (int) (screenWidth * currentScale);
-        params.height = (int) (screenWidth * currentScale);
-        sphereMock.setLayoutParams(params);
+        
+        findViewById(R.id.btn_save).setOnClickListener(v -> {
+            prefs.edit()
+                 .putString(posPref, "custom")
+                 .apply();
+            finish();
+        });
     }
 }

@@ -65,14 +65,12 @@ public class GestureRadiusEditorActivity extends AndroidApplication {
         float effRadius = worldRadius + worldIconSize * 0.75f;
         
         // Base sizes scaled by user's sphere size multiplier
-        float sphereVisualDiameter = screenWidth * scale;
         baseDiameter = (effRadius * 2f * (screenWidth / 16f)) * scale;
 
         // Position calculations
         if ("custom".equals(posType)) {
             float customX = prefs.getFloat("pref_sphere_x", 0f);
             float customY = prefs.getFloat("pref_sphere_y", (screenHeight - screenWidth) / 2f);
-            // Center of custom view of size screenWidth * scale
             centerX = customX + (screenWidth * scale) / 2f;
             centerY = customY + (screenWidth * scale) / 2f;
         } else if ("top".equals(posType)) {
@@ -101,6 +99,8 @@ public class GestureRadiusEditorActivity extends AndroidApplication {
 
         String groupName = getIntent().getStringExtra("group_name");
         sphereEngine = new SphereEngine(this, true, groupName);
+        sphereEngine.applyPositionAndScale = true; // Tell engine to translate camera like wallpaper mode
+        
         View glView = initializeForView(sphereEngine, config);
         
         glView.setClickable(false);
@@ -117,17 +117,6 @@ public class GestureRadiusEditorActivity extends AndroidApplication {
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
         ));
-
-        // Apply visual sizes and positions to Sphere Mock
-        FrameLayout.LayoutParams sphereParams = (FrameLayout.LayoutParams) sphereMock.getLayoutParams();
-        sphereParams.width = (int) sphereVisualDiameter;
-        sphereParams.height = (int) sphereVisualDiameter;
-        sphereMock.setLayoutParams(sphereParams);
-        
-        sphereMock.post(() -> {
-            sphereMock.setX(centerX - sphereVisualDiameter / 2f);
-            sphereMock.setY(centerY - sphereVisualDiameter / 2f);
-        });
 
         updateGestureZone();
 

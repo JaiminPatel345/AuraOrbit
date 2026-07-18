@@ -187,6 +187,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * guard that did not exist before — wallpaper-mode behavior is unchanged.
      */
     private final boolean activityMode;
+    public boolean applyPositionAndScale = false;
     private boolean touchStartedOutsideSphere = false;
     private boolean permanentSphereEnabled = false;
 
@@ -1066,7 +1067,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * - gradientTexture (never changes — only depends on color constants)
      * - hintFont / hintLayout (only rebuilt if density changes, which is rare)
      */
-    private void applyConfig() {
+    public void applyConfig() {
         String snapshot = configSnapshot();
         if (snapshot.equals(lastConfigSnapshot)) {
             Log.d(TAG, "applyConfig: snapshot unchanged, skipping rebuild");
@@ -1131,7 +1132,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         float dx = 0;
         float dy = 0;
         float scale = 1.0f;
-        if (!activityMode) {
+        if (!activityMode || applyPositionAndScale) {
             scale = Math.max(0.1f, prefs.getFloat("pref_sphere_scale", 1.0f));
             String posType = prefs.getString("pref_sphere_position", "center");
             if ("custom".equals(posType)) {
@@ -3790,7 +3791,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 float dx = 0;
                 float dy = 0;
                 float scale = 1.0f;
-                if (!activityMode) {
+                if (!activityMode || applyPositionAndScale) {
                     scale = Math.max(0.1f, sharedPrefs.getFloat("pref_sphere_scale", 1.0f));
                     String posType = sharedPrefs.getString("pref_sphere_position", "center");
                     if ("custom".equals(posType)) {
