@@ -18,6 +18,7 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
     private WindowManager.LayoutParams overlayParams;
     private boolean isOverlayAdded = false;
     private SharedPreferences prefs;
+    private int currentXPixelOffset = 0;
 
     @Override
     public void onCreate() {
@@ -61,6 +62,58 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
         public void onDestroy() {
             removeOverlay();
             super.onDestroy();
+        }
+
+        private float lastXOffset = 0f;
+
+        @Override
+        public void onOffsetsChanged(float xOffset, float yOffset, float xOffsetStep, float yOffsetStep, int xPixelOffset, int yPixelOffset) {
+            super.onOffsetsChanged(xOffset, yOffset, xOffsetStep, yOffsetStep, xPixelOffset, yPixelOffset);
+            currentXPixelOffset = xPixelOffset;
+            
+            if (Math.abs(xOffset - lastXOffset) > 0.001f) {
+                lastXOffset = xOffset;
+                if (isOverlayAdded && overlayView != null && overlayParams != null) {
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+                        try {
+                            int radiusPrefVal = prefs.getInt("pref_sphere_radius", 50);
+                            int iconPrefVal = prefs.getInt("pref_icon_size", 50);
+                            float scale = prefs.getFloat("pref_sphere_scale", 1.0f);
+                            String posType = prefs.getString("pref_sphere_position", "center");
+                            int currentPercent = prefs.getInt("pref_gesture_capture_scale_percent", 100);
+
+                            android.util.DisplayMetrics metrics = getResources().getDisplayMetrics();
+                            int screenWidth = metrics.widthPixels;
+                            int screenHeight = metrics.heightPixels;
+
+                            float worldRadius = 3.0f + 5.0f * (radiusPrefVal / 100f);
+                            float worldIconSize = 0.6f + 1.4f * (iconPrefVal / 100f);
+                            float effRadius = worldRadius + worldIconSize * 0.75f;
+                            float baseDiameter = (effRadius * 2f * (screenWidth / 16f)) * scale;
+                            int size = (int) (baseDiameter * (currentPercent / 100f));
+
+                            int centerX;
+                            if ("custom".equals(posType)) {
+                                float customX = prefs.getFloat("pref_sphere_x", 0f);
+                                centerX = (int) (customX + (screenWidth * scale) / 2f);
+                            } else if ("top".equals(posType)) {
+                                centerX = screenWidth / 2;
+                            } else if ("bottom".equals(posType)) {
+                                centerX = screenWidth / 2;
+                            } else {
+                                centerX = screenWidth / 2;
+                            }
+
+                            int physicalX = centerX + currentXPixelOffset;
+                            overlayParams.x = physicalX - size / 2;
+                            wm.updateViewLayout(overlayView, overlayParams);
+                        } catch (Exception e) {
+                            // Ignored during transitions
+                        }
+                    });
+                }
+            }
         }
     }
 
@@ -152,7 +205,7 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
 
             overlayParams.width = size;
             overlayParams.height = size;
-            overlayParams.x = centerX - size / 2;
+            overlayParams.x = (centerX + currentXPixelOffset) - size / 2;
             overlayParams.y = centerY - size / 2;
 
             try {

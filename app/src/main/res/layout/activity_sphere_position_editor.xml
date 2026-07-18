@@ -10,7 +10,7 @@
         android:id="@+id/sphere_mock"
         android:layout_width="300dp"
         android:layout_height="300dp"
-        android:background="@drawable/circle_mock"
+        android:background="@drawable/real_sphere"
         android:layout_gravity="top|start" />
 
     <!-- Top Bar (Buttons) -->

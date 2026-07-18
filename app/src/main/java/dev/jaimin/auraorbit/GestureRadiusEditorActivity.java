@@ -42,6 +42,13 @@ public class GestureRadiusEditorActivity extends AppCompatActivity {
                         | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
 
         sphereMock = findViewById(R.id.sphere_mock);
+        sphereMock.setOutlineProvider(new android.view.ViewOutlineProvider() {
+            @Override
+            public void getOutline(View view, android.graphics.Outline outline) {
+                outline.setOval(0, 0, view.getWidth(), view.getHeight());
+            }
+        });
+        sphereMock.setClipToOutline(true);
         gestureZoneMock = findViewById(R.id.gesture_zone_mock);
         tvPercentValue = findViewById(R.id.tv_percent_value);
         Slider sliderCaptureRadius = findViewById(R.id.slider_capture_radius);

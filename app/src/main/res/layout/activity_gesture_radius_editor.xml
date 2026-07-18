@@ -16,7 +16,7 @@
             android:id="@+id/sphere_mock"
             android:layout_width="200dp"
             android:layout_height="200dp"
-            android:background="@drawable/circle_mock"
+            android:background="@drawable/real_sphere"
             android:layout_gravity="top|start" />
 
         <!-- Gesture Capture Zone Mock (Placed on top of the sphere so the blue lines are visible) -->
