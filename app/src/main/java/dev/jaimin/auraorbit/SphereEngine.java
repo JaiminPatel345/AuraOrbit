@@ -934,7 +934,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         permanentSphereEnabled = prefs.getBoolean("pref_permanent_sphere_enabled", false);
 
         // Background visibility (replaces old pref_keep_wallpaper)
-        showBackground = prefs.getBoolean("pref_show_background", true);
+        showBackground = !activityMode && prefs.getBoolean("pref_show_background", true);
 
         // Active home-screen page for visibility fade.
         // User-facing value is 1-based (UI: 1 = first page, SeekBar range 1..9).
@@ -1132,13 +1132,27 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         float dy = 0;
         float scale = 1.0f;
         if (!activityMode) {
+            scale = Math.max(0.1f, prefs.getFloat("pref_sphere_scale", 1.0f));
             String posType = prefs.getString("pref_sphere_position", "center");
             if ("custom".equals(posType)) {
                 float sphereX = prefs.getFloat("pref_sphere_x", 0f);
                 float sphereY = prefs.getFloat("pref_sphere_y", 0f);
-                scale = Math.max(0.1f, prefs.getFloat("pref_sphere_scale", 1.0f));
                 float centerX = sphereX + (vpW * scale) / 2f;
                 float centerY = sphereY + (vpW * scale) / 2f;
+                float offsetX = centerX - vpW / 2f;
+                float offsetY = centerY - vpH / 2f;
+                dx = offsetX * (16f / vpW);
+                dy = -offsetY * (16f / vpW);
+            } else if ("top".equals(posType)) {
+                float centerX = vpW / 2f;
+                float centerY = vpH * 0.25f;
+                float offsetX = centerX - vpW / 2f;
+                float offsetY = centerY - vpH / 2f;
+                dx = offsetX * (16f / vpW);
+                dy = -offsetY * (16f / vpW);
+            } else if ("bottom".equals(posType)) {
+                float centerX = vpW / 2f;
+                float centerY = vpH * 0.75f;
                 float offsetX = centerX - vpW / 2f;
                 float offsetY = centerY - vpH / 2f;
                 dx = offsetX * (16f / vpW);
@@ -3777,13 +3791,27 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 float dy = 0;
                 float scale = 1.0f;
                 if (!activityMode) {
+                    scale = Math.max(0.1f, sharedPrefs.getFloat("pref_sphere_scale", 1.0f));
                     String posType = sharedPrefs.getString("pref_sphere_position", "center");
                     if ("custom".equals(posType)) {
                         float sphereX = sharedPrefs.getFloat("pref_sphere_x", 0f);
                         float sphereY = sharedPrefs.getFloat("pref_sphere_y", 0f);
-                        scale = Math.max(0.1f, sharedPrefs.getFloat("pref_sphere_scale", 1.0f));
                         float centerX = sphereX + (width * scale) / 2f;
                         float centerY = sphereY + (width * scale) / 2f;
+                        float offsetX = centerX - width / 2f;
+                        float offsetY = centerY - height / 2f;
+                        dx = offsetX * (16f / width);
+                        dy = -offsetY * (16f / width);
+                    } else if ("top".equals(posType)) {
+                        float centerX = width / 2f;
+                        float centerY = height * 0.25f;
+                        float offsetX = centerX - width / 2f;
+                        float offsetY = centerY - height / 2f;
+                        dx = offsetX * (16f / width);
+                        dy = -offsetY * (16f / width);
+                    } else if ("bottom".equals(posType)) {
+                        float centerX = width / 2f;
+                        float centerY = height * 0.75f;
                         float offsetX = centerX - width / 2f;
                         float offsetY = centerY - height / 2f;
                         dx = offsetX * (16f / width);
