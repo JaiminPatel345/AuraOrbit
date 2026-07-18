@@ -1126,8 +1126,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // Camera uses sphereRadius (the slider) as its reference so that the
         // maximum sphere always fills screen width exactly; effectiveRadius is
         // computed inside distributeNodesOnSphere() after app count is known.
-        float vpW = camera.viewportWidth  > 0 ? camera.viewportWidth  : Gdx.graphics.getWidth();
-        float vpH = camera.viewportHeight > 0 ? camera.viewportHeight : Gdx.graphics.getHeight();
+        int screenW = context.getResources().getDisplayMetrics().widthPixels;
+        int screenH = context.getResources().getDisplayMetrics().heightPixels;
 
         float dx = 0;
         float dy = 0;
@@ -1138,31 +1138,31 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             if ("custom".equals(posType)) {
                 float sphereX = prefs.getFloat("pref_sphere_x", 0f);
                 float sphereY = prefs.getFloat("pref_sphere_y", 0f);
-                float centerX = sphereX + (vpW * scale) / 2f;
-                float centerY = sphereY + (vpW * scale) / 2f;
-                float offsetX = centerX - vpW / 2f;
-                float offsetY = centerY - vpH / 2f;
-                dx = offsetX * (16f / vpW);
-                dy = -offsetY * (16f / vpW);
+                float centerX = sphereX + (screenW * scale) / 2f;
+                float centerY = sphereY + (screenW * scale) / 2f;
+                float offsetX = centerX - screenW / 2f;
+                float offsetY = centerY - screenH / 2f;
+                dx = offsetX * (16f / screenW);
+                dy = -offsetY * (16f / screenW);
             } else if ("top".equals(posType)) {
-                float centerX = vpW / 2f;
-                float centerY = vpH * 0.25f;
-                float offsetX = centerX - vpW / 2f;
-                float offsetY = centerY - vpH / 2f;
-                dx = offsetX * (16f / vpW);
-                dy = -offsetY * (16f / vpW);
+                float centerX = screenW / 2f;
+                float centerY = screenH * 0.25f;
+                float offsetX = centerX - screenW / 2f;
+                float offsetY = centerY - screenH / 2f;
+                dx = offsetX * (16f / screenW);
+                dy = -offsetY * (16f / screenW);
             } else if ("bottom".equals(posType)) {
-                float centerX = vpW / 2f;
-                float centerY = vpH * 0.75f;
-                float offsetX = centerX - vpW / 2f;
-                float offsetY = centerY - vpH / 2f;
-                dx = offsetX * (16f / vpW);
-                dy = -offsetY * (16f / vpW);
+                float centerX = screenW / 2f;
+                float centerY = screenH * 0.75f;
+                float offsetX = centerX - screenW / 2f;
+                float offsetY = centerY - screenH / 2f;
+                dx = offsetX * (16f / screenW);
+                dy = -offsetY * (16f / screenW);
             }
         }
         sphereScale = scale;
 
-        float camDist = computeCameraDistance(vpW, vpH) / scale;
+        float camDist = computeCameraDistance(screenW, screenH) / scale;
         camera.position.set(-dx, -dy, camDist);
         camera.lookAt(-dx, -dy, 0f);
         camera.update();
@@ -3791,36 +3791,40 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 float dx = 0;
                 float dy = 0;
                 float scale = 1.0f;
+                
+                int screenW = context.getResources().getDisplayMetrics().widthPixels;
+                int screenH = context.getResources().getDisplayMetrics().heightPixels;
+                
                 if (!activityMode || applyPositionAndScale) {
                     scale = Math.max(0.1f, sharedPrefs.getFloat("pref_sphere_scale", 1.0f));
                     String posType = sharedPrefs.getString("pref_sphere_position", "center");
                     if ("custom".equals(posType)) {
                         float sphereX = sharedPrefs.getFloat("pref_sphere_x", 0f);
                         float sphereY = sharedPrefs.getFloat("pref_sphere_y", 0f);
-                        float centerX = sphereX + (width * scale) / 2f;
-                        float centerY = sphereY + (width * scale) / 2f;
-                        float offsetX = centerX - width / 2f;
-                        float offsetY = centerY - height / 2f;
-                        dx = offsetX * (16f / width);
-                        dy = -offsetY * (16f / width);
+                        float centerX = sphereX + (screenW * scale) / 2f;
+                        float centerY = sphereY + (screenW * scale) / 2f;
+                        float offsetX = centerX - screenW / 2f;
+                        float offsetY = centerY - screenH / 2f;
+                        dx = offsetX * (16f / screenW);
+                        dy = -offsetY * (16f / screenW);
                     } else if ("top".equals(posType)) {
-                        float centerX = width / 2f;
-                        float centerY = height * 0.25f;
-                        float offsetX = centerX - width / 2f;
-                        float offsetY = centerY - height / 2f;
-                        dx = offsetX * (16f / width);
-                        dy = -offsetY * (16f / width);
+                        float centerX = screenW / 2f;
+                        float centerY = screenH * 0.25f;
+                        float offsetX = centerX - screenW / 2f;
+                        float offsetY = centerY - screenH / 2f;
+                        dx = offsetX * (16f / screenW);
+                        dy = -offsetY * (16f / screenW);
                     } else if ("bottom".equals(posType)) {
-                        float centerX = width / 2f;
-                        float centerY = height * 0.75f;
-                        float offsetX = centerX - width / 2f;
-                        float offsetY = centerY - height / 2f;
-                        dx = offsetX * (16f / width);
-                        dy = -offsetY * (16f / width);
+                        float centerX = screenW / 2f;
+                        float centerY = screenH * 0.75f;
+                        float offsetX = centerX - screenW / 2f;
+                        float offsetY = centerY - screenH / 2f;
+                        dx = offsetX * (16f / screenW);
+                        dy = -offsetY * (16f / screenW);
                     }
                 }
                 sphereScale = scale;
-                float camDist = computeCameraDistance(width, height) / scale;
+                float camDist = computeCameraDistance(screenW, screenH) / scale;
                 camera.position.set(-dx, -dy, camDist);
                 camera.lookAt(-dx, -dy, 0f);
             }
