@@ -529,15 +529,17 @@ public class WidgetEditFragment extends Fragment {
         
         root.findViewById(R.id.btn_sphere_position).setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), dev.jaimin.auraorbit.SpherePositionEditorActivity.class);
-            if (originalWidgetName != null) intent.putExtra("widget_name", originalWidgetName);
-            else intent.putExtra("widget_name", nameInput.getText().toString());
+            String name = originalWidgetName != null ? originalWidgetName : nameInput.getText().toString();
+            intent.putExtra("widget_name", name);
+            intent.putExtra("group_name", name);
             startActivity(intent);
         });
         
         root.findViewById(R.id.btn_sphere_blur).setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), dev.jaimin.auraorbit.SphereBlurEditorActivity.class);
-            if (originalWidgetName != null) intent.putExtra("widget_name", originalWidgetName);
-            else intent.putExtra("widget_name", nameInput.getText().toString());
+            String name = originalWidgetName != null ? originalWidgetName : nameInput.getText().toString();
+            intent.putExtra("widget_name", name);
+            intent.putExtra("group_name", name);
             startActivity(intent);
         });
         

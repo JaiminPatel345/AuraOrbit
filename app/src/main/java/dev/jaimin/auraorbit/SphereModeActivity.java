@@ -85,6 +85,9 @@ public class SphereModeActivity extends AndroidApplication {
 
         // Read group_name extra if opened from a pinned group widget
         String groupName = getIntent().getStringExtra("group_name");
+        if (groupName == null) {
+            groupName = getIntent().getStringExtra("widget_name");
+        }
 
         // Initialize libGDX with activityMode=true so the engine bypasses all
         // wallpaper-specific guards (page isolation, edge exclusion, zoom revert,

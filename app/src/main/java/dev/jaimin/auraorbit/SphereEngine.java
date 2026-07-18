@@ -902,7 +902,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // the WeakHashMap inside SharedPreferences from GC-ing the listener.
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         prefListener = (p, key) -> {
-            if (key != null && RELEVANT_KEYS.contains(key)) {
+            if (key != null && (RELEVANT_KEYS.contains(key) || (pinnedGroupName != null && key.endsWith("_" + pinnedGroupName)))) {
                 Gdx.app.postRunnable(this::applyConfig);
             }
         };
@@ -1030,6 +1030,16 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         if (pinnedGroupName != null) fpsPref = prefs.getString("pref_target_fps_" + pinnedGroupName, fpsPref);
         sb.append(fpsPref).append('|');
 
+        String scaleKey = pinnedGroupName != null ? "pref_sphere_scale_" + pinnedGroupName : "pref_sphere_scale";
+        String posKey = pinnedGroupName != null ? "pref_sphere_position_" + pinnedGroupName : "pref_sphere_position";
+        String xKey = pinnedGroupName != null ? "pref_sphere_x_" + pinnedGroupName : "pref_sphere_x";
+        String yKey = pinnedGroupName != null ? "pref_sphere_y_" + pinnedGroupName : "pref_sphere_y";
+
+        sb.append(prefs.getFloat(scaleKey, prefs.getFloat("pref_sphere_scale", 1.0f))).append('|');
+        sb.append(prefs.getString(posKey, prefs.getString("pref_sphere_position", "center"))).append('|');
+        sb.append(prefs.getFloat(xKey, prefs.getFloat("pref_sphere_x", 0f))).append('|');
+        sb.append(prefs.getFloat(yKey, prefs.getFloat("pref_sphere_y", 0f))).append('|');
+
         // System-wallpaper mirror: changing the system wallpaper or granting
         // MANAGE_EXTERNAL_STORAGE must both trigger a background rebuild on next
         // resume(). getWallpaperId() needs no permission and is stable per-wallpaper.
@@ -1133,11 +1143,17 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         float dy = 0;
         float scale = 1.0f;
         if (!activityMode || applyPositionAndScale) {
-            scale = Math.max(0.1f, prefs.getFloat("pref_sphere_scale", 1.0f));
-            String posType = prefs.getString("pref_sphere_position", "center");
+            String scaleKey = pinnedGroupName != null ? "pref_sphere_scale_" + pinnedGroupName : "pref_sphere_scale";
+            String posKey = pinnedGroupName != null ? "pref_sphere_position_" + pinnedGroupName : "pref_sphere_position";
+            String xKey = pinnedGroupName != null ? "pref_sphere_x_" + pinnedGroupName : "pref_sphere_x";
+            String yKey = pinnedGroupName != null ? "pref_sphere_y_" + pinnedGroupName : "pref_sphere_y";
+
+            scale = Math.max(0.1f, prefs.getFloat(scaleKey, prefs.getFloat("pref_sphere_scale", 1.0f)));
+            String posType = prefs.getString(posKey, prefs.getString("pref_sphere_position", "center"));
+
             if ("custom".equals(posType)) {
-                float sphereX = prefs.getFloat("pref_sphere_x", 0f);
-                float sphereY = prefs.getFloat("pref_sphere_y", 0f);
+                float sphereX = prefs.getFloat(xKey, prefs.getFloat("pref_sphere_x", 0f));
+                float sphereY = prefs.getFloat(yKey, prefs.getFloat("pref_sphere_y", 0f));
                 float centerX = sphereX + (screenW * scale) / 2f;
                 float centerY = sphereY + (screenW * scale) / 2f;
                 float offsetX = centerX - screenW / 2f;
@@ -3823,11 +3839,17 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 int screenH = context.getResources().getDisplayMetrics().heightPixels;
                 
                 if (!activityMode || applyPositionAndScale) {
-                    scale = Math.max(0.1f, sharedPrefs.getFloat("pref_sphere_scale", 1.0f));
-                    String posType = sharedPrefs.getString("pref_sphere_position", "center");
+                    String scaleKey = pinnedGroupName != null ? "pref_sphere_scale_" + pinnedGroupName : "pref_sphere_scale";
+                    String posKey = pinnedGroupName != null ? "pref_sphere_position_" + pinnedGroupName : "pref_sphere_position";
+                    String xKey = pinnedGroupName != null ? "pref_sphere_x_" + pinnedGroupName : "pref_sphere_x";
+                    String yKey = pinnedGroupName != null ? "pref_sphere_y_" + pinnedGroupName : "pref_sphere_y";
+
+                    scale = Math.max(0.1f, sharedPrefs.getFloat(scaleKey, sharedPrefs.getFloat("pref_sphere_scale", 1.0f)));
+                    String posType = sharedPrefs.getString(posKey, sharedPrefs.getString("pref_sphere_position", "center"));
+
                     if ("custom".equals(posType)) {
-                        float sphereX = sharedPrefs.getFloat("pref_sphere_x", 0f);
-                        float sphereY = sharedPrefs.getFloat("pref_sphere_y", 0f);
+                        float sphereX = sharedPrefs.getFloat(xKey, sharedPrefs.getFloat("pref_sphere_x", 0f));
+                        float sphereY = sharedPrefs.getFloat(yKey, sharedPrefs.getFloat("pref_sphere_y", 0f));
                         float centerX = sphereX + (screenW * scale) / 2f;
                         float centerY = sphereY + (screenW * scale) / 2f;
                         float offsetX = centerX - screenW / 2f;
