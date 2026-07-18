@@ -454,8 +454,12 @@ public class WidgetEditFragment extends Fragment {
             MaterialButton btnEditApps = root.findViewById(R.id.btn_edit_apps);
             View cardApps = root.findViewById(R.id.card_apps);
             View tvAppsTitle = root.findViewById(R.id.tv_apps_title);
+            View editAppsDivider = root.findViewById(R.id.edit_apps_divider);
             
             btnEditApps.setVisibility(View.VISIBLE);
+            if (editAppsDivider != null) {
+                editAppsDivider.setVisibility(View.VISIBLE);
+            }
             cardApps.setVisibility(View.GONE);
             tvAppsTitle.setVisibility(View.GONE);
             

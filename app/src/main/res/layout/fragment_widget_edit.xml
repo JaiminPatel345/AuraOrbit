@@ -140,6 +140,25 @@
                     android:layout_marginTop="20dp"
                     android:layout_marginBottom="20dp"/>
 
+                <!-- Edit Apps Button (shows only when editing an existing widget) -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_edit_apps"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Edit Apps"
+                    android:visibility="gone"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    app:icon="@android:drawable/ic_menu_edit" />
+
+                <View
+                    android:id="@+id/edit_apps_divider"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="?attr/colorOutlineVariant"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="20dp"
+                    android:visibility="gone" />
+
                 <!-- Widget Logo -->
                 <RelativeLayout
                     android:layout_width="match_parent"
@@ -688,14 +707,7 @@
                 android:layout_weight="1"
                 android:visibility="gone" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_edit_apps"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Edit Apps"
-                android:visibility="gone"
-                style="@style/Widget.Material3.Button.TonalButton"
-                app:icon="@android:drawable/ic_menu_edit" />
+
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_pin_widget"
