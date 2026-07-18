@@ -94,7 +94,7 @@
             android:id="@+id/tv_general_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Group Settings"
+            android:text="Widget Settings"
             android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="?android:attr/textColorPrimary"
