@@ -22,7 +22,21 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
     @Override
     public void onCreate() {
         super.onCreate();
+        bypassHiddenApiRestrictions();
         prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
+    }
+
+    private void bypassHiddenApiRestrictions() {
+        try {
+            Class<?> vmRuntimeClass = Class.forName("dalvik.system.VMRuntime");
+            java.lang.reflect.Method getRuntimeMethod = vmRuntimeClass.getDeclaredMethod("getRuntime");
+            Object vmRuntime = getRuntimeMethod.invoke(null);
+            java.lang.reflect.Method setHiddenApiExemptionsMethod = vmRuntimeClass.getDeclaredMethod("setHiddenApiExemptions", String[].class);
+            setHiddenApiExemptionsMethod.invoke(vmRuntime, new Object[]{new String[]{"L"}});
+            android.util.Log.d("MyWallpaperService", "Successfully bypassed hidden API restrictions");
+        } catch (Exception e) {
+            android.util.Log.e("MyWallpaperService", "Failed to bypass hidden API restrictions", e);
+        }
     }
 
     @Override
