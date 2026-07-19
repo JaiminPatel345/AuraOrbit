@@ -1217,19 +1217,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         Log.d(TAG, "applyConfig: anchored inferredPage=" + inferredPage
                 + " (activePage=" + activePage + ", offsetEverSeen=" + offsetEverSeen + ")");
 
-        int screenW = context.getResources().getDisplayMetrics().widthPixels;
-        int screenH = context.getResources().getDisplayMetrics().heightPixels;
-
-        float[] dxDyScale = new float[3];
-        getActivePositionAndScale(dxDyScale);
-        float dx = dxDyScale[0];
-        float dy = dxDyScale[1];
-        float scale = dxDyScale[2];
-        sphereScale = scale;
-
-        float camDist = computeCameraDistance(screenW, screenH) / scale;
-        camera.position.set(-dx, -dy, camDist);
-        camera.lookAt(-dx, -dy, 0f);
+        // ─── Update camera position for new radius ───────────────────────
+        float vpW = camera.viewportWidth  > 0 ? camera.viewportWidth  : Gdx.graphics.getWidth();
+        float vpH = camera.viewportHeight > 0 ? camera.viewportHeight : Gdx.graphics.getHeight();
+        camera.position.set(0f, 0f, computeCameraDistance(vpW, vpH));
         camera.update();
 
         // ─── Reset animation state on rebuild ────────────────────────────
@@ -3888,16 +3879,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // after an orientation change the binding dimension may flip, so we
             // always recalculate to keep the sphere+icons inside the screen.
             if (width > 0 && height > 0) {
-                SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
-                float[] dxDyScale = new float[3];
-                getActivePositionAndScale(dxDyScale);
-                float dx = dxDyScale[0];
-                float dy = dxDyScale[1];
-                float scale = dxDyScale[2];
-                sphereScale = scale;
-                float camDist = computeCameraDistance(width, height) / scale;
-                camera.position.set(-dx, -dy, camDist);
-                camera.lookAt(-dx, -dy, 0f);
+                camera.position.set(0f, 0f, computeCameraDistance(width, height));
             }
             camera.update();
         }

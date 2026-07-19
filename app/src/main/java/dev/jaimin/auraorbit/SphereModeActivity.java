@@ -51,10 +51,6 @@ public class SphereModeActivity extends AndroidApplication {
     private static final String TAG = "AuraOrbit.SphereMode";
     
     private SphereEngine sphereEngine;
-    private int sphereCenterX;
-    private int sphereCenterY;
-    private int sphereSize;
-    private boolean touchStartedOutside = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,7 +83,7 @@ public class SphereModeActivity extends AndroidApplication {
         config.b = 8;
         config.a = 8;
 
-        // Read group_name extra if opened from a pinned group widget
+        // Read group_name / widget_name extra if opened from a pinned widget
         String groupName = getIntent().getStringExtra("group_name");
         if (groupName == null) {
             groupName = getIntent().getStringExtra("widget_name");
@@ -125,7 +121,7 @@ public class SphereModeActivity extends AndroidApplication {
         android.util.DisplayMetrics metrics = getResources().getDisplayMetrics();
         int screenWidth = metrics.widthPixels;
         int screenHeight = metrics.heightPixels;
-        sphereSize = (int) (screenWidth * scale);
+        int sphereSize = (int) (screenWidth * scale);
 
         android.widget.FrameLayout container = new android.widget.FrameLayout(this);
         
@@ -141,15 +137,14 @@ public class SphereModeActivity extends AndroidApplication {
             sphereY = (int) prefs.getFloat(yPref, sphereY);
         }
         
-        sphereCenterX = sphereX + sphereSize / 2;
-        sphereCenterY = sphereY + sphereSize / 2;
+        int sphereCenterX = sphereX + sphereSize / 2;
+        int sphereCenterY = sphereY + sphereSize / 2;
         
-        sphereEngine.applyPositionAndScale = true;
-        
-        // Position glView as MATCH_PARENT so 3D camera translation resolves matching the editor
+        // Position glView absolutely at the sphere's position
         android.widget.FrameLayout.LayoutParams glParams = new android.widget.FrameLayout.LayoutParams(
-                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-                android.widget.FrameLayout.LayoutParams.MATCH_PARENT);
+                sphereSize, sphereSize, android.view.Gravity.TOP | android.view.Gravity.START);
+        glParams.leftMargin = sphereX;
+        glParams.topMargin = sphereY;
         container.addView(glView, glParams);
         
         // Close the activity if the user touches the blurred background outside the sphere
@@ -180,7 +175,25 @@ public class SphereModeActivity extends AndroidApplication {
             getWindow().setBackgroundBlurRadius(0);
         }
         
-        getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        if (blurRadiusPref > 0 && blurStrengthPref > 0) {
+            // Use InsetDrawable with oval for shaped blur area
+            int left = sphereCenterX - windowSize / 2;
+            int top = sphereCenterY - windowSize / 2;
+            int right = screenWidth - (left + windowSize);
+            int bottom = screenHeight - (top + windowSize);
+            
+            android.graphics.drawable.GradientDrawable circle = new android.graphics.drawable.GradientDrawable();
+            circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+            circle.setColor(android.graphics.Color.TRANSPARENT);
+            
+            android.graphics.drawable.InsetDrawable insetDrawable = 
+                new android.graphics.drawable.InsetDrawable(circle, left, top, right, bottom);
+            getWindow().setBackgroundDrawable(insetDrawable);
+        } else {
+            // No blur — fully transparent background, no insets
+            getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+        
         getWindow().setAttributes(params);
 
         // ─── Hide system bars (immersive fullscreen) ─────────────────────
@@ -188,6 +201,7 @@ public class SphereModeActivity extends AndroidApplication {
         // fully decorated and the insets controller is available.
         hideSystemBars();
 
+        // ─── Empty state popup ────────────────────────────────────────────
         boolean isEmpty = false;
         if (groupName != null) {
             java.util.List<WidgetStore.Widget> widgets = WidgetStore.load(prefs);
@@ -251,6 +265,9 @@ public class SphereModeActivity extends AndroidApplication {
         // update the engine with the new group name!
         if (sphereEngine != null) {
             String groupName = intent.getStringExtra("group_name");
+            if (groupName == null) {
+                groupName = intent.getStringExtra("widget_name");
+            }
             sphereEngine.setPinnedGroupName(groupName);
         }
     }
@@ -282,35 +299,6 @@ public class SphereModeActivity extends AndroidApplication {
         if (hasFocus) {
             hideSystemBars();
         }
-    }
-
-    @Override
-    public boolean dispatchTouchEvent(android.view.MotionEvent ev) {
-        if (ev.getAction() == android.view.MotionEvent.ACTION_DOWN) {
-            float x = ev.getX();
-            float y = ev.getY();
-            float dx = x - sphereCenterX;
-            float dy = y - sphereCenterY;
-            float dist = (float) Math.sqrt(dx * dx + dy * dy);
-            touchStartedOutside = dist > (sphereSize / 2f) * 1.15f;
-        } else if (ev.getAction() == android.view.MotionEvent.ACTION_UP) {
-            if (touchStartedOutside) {
-                float x = ev.getX();
-                float y = ev.getY();
-                float dx = x - sphereCenterX;
-                float dy = y - sphereCenterY;
-                float dist = (float) Math.sqrt(dx * dx + dy * dy);
-                if (dist > (sphereSize / 2f) * 1.15f) {
-                    if (sphereEngine != null) {
-                        sphereEngine.fanOutAndFinish();
-                    } else {
-                        finish();
-                    }
-                    return true;
-                }
-            }
-        }
-        return super.dispatchTouchEvent(ev);
     }
 
     @Override
