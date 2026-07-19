@@ -92,6 +92,10 @@ public class SpherePositionEditorActivity extends AndroidApplication {
         config.a = 8;
 
         sphereEngine = new SphereEngine(this, true, groupName);
+        java.util.ArrayList<String> tempPackages = getIntent().getStringArrayListExtra("temp_packages");
+        if (tempPackages != null) {
+            sphereEngine.setTempPackages(tempPackages);
+        }
         sphereEngine.applyPositionAndScale = true; // Tell engine to translate camera like wallpaper mode
         sphereEngine.setPreviewModeAuthoritative(true); // Ensure app decals are loaded and rendered immediately
         

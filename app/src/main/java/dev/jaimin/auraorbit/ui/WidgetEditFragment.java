@@ -536,6 +536,7 @@ public class WidgetEditFragment extends Fragment {
             String name = originalWidgetName != null ? originalWidgetName : nameInput.getText().toString();
             intent.putExtra("widget_name", name);
             intent.putExtra("group_name", name);
+            intent.putStringArrayListExtra("temp_packages", new java.util.ArrayList<>(workingMembers));
             startActivity(intent);
         });
         

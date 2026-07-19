@@ -802,6 +802,11 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * and should only render apps belonging to this specific group.
      */
     private String pinnedGroupName = null;
+    private java.util.List<String> tempPackages = null;
+
+    public void setTempPackages(java.util.List<String> tempPackages) {
+        this.tempPackages = tempPackages;
+    }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  Constructor
@@ -1204,9 +1209,17 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         lastGestureEndNanos = Long.MIN_VALUE / 2;
 
         // ─── Re-fetch apps, redistribute, recreate decals and backdrops ──
-        appNodes = AppFetcher.fetchSelectedApps(context, pinnedGroupName);
+        if (tempPackages != null && !tempPackages.isEmpty()) {
+            appNodes = AppFetcher.fetchAppsByPackages(context, tempPackages);
+        } else {
+            appNodes = AppFetcher.fetchSelectedApps(context, pinnedGroupName);
+        }
         
-        if (pinnedGroupName != null) {
+        if (appNodes.isEmpty()) {
+            appNodes = AppFetcher.fetchSelectedApps(context, null);
+        }
+
+        if (pinnedGroupName != null && (tempPackages == null || tempPackages.isEmpty())) {
             java.util.List<AppFetcher.AppNode> filtered = new java.util.ArrayList<>();
             for (AppFetcher.AppNode node : appNodes) {
                 if (pinnedGroupName.equals(node.groupId)) {

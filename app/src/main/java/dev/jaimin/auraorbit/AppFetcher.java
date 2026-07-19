@@ -261,6 +261,52 @@ public class AppFetcher {
         return nodes;
     }
 
+    /**
+     * Fetches AppNode objects for a custom list of package names.
+     */
+    public static List<AppNode> fetchAppsByPackages(Context context, java.util.Collection<String> packages) {
+        PackageManager pm = context.getPackageManager();
+        List<AppNode> nodes = new ArrayList<>();
+        if (packages == null) return nodes;
+
+        for (String packageName : packages) {
+            try {
+                ApplicationInfo appInfo = pm.getApplicationInfo(packageName, 0);
+                String appName = pm.getApplicationLabel(appInfo).toString();
+
+                AppNode node = new AppNode(packageName, appName);
+
+                Bitmap bitmap = sIconCache.get(packageName);
+                if (bitmap == null) {
+                    IconPackManager iconPackManager = IconPackManager.getInstance(context);
+                    Drawable drawable = null;
+                    Intent launchIntent = pm.getLaunchIntentForPackage(packageName);
+                    if (launchIntent != null && launchIntent.getComponent() != null) {
+                        drawable = iconPackManager.getIcon("ComponentInfo{" + packageName + "/" + launchIntent.getComponent().getClassName() + "}");
+                    }
+                    
+                    if (drawable == null) {
+                        drawable = pm.getApplicationIcon(appInfo);
+                    }
+                    bitmap = drawableToBitmap(drawable, ICON_SIZE);
+                    if (bitmap != null) {
+                        sIconCache.put(packageName, bitmap);
+                    }
+                }
+
+                if (bitmap != null) {
+                    node.iconTexture = bitmapToTexture(bitmap);
+                    node.iconRegion = new TextureRegion(node.iconTexture);
+                }
+
+                nodes.add(node);
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to load app: " + packageName, e);
+            }
+        }
+        return nodes;
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     //  Public API — Enumerate all launchable apps for the settings screen
     // ═══════════════════════════════════════════════════════════════════════
