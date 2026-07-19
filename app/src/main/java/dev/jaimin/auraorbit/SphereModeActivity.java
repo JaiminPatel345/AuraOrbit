@@ -180,7 +180,7 @@ public class SphereModeActivity extends AndroidApplication {
             getWindow().setBackgroundBlurRadius(0);
         }
         
-        if (blurRadiusPref == 100) {
+        if (blurRadiusPref == 100 || blurRadiusPref == 0) {
             getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
         } else {
             int left = sphereCenterX - windowSize / 2;
@@ -196,6 +196,15 @@ public class SphereModeActivity extends AndroidApplication {
                 new android.graphics.drawable.InsetDrawable(circle, left, top, right, bottom);
             getWindow().setBackgroundDrawable(insetDrawable);
         }
+
+        // Set custom OutlineProvider to prevent decor view from clipping glView to circular background outline
+        getWindow().getDecorView().setOutlineProvider(new android.view.ViewOutlineProvider() {
+            @Override
+            public void getOutline(android.view.View view, android.graphics.Outline outline) {
+                outline.setRect(0, 0, view.getWidth(), view.getHeight());
+            }
+        });
+        getWindow().getDecorView().setClipToOutline(false);
         
         getWindow().setAttributes(params);
 
