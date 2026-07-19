@@ -10,8 +10,8 @@ public class DeletedWidgetActivity extends Activity {
         super.onCreate(savedInstanceState);
         
         new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            .setTitle("Group Deleted")
-            .setMessage("This group has been deleted. Android does not allow apps to delete widgets automatically.\n\nPlease long-press this widget and drag it to the trash to remove it from your home screen.")
+            .setTitle("Widget Deleted")
+            .setMessage("This widget has been deleted. Android does not allow apps to delete widgets automatically.\n\nPlease long-press this widget and drag it to the trash to remove it from your home screen.")
             .setPositiveButton("OK", (dialog, which) -> {
                 finish();
             })

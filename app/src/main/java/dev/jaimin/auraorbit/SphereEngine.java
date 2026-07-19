@@ -1271,17 +1271,6 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             isFallback = true;
         }
 
-        if (!isFallback && pinnedGroupName != null && (tempPackages == null || tempPackages.isEmpty())) {
-            java.util.List<AppFetcher.AppNode> filtered = new java.util.ArrayList<>();
-            for (AppFetcher.AppNode node : appNodes) {
-                if (pinnedGroupName.equals(node.groupId)) {
-                    filtered.add(node);
-                } else {
-                    if (node.iconTexture != null) node.iconTexture.dispose();
-                }
-            }
-            appNodes = filtered;
-        }
         
         distributeNodesOnSphere();
         createDecals();

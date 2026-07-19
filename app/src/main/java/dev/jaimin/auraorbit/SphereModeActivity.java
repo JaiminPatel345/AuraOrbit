@@ -51,6 +51,10 @@ public class SphereModeActivity extends AndroidApplication {
     private static final String TAG = "AuraOrbit.SphereMode";
     
     private SphereEngine sphereEngine;
+    private int sphereCenterX;
+    private int sphereCenterY;
+    private int sphereSize;
+    private boolean touchStartedOutside = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -121,7 +125,7 @@ public class SphereModeActivity extends AndroidApplication {
         android.util.DisplayMetrics metrics = getResources().getDisplayMetrics();
         int screenWidth = metrics.widthPixels;
         int screenHeight = metrics.heightPixels;
-        int sphereSize = (int) (screenWidth * scale);
+        sphereSize = (int) (screenWidth * scale);
 
         android.widget.FrameLayout container = new android.widget.FrameLayout(this);
         
@@ -137,8 +141,8 @@ public class SphereModeActivity extends AndroidApplication {
             sphereY = (int) prefs.getFloat(yPref, sphereY);
         }
         
-        int sphereCenterX = sphereX + sphereSize / 2;
-        int sphereCenterY = sphereY + sphereSize / 2;
+        sphereCenterX = sphereX + sphereSize / 2;
+        sphereCenterY = sphereY + sphereSize / 2;
         
         sphereEngine.applyPositionAndScale = true;
         
@@ -294,6 +298,35 @@ public class SphereModeActivity extends AndroidApplication {
         if (hasFocus) {
             hideSystemBars();
         }
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(android.view.MotionEvent ev) {
+        if (ev.getAction() == android.view.MotionEvent.ACTION_DOWN) {
+            float x = ev.getX();
+            float y = ev.getY();
+            float dx = x - sphereCenterX;
+            float dy = y - sphereCenterY;
+            float dist = (float) Math.sqrt(dx * dx + dy * dy);
+            touchStartedOutside = dist > (sphereSize / 2f) * 1.15f;
+        } else if (ev.getAction() == android.view.MotionEvent.ACTION_UP) {
+            if (touchStartedOutside) {
+                float x = ev.getX();
+                float y = ev.getY();
+                float dx = x - sphereCenterX;
+                float dy = y - sphereCenterY;
+                float dist = (float) Math.sqrt(dx * dx + dy * dy);
+                if (dist > (sphereSize / 2f) * 1.15f) {
+                    if (sphereEngine != null) {
+                        sphereEngine.fanOutAndFinish();
+                    } else {
+                        finish();
+                    }
+                    return true;
+                }
+            }
+        }
+        return super.dispatchTouchEvent(ev);
     }
 
     @Override
