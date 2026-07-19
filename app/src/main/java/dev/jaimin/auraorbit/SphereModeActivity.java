@@ -5,6 +5,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -93,6 +95,7 @@ public class SphereModeActivity extends AndroidApplication {
         // wallpaper-specific guards (page isolation, edge exclusion, zoom revert,
         // command gating).
         sphereEngine = new SphereEngine(this, true, groupName);
+        sphereEngine.applyPositionAndScale = true;
         View glView = initializeForView(sphereEngine, config);
         glView.setClickable(true); // Ensure glView consumes clicks
         if (graphics.getView() instanceof android.view.SurfaceView) {
@@ -109,8 +112,8 @@ public class SphereModeActivity extends AndroidApplication {
 
         float scale = prefs.getFloat(scalePref, 1.0f);
         String pos = prefs.getString(posPref, "center");
-        int blurRadiusPref = prefs.getInt(radiusPref, 0);
-        int blurStrengthPref = prefs.getInt(strengthPref, 0);
+        int blurRadiusPref = prefs.getInt(radiusPref, 10);
+        int blurStrengthPref = prefs.getInt(strengthPref, 50);
         // Migrate old pref_blur_amount if the new ones don't exist
         if (!prefs.contains(radiusPref) && groupName == null && prefs.contains("pref_blur_amount")) {
             int oldAmount = prefs.getInt("pref_blur_amount", 0);
@@ -126,35 +129,68 @@ public class SphereModeActivity extends AndroidApplication {
         android.widget.FrameLayout container = new android.widget.FrameLayout(this);
         
         // ─── Window Bounds ────────────────────────────────────────────────
-        int sphereX = (screenWidth - sphereSize) / 2;
-        int sphereY = (screenHeight - sphereSize) / 2;
-        if ("top".equals(pos)) {
-            sphereY = 100;
+        int sphereCenterX, sphereCenterY;
+        if ("custom".equals(pos)) {
+            float defaultX = (screenWidth - (screenWidth * scale)) / 2f;
+            float defaultY = (screenHeight - (screenWidth * scale)) / 2f;
+            float sphereX = prefs.getFloat(xPref, defaultX);
+            float sphereY = prefs.getFloat(yPref, defaultY);
+            sphereCenterX = (int) (sphereX + (screenWidth * scale) / 2f);
+            sphereCenterY = (int) (sphereY + (screenWidth * scale) / 2f);
+        } else if ("top".equals(pos)) {
+            sphereCenterX = screenWidth / 2;
+            sphereCenterY = (int) (screenHeight * 0.25f);
         } else if ("bottom".equals(pos)) {
-            sphereY = screenHeight - sphereSize - 100;
-        } else if ("custom".equals(pos)) {
-            sphereX = (int) prefs.getFloat(xPref, sphereX);
-            sphereY = (int) prefs.getFloat(yPref, sphereY);
+            sphereCenterX = screenWidth / 2;
+            sphereCenterY = (int) (screenHeight * 0.75f);
+        } else { // "center"
+            sphereCenterX = screenWidth / 2;
+            sphereCenterY = screenHeight / 2;
         }
         
-        int sphereCenterX = sphereX + sphereSize / 2;
-        int sphereCenterY = sphereY + sphereSize / 2;
-        
-        // Position glView absolutely at the sphere's position
+        // Position glView to cover the full screen so that the engine renders matching the preview and wallpaper
         android.widget.FrameLayout.LayoutParams glParams = new android.widget.FrameLayout.LayoutParams(
-                sphereSize, sphereSize, android.view.Gravity.TOP | android.view.Gravity.START);
-        glParams.leftMargin = sphereX;
-        glParams.topMargin = sphereY;
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT);
         container.addView(glView, glParams);
         
         // Close the activity if the user touches the blurred background outside the sphere
-        container.setOnClickListener(v -> finish());
+        container.setOnClickListener(v -> {
+            if (sphereEngine != null) {
+                sphereEngine.fanOutAndFinish();
+            } else {
+                finish();
+            }
+        });
         
         setContentView(container);
 
-        int maxDim = Math.max(screenWidth, screenHeight) * 2;
-        int windowSize = (int) (sphereSize + (maxDim - sphereSize) * (blurRadiusPref / 100.0f));
-        if (blurRadiusPref == 0) windowSize = sphereSize;
+        // Calculate the exact 3D visual sphere radius on screen
+        int sphereRadiusPref = prefs.getInt("pref_sphere_radius", 50);
+        int iconPref = prefs.getInt("pref_icon_size", 50);
+        if (groupName != null) {
+            iconPref = prefs.getInt("pref_icon_size_" + groupName, iconPref);
+        }
+        float worldRadius = 3.0f + 5.0f * (sphereRadiusPref / 100f);
+        float worldIconSize = 0.6f + 1.4f * (iconPref / 100f);
+        float effRadius = worldRadius + worldIconSize * 0.75f;
+        float actualVisualSphereRadius = (effRadius * (screenWidth / 16f)) * scale;
+
+        float blurSize = 0f;
+        if (blurRadiusPref > 0) {
+            if (blurRadiusPref <= 10) {
+                blurSize = actualVisualSphereRadius * 2f * (blurRadiusPref / 10f);
+            } else {
+                float distTopLeft = (float) Math.hypot(sphereCenterX, sphereCenterY);
+                float distTopRight = (float) Math.hypot(screenWidth - sphereCenterX, sphereCenterY);
+                float distBottomLeft = (float) Math.hypot(sphereCenterX, screenHeight - sphereCenterY);
+                float distBottomRight = (float) Math.hypot(screenWidth - sphereCenterX, screenHeight - sphereCenterY);
+                float maxRequiredRadius = Math.max(Math.max(distTopLeft, distTopRight), Math.max(distBottomLeft, distBottomRight));
+                
+                float t = (blurRadiusPref - 10f) / 10f;
+                blurSize = (actualVisualSphereRadius + (maxRequiredRadius - actualVisualSphereRadius) * t) * 2f;
+            }
+        }
         
         WindowManager.LayoutParams params = getWindow().getAttributes();
         params.width = WindowManager.LayoutParams.MATCH_PARENT;
@@ -176,21 +212,13 @@ public class SphereModeActivity extends AndroidApplication {
         }
         
         if (blurRadiusPref > 0 && blurStrengthPref > 0) {
-            // Use InsetDrawable with oval for shaped blur area
-            int left = sphereCenterX - windowSize / 2;
-            int top = sphereCenterY - windowSize / 2;
-            int right = screenWidth - (left + windowSize);
-            int bottom = screenHeight - (top + windowSize);
-            
-            android.graphics.drawable.GradientDrawable circle = new android.graphics.drawable.GradientDrawable();
-            circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-            circle.setColor(android.graphics.Color.TRANSPARENT);
-            
-            android.graphics.drawable.InsetDrawable insetDrawable = 
-                new android.graphics.drawable.InsetDrawable(circle, left, top, right, bottom);
-            getWindow().setBackgroundDrawable(insetDrawable);
+            float halfSize = blurSize / 2f;
+            int left = (int) (sphereCenterX - halfSize);
+            int top = (int) (sphereCenterY - halfSize);
+            int right = (int) (sphereCenterX + halfSize);
+            int bottom = (int) (sphereCenterY + halfSize);
+            getWindow().setBackgroundDrawable(new BlurBackgroundDrawable(left, top, right, bottom));
         } else {
-            // No blur — fully transparent background, no insets
             getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
         }
         
@@ -320,6 +348,34 @@ public class SphereModeActivity extends AndroidApplication {
             sphereEngine.fanOutAndFinish();
         } else {
             super.onBackPressed();
+        }
+    }
+
+    private static class BlurBackgroundDrawable extends android.graphics.drawable.GradientDrawable {
+        private final int customLeft;
+        private final int customTop;
+        private final int customRight;
+        private final int customBottom;
+
+        public BlurBackgroundDrawable(int left, int top, int right, int bottom) {
+            super();
+            setShape(OVAL);
+            setColor(android.graphics.Color.TRANSPARENT);
+            this.customLeft = left;
+            this.customTop = top;
+            this.customRight = right;
+            this.customBottom = bottom;
+            super.setBounds(left, top, right, bottom);
+        }
+
+        @Override
+        public void setBounds(int left, int top, int right, int bottom) {
+            super.setBounds(customLeft, customTop, customRight, customBottom);
+        }
+
+        @Override
+        public void setBounds(@NonNull android.graphics.Rect bounds) {
+            super.setBounds(customLeft, customTop, customRight, customBottom);
         }
     }
 }

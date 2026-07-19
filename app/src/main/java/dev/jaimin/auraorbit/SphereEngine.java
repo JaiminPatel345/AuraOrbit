@@ -1220,7 +1220,17 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // ─── Update camera position for new radius ───────────────────────
         float vpW = camera.viewportWidth  > 0 ? camera.viewportWidth  : Gdx.graphics.getWidth();
         float vpH = camera.viewportHeight > 0 ? camera.viewportHeight : Gdx.graphics.getHeight();
-        camera.position.set(0f, 0f, computeCameraDistance(vpW, vpH));
+        
+        float[] dxDyScale = new float[3];
+        getActivePositionAndScale(dxDyScale);
+        float dx = dxDyScale[0];
+        float dy = dxDyScale[1];
+        float scale = dxDyScale[2];
+        sphereScale = scale;
+        
+        float camDist = computeCameraDistance(vpW, vpH) / scale;
+        camera.position.set(-dx, -dy, camDist);
+        camera.lookAt(-dx, -dy, 0f);
         camera.update();
 
         // ─── Reset animation state on rebuild ────────────────────────────
@@ -2048,7 +2058,51 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 // Inside our own activity the sphere owns all input. No launcher
                 // gesture conflict, no command gating, no zoom/drawer guards.
                 if (activityMode) {
-                    raycastAndLaunch(x, y);
+                    if (raycastAndLaunch(x, y)) {
+                        return true;
+                    }
+                    
+                    int screenW = Gdx.graphics.getWidth();
+                    int screenH = Gdx.graphics.getHeight();
+                    
+                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+                    String scaleKey = pinnedGroupName != null ? "pref_sphere_scale_" + pinnedGroupName : "pref_sphere_scale";
+                    String posKey = pinnedGroupName != null ? "pref_sphere_position_" + pinnedGroupName : "pref_sphere_position";
+                    String xKey = pinnedGroupName != null ? "pref_sphere_x_" + pinnedGroupName : "pref_sphere_x";
+                    String yKey = pinnedGroupName != null ? "pref_sphere_y_" + pinnedGroupName : "pref_sphere_y";
+
+                    float scale = prefs.getFloat(scaleKey, 1.0f);
+                    String posType = prefs.getString(posKey, "center");
+                    
+                    float sphereX = (screenW - (screenW * scale)) / 2f;
+                    float sphereY = (screenH - (screenW * scale)) / 2f;
+                    
+                    if ("top".equals(posType)) {
+                        sphereY = 100;
+                    } else if ("bottom".equals(posType)) {
+                        sphereY = screenH - (screenW * scale) - 100;
+                    } else if ("custom".equals(posType)) {
+                        sphereX = prefs.getFloat(xKey, sphereX);
+                        sphereY = prefs.getFloat(yKey, sphereY);
+                    }
+                    
+                    float centerX = sphereX + (screenW * scale) / 2f;
+                    float centerY = sphereY + (screenW * scale) / 2f;
+                    
+                    int radiusPref = prefs.getInt("pref_sphere_radius", 50);
+                    int iconPref = prefs.getInt("pref_icon_size", 50);
+                    if (pinnedGroupName != null) {
+                        iconPref = prefs.getInt("pref_icon_size_" + pinnedGroupName, iconPref);
+                    }
+                    float worldRadius = 3.0f + 5.0f * (radiusPref / 100f);
+                    float worldIconSize = 0.6f + 1.4f * (iconPref / 100f);
+                    float effRadius = worldRadius + worldIconSize * 0.75f;
+                    float visualRadius = (effRadius * (screenW / 16f)) * scale;
+
+                    float dist = com.badlogic.gdx.math.Vector2.dst(x, y, centerX, centerY);
+                    if (dist > visualRadius) {
+                        fanOutAndFinish();
+                    }
                     return true;
                 }
 
@@ -3879,7 +3933,16 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // after an orientation change the binding dimension may flip, so we
             // always recalculate to keep the sphere+icons inside the screen.
             if (width > 0 && height > 0) {
-                camera.position.set(0f, 0f, computeCameraDistance(width, height));
+                float[] dxDyScale = new float[3];
+                getActivePositionAndScale(dxDyScale);
+                float dx = dxDyScale[0];
+                float dy = dxDyScale[1];
+                float scale = dxDyScale[2];
+                sphereScale = scale;
+                
+                float camDist = computeCameraDistance(width, height) / scale;
+                camera.position.set(-dx, -dy, camDist);
+                camera.lookAt(-dx, -dy, 0f);
             }
             camera.update();
         }

@@ -675,12 +675,12 @@ public class WidgetEditFragment extends Fragment {
     private void updateBlurStatusText(SharedPreferences prefs) {
         if (tvBlurStatus == null) return;
         int amount = originalWidgetName != null 
-                ? prefs.getInt("pref_blur_radius_" + originalWidgetName, 0) 
-                : 0;
+                ? prefs.getInt("pref_blur_radius_" + originalWidgetName, 10) 
+                : 10;
         if (amount == 0) tvBlurStatus.setText("No Blur");
-        else if (amount <= 33) tvBlurStatus.setText("Sphere Background Only");
-        else if (amount <= 66) tvBlurStatus.setText("Nearby Area");
-        else if (amount < 100) tvBlurStatus.setText("Almost Full Screen");
+        else if (amount <= 6) tvBlurStatus.setText("Sphere Background Only");
+        else if (amount <= 13) tvBlurStatus.setText("Nearby Area");
+        else if (amount < 20) tvBlurStatus.setText("Almost Full Screen");
         else tvBlurStatus.setText("Full Screen Blur");
     }
 
@@ -1071,8 +1071,8 @@ public class WidgetEditFragment extends Fragment {
             float oldX = prefs.getFloat("pref_sphere_x_" + originalWidgetName, prefs.getFloat("pref_sphere_x", 0f));
             float oldY = prefs.getFloat("pref_sphere_y_" + originalWidgetName, prefs.getFloat("pref_sphere_y", 0f));
             float oldScale = prefs.getFloat("pref_sphere_scale_" + originalWidgetName, prefs.getFloat("pref_sphere_scale", 1f));
-            int oldBlurRadius = prefs.getInt("pref_blur_radius_" + originalWidgetName, prefs.getInt("pref_blur_radius", 0));
-            int oldBlurStrength = prefs.getInt("pref_blur_strength_" + originalWidgetName, prefs.getInt("pref_blur_strength", 0));
+            int oldBlurRadius = prefs.getInt("pref_blur_radius_" + originalWidgetName, prefs.getInt("pref_blur_radius", 10));
+            int oldBlurStrength = prefs.getInt("pref_blur_strength_" + originalWidgetName, prefs.getInt("pref_blur_strength", 50));
             
             // Migrate widget widget mappings to new name
             android.appwidget.AppWidgetManager appWidgetManager = android.appwidget.AppWidgetManager.getInstance(requireContext());
@@ -1129,10 +1129,10 @@ public class WidgetEditFragment extends Fragment {
         }
         
         if (originalWidgetName == null) {
-            // New widget gets 0 blur (no blur) by default!
+            // New widget gets 10 blur (multiplier 1.0) by default!
             prefs.edit()
-                .putInt("pref_blur_radius_" + newName, 0)
-                .putInt("pref_blur_strength_" + newName, 0)
+                .putInt("pref_blur_radius_" + newName, 10)
+                .putInt("pref_blur_strength_" + newName, 50)
                 .apply();
         }
 
