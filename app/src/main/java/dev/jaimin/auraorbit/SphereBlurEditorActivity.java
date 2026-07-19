@@ -94,7 +94,10 @@ public class SphereBlurEditorActivity extends com.badlogic.gdx.backends.android.
             sphereCenterY = screenHeight / 2f;
         }
 
-        // Calculate the exact 3D visual sphere radius on screen
+        // Calculate the exact on-screen pixel radius of the 3D sphere using the
+        // same perspective math as SphereEngine.computeCameraDistance().
+        // Engine: FOV=67° (vertical), camera placed at effRadius/sin(halfH)*1.05f back.
+        // We project worldRadius through that same view frustum to get screen pixels.
         int sphereRadiusPref = prefs.getInt("pref_sphere_radius", 50);
         int iconPref = prefs.getInt("pref_icon_size", 50);
         if (groupName != null) {
@@ -103,7 +106,8 @@ public class SphereBlurEditorActivity extends com.badlogic.gdx.backends.android.
         float worldRadius = 3.0f + 5.0f * (sphereRadiusPref / 100f);
         float worldIconSize = 0.6f + 1.4f * (iconPref / 100f);
         float effRadius = worldRadius + worldIconSize * 0.75f;
-        actualVisualSphereRadius = (effRadius * (screenWidth / 16f)) * currentScale;
+        actualVisualSphereRadius = SphereEngine.computeVisualSpherePixelRadius(
+                worldRadius, effRadius, 67f, screenWidth, screenHeight, currentScale);
 
         // Render the 3D sphere natively in preview container
         AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
@@ -213,29 +217,43 @@ public class SphereBlurEditorActivity extends com.badlogic.gdx.backends.android.
                 getWindow().setBackgroundBlurRadius(0);
                 getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
             } else {
-                int radius = Math.min(currentBlurStrength * 2, 150); // Scale up to max blur radius
+                int radius = Math.min(currentBlurStrength * 2, 150);
                 if (radius == 0) radius = 1;
                 getWindow().setBackgroundBlurRadius(radius);
 
-                float blurSize = 0f;
+                // ─── Blur oval radius calculation ─────────────────────────────
+                // Slider range 0–20 maps to display "0.0"–"2.0" (divided by 10).
+                //
+                // • value  1–10 (display 0.1–1.0):
+                //     Oval grows from 10% → 100% of the sphere circle radius.
+                //     At value 10 the oval exactly covers the visible sphere.
+                //     Values below 1.0 blur only the inner portion of the sphere.
+                //
+                // • value 11–20 (display 1.1–2.0):
+                //     Oval expands gently beyond the sphere up to full-screen
+                //     corner coverage (t goes 0→1 over this range).
+                float ovalRadius;
                 if (currentBlurRadius <= 10) {
-                    blurSize = actualVisualSphereRadius * 2f * (currentBlurRadius / 10f);
+                    // Linear scale within the sphere: 10% per step
+                    ovalRadius = actualVisualSphereRadius * (currentBlurRadius / 10f);
                 } else {
-                    float distTopLeft = (float) Math.hypot(sphereCenterX, sphereCenterY);
-                    float distTopRight = (float) Math.hypot(screenWidth - sphereCenterX, sphereCenterY);
-                    float distBottomLeft = (float) Math.hypot(sphereCenterX, screenHeight - sphereCenterY);
+                    // Distance from sphere edge to the farthest screen corner
+                    float distTopLeft     = (float) Math.hypot(sphereCenterX, sphereCenterY);
+                    float distTopRight    = (float) Math.hypot(screenWidth - sphereCenterX, sphereCenterY);
+                    float distBottomLeft  = (float) Math.hypot(sphereCenterX, screenHeight - sphereCenterY);
                     float distBottomRight = (float) Math.hypot(screenWidth - sphereCenterX, screenHeight - sphereCenterY);
-                    float maxRequiredRadius = Math.max(Math.max(distTopLeft, distTopRight), Math.max(distBottomLeft, distBottomRight));
+                    float maxCornerRadius = Math.max(Math.max(distTopLeft, distTopRight),
+                                                     Math.max(distBottomLeft, distBottomRight));
 
-                    float t = (currentBlurRadius - 10f) / 10f;
-                    blurSize = (actualVisualSphereRadius + (maxRequiredRadius - actualVisualSphereRadius) * t) * 2f;
+                    float t = (currentBlurRadius - 10f) / 10f; // 0 at value=11, 1 at value=20
+                    ovalRadius = actualVisualSphereRadius
+                               + (maxCornerRadius - actualVisualSphereRadius) * t;
                 }
 
-                float halfSize = blurSize / 2f;
-                int left = (int) (sphereCenterX - halfSize);
-                int top = (int) (sphereCenterY - halfSize);
-                int right = (int) (sphereCenterX + halfSize);
-                int bottom = (int) (sphereCenterY + halfSize);
+                int left   = (int) (sphereCenterX - ovalRadius);
+                int top    = (int) (sphereCenterY - ovalRadius);
+                int right  = (int) (sphereCenterX + ovalRadius);
+                int bottom = (int) (sphereCenterY + ovalRadius);
 
                 getWindow().setBackgroundDrawable(new BlurBackgroundDrawable(left, top, right, bottom));
             }

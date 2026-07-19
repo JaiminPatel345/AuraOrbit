@@ -3450,6 +3450,48 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     }
 
     // ═══════════════════════════════════════════════════════════════════════
+    //  Public — Visual Sphere Pixel Radius (shared by blur editors)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Converts the 3D sphere world-radius into an on-screen pixel radius using
+     * the same perspective math as {@link #computeCameraDistance}.
+     *
+     * This is the single source of truth used by {@link SphereBlurEditorActivity}
+     * and {@link SphereModeActivity} to size the background-blur oval so it
+     * exactly matches the visible sphere circle on screen.
+     *
+     * Formula derivation (portrait device, horizontal FOV dominates):
+     * <pre>
+     *   camDist  = effRadius / sin(halfH) × 1.05          (same as computeCameraDistance)
+     *   pixelR   = (worldRadius / camDist) × (screenW/2) / tan(halfH)
+     *            = worldRadius × cos(halfH) / (effRadius × 1.05) × (screenW/2)
+     * </pre>
+     *
+     * @param worldRadius  Sphere radius in world units (no icon overhang, = pref-driven)
+     * @param effRadius    Sphere radius + icon overhang used for camera placement
+     * @param fovDegrees   Vertical field-of-view in degrees (engine uses 67°)
+     * @param screenW      Screen width in pixels
+     * @param screenH      Screen height in pixels
+     * @param scale        Sphere scale factor from position-editor (1.0 = default)
+     * @return On-screen pixel radius of the sphere silhouette
+     */
+    public static float computeVisualSpherePixelRadius(
+            float worldRadius, float effRadius, float fovDegrees,
+            int screenW, int screenH, float scale) {
+        double halfV = Math.toRadians(fovDegrees / 2.0);
+        float aspect = (float) screenW / screenH;
+        double halfH = Math.atan(Math.tan(halfV) * aspect);
+
+        // Camera Z distance (mirrors computeCameraDistance, portrait path)
+        double camDist = effRadius / Math.sin(halfH) * 1.05;
+
+        // Perspective projection onto screen pixels
+        double pixelRadius = (worldRadius / camDist) * (screenW / 2.0) / Math.tan(halfH);
+        return (float) (pixelRadius * scale);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
     //  Color Parsing Utility
     // ═══════════════════════════════════════════════════════════════════════
 
