@@ -64,15 +64,8 @@ public class SphereBlurEditorActivity extends com.badlogic.gdx.backends.android.
 
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
         currentScale = prefs.getFloat(scalePref, 1.0f);
-        currentBlurRadius = prefs.getInt(radiusPref, 10);
+        currentBlurRadius = 20; // Forced to maximum (full screen)
         currentBlurStrength = prefs.getInt(strengthPref, 50);
-
-        // Migrate old pref_blur_amount if the new ones don't exist
-        if (!prefs.contains(radiusPref) && groupName == null && prefs.contains("pref_blur_amount")) {
-            int oldAmount = prefs.getInt("pref_blur_amount", 0);
-            currentBlurRadius = oldAmount;
-            currentBlurStrength = oldAmount > 0 ? 50 : 0;
-        }
 
         // Calculate the exact 3D visual sphere center coordinates
         String posType = prefs.getString(posPref, "center");
@@ -168,17 +161,8 @@ public class SphereBlurEditorActivity extends com.badlogic.gdx.backends.android.
             window.setAttributes(params);
         }
         
-        Slider sliderRadius = controlDialog.findViewById(R.id.slider_blur_radius);
         Slider sliderStrength = controlDialog.findViewById(R.id.slider_blur_strength);
-        
-        sliderRadius.setLabelFormatter(value -> String.format(java.util.Locale.US, "%.1f", value / 10f));
-        sliderRadius.setValue(currentBlurRadius);
         sliderStrength.setValue(currentBlurStrength);
-        
-        sliderRadius.addOnChangeListener((slider, value, fromUser) -> {
-            currentBlurRadius = (int) value;
-            updateBlurPreview();
-        });
         
         sliderStrength.addOnChangeListener((slider, value, fromUser) -> {
             currentBlurStrength = (int) value;
@@ -213,78 +197,15 @@ public class SphereBlurEditorActivity extends com.badlogic.gdx.backends.android.
 
     private void updateBlurPreview() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            if (currentBlurRadius == 0 || currentBlurStrength == 0) {
+            if (currentBlurStrength == 0) {
                 getWindow().setBackgroundBlurRadius(0);
                 getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
             } else {
                 int radius = Math.min(currentBlurStrength * 2, 150);
                 if (radius == 0) radius = 1;
                 getWindow().setBackgroundBlurRadius(radius);
-
-                // ─── Blur oval radius calculation ─────────────────────────────
-                // Slider range 0–20 maps to display "0.0"–"2.0" (divided by 10).
-                //
-                // • value  1–10 (display 0.1–1.0):
-                //     Oval grows from 10% → 100% of the sphere circle radius.
-                //     At value 10 the oval exactly covers the visible sphere.
-                //     Values below 1.0 blur only the inner portion of the sphere.
-                //
-                // • value 11–20 (display 1.1–2.0):
-                //     Oval expands gently beyond the sphere up to full-screen
-                //     corner coverage (t goes 0→1 over this range).
-                float ovalRadius;
-                if (currentBlurRadius <= 10) {
-                    // Linear scale within the sphere: 10% per step
-                    ovalRadius = actualVisualSphereRadius * (currentBlurRadius / 10f);
-                } else {
-                    // Distance from sphere edge to the farthest screen corner
-                    float distTopLeft     = (float) Math.hypot(sphereCenterX, sphereCenterY);
-                    float distTopRight    = (float) Math.hypot(screenWidth - sphereCenterX, sphereCenterY);
-                    float distBottomLeft  = (float) Math.hypot(sphereCenterX, screenHeight - sphereCenterY);
-                    float distBottomRight = (float) Math.hypot(screenWidth - sphereCenterX, screenHeight - sphereCenterY);
-                    float maxCornerRadius = Math.max(Math.max(distTopLeft, distTopRight),
-                                                     Math.max(distBottomLeft, distBottomRight));
-
-                    float t = (currentBlurRadius - 10f) / 10f; // 0 at value=11, 1 at value=20
-                    ovalRadius = actualVisualSphereRadius
-                               + (maxCornerRadius - actualVisualSphereRadius) * t;
-                }
-
-                int left   = (int) (sphereCenterX - ovalRadius);
-                int top    = (int) (sphereCenterY - ovalRadius);
-                int right  = (int) (sphereCenterX + ovalRadius);
-                int bottom = (int) (sphereCenterY + ovalRadius);
-
-                getWindow().setBackgroundDrawable(new BlurBackgroundDrawable(left, top, right, bottom));
+                getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
             }
-        }
-    }
-
-    private static class BlurBackgroundDrawable extends android.graphics.drawable.GradientDrawable {
-        private final int customLeft;
-        private final int customTop;
-        private final int customRight;
-        private final int customBottom;
-
-        public BlurBackgroundDrawable(int left, int top, int right, int bottom) {
-            super();
-            setShape(OVAL);
-            setColor(android.graphics.Color.TRANSPARENT);
-            this.customLeft = left;
-            this.customTop = top;
-            this.customRight = right;
-            this.customBottom = bottom;
-            super.setBounds(left, top, right, bottom);
-        }
-
-        @Override
-        public void setBounds(int left, int top, int right, int bottom) {
-            super.setBounds(customLeft, customTop, customRight, customBottom);
-        }
-
-        @Override
-        public void setBounds(@NonNull android.graphics.Rect bounds) {
-            super.setBounds(customLeft, customTop, customRight, customBottom);
         }
     }
 }

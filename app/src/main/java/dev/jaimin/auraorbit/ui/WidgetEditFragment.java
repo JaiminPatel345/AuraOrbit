@@ -674,14 +674,14 @@ public class WidgetEditFragment extends Fragment {
 
     private void updateBlurStatusText(SharedPreferences prefs) {
         if (tvBlurStatus == null) return;
-        int amount = originalWidgetName != null 
-                ? prefs.getInt("pref_blur_radius_" + originalWidgetName, 10) 
-                : 10;
-        if (amount == 0) tvBlurStatus.setText("No Blur");
-        else if (amount <= 6) tvBlurStatus.setText("Sphere Background Only");
-        else if (amount <= 13) tvBlurStatus.setText("Nearby Area");
-        else if (amount < 20) tvBlurStatus.setText("Almost Full Screen");
-        else tvBlurStatus.setText("Full Screen Blur");
+        int strength = originalWidgetName != null 
+                ? prefs.getInt("pref_blur_strength_" + originalWidgetName, 50) 
+                : 50;
+        if (strength == 0) {
+            tvBlurStatus.setText("No Blur");
+        } else {
+            tvBlurStatus.setText("Full Screen (" + strength + "%)");
+        }
     }
 
     private void updateBackgroundStatus() {
@@ -1129,9 +1129,9 @@ public class WidgetEditFragment extends Fragment {
         }
         
         if (originalWidgetName == null) {
-            // New widget gets 10 blur (multiplier 1.0) by default!
+            // New widget gets 20 blur (full screen) by default!
             prefs.edit()
-                .putInt("pref_blur_radius_" + newName, 10)
+                .putInt("pref_blur_radius_" + newName, 20)
                 .putInt("pref_blur_strength_" + newName, 50)
                 .apply();
         }
