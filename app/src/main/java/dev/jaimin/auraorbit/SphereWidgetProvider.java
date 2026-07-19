@@ -32,7 +32,7 @@ public class SphereWidgetProvider extends AppWidgetProvider {
         java.util.List<WidgetStore.Widget> widgets = WidgetStore.load(prefs);
 
         for (int appWidgetId : appWidgetIds) {
-            String widgetName = prefs.getString("widget_widget_" + appWidgetId, null);
+            String widgetName = prefs.getString("widget_group_" + appWidgetId, null);
             
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_sphere);
             views.setViewVisibility(R.id.widget_icon_container, visibility);
@@ -173,7 +173,7 @@ public class SphereWidgetProvider extends AppWidgetProvider {
         java.util.List<WidgetStore.Widget> widgets = WidgetStore.load(prefs);
 
         for (int appWidgetId : appWidgetIds) {
-            String widgetName = prefs.getString("widget_widget_" + appWidgetId, null);
+            String widgetName = prefs.getString("widget_group_" + appWidgetId, null);
 
             Intent intent = new Intent(context, SphereModeActivity.class);
             // Set flags to clear any previous instance of the activity
