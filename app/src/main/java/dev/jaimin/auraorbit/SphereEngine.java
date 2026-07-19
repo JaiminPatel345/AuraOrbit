@@ -1208,7 +1208,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         gestureSnapshotValid = false;
         lastGestureEndNanos = Long.MIN_VALUE / 2;
 
-        // ─── Re-fetch apps, redistribute, recreate decals and backdrops ──
+        boolean isFallback = false;
         if (tempPackages != null && !tempPackages.isEmpty()) {
             appNodes = AppFetcher.fetchAppsByPackages(context, tempPackages);
         } else {
@@ -1224,9 +1224,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 }
             }
             appNodes = AppFetcher.fetchAppsByPackages(context, pkgs);
+            isFallback = true;
         }
 
-        if (pinnedGroupName != null && (tempPackages == null || tempPackages.isEmpty())) {
+        if (!isFallback && pinnedGroupName != null && (tempPackages == null || tempPackages.isEmpty())) {
             java.util.List<AppFetcher.AppNode> filtered = new java.util.ArrayList<>();
             for (AppFetcher.AppNode node : appNodes) {
                 if (pinnedGroupName.equals(node.groupId)) {
