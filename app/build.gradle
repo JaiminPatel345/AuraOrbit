@@ -10,8 +10,8 @@ android {
         applicationId "dev.jaimin.auraorbit"
         minSdk rootProject.ext.androidMinSdk
         targetSdk rootProject.ext.androidTargetSdk
-        versionCode 8
-        versionName "2.3.1"
+        versionCode 9
+        versionName "2.4.0"
     }
 
     signingConfigs {
@@ -74,9 +74,11 @@ dependencies {
     // ─── libGDX Android Backend (includes Live Wallpaper support) ──────
     implementation "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
 
-    // ─── libGDX Android Native Libs (arm64, x86_64) ───────────────────
+    // ─── libGDX Android Native Libs (arm64, armeabi-v7a, x86_64, x86) ───
     natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-arm64-v8a"
+    natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a"
     natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86_64"
+    natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86"
 
     // ─── AndroidX ──────────────────────────────────────────────────────
     implementation 'androidx.preference:preference:1.2.1'

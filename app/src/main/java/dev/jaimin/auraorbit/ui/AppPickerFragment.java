@@ -121,10 +121,11 @@ public class AppPickerFragment extends Fragment {
             }
         });
 
-        // Wire "Save" FAB to persist selection
-        root.findViewById(R.id.fab_save).setOnClickListener(v -> {
+        // Wire up the Save button at the bottom.
+        root.findViewById(R.id.btn_save).setOnClickListener(v -> {
             prefs.edit().putStringSet(AppFetcher.PREF_SELECTED_APPS, new HashSet<>(localSelectedApps)).apply();
             dev.jaimin.auraorbit.SphereWidgetProvider.updateAllWidgets(requireContext());
+            android.widget.Toast.makeText(requireContext(), "Saved!", android.widget.Toast.LENGTH_SHORT).show();
             getParentFragmentManager().popBackStack();
         });
 

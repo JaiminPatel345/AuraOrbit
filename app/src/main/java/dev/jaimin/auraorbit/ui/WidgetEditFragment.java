@@ -128,7 +128,7 @@ public class WidgetEditFragment extends Fragment {
     private boolean pendingLogoClear = false;
     private boolean isHideLogo = false;
     private boolean isHideText = false;
-    private boolean isTransparent = true;
+    private boolean isTransparent = false;
     private boolean isUseThemeColor = true;
     private int customIconSize = 50;
     private int customSpeed = 100;
@@ -312,7 +312,7 @@ public class WidgetEditFragment extends Fragment {
         if (originalWidgetName != null) {
             isHideLogo = prefs.getBoolean("pref_widget_hide_logo_" + originalWidgetName, false);
             isHideText = prefs.getBoolean("pref_widget_hide_text_" + originalWidgetName, false);
-            isTransparent = prefs.getBoolean("pref_widget_transparent_" + originalWidgetName, true);
+            isTransparent = prefs.getBoolean("pref_widget_transparent_" + originalWidgetName, false);
             isUseThemeColor = prefs.getBoolean("pref_widget_use_theme_color_" + originalWidgetName, true);
             customIconSize = prefs.getInt("pref_icon_size_" + originalWidgetName, prefs.getInt("pref_icon_size", 50));
             customSpeed = prefs.getInt("pref_rotation_speed_" + originalWidgetName, prefs.getInt("pref_rotation_speed", 100));

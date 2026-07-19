@@ -1,6 +1,6 @@
 # AuraOrbit 🌍✨
 
-**AuraOrbit** is a next-generation Android Live Wallpaper featuring a fully interactive 3D sphere that orbits your favorite apps right on your home screen. Built on the high-performance libGDX game engine, it leverages a golden angle Fibonacci distribution to plot your apps perfectly in a 3D space, supporting true 120 FPS hardware refresh rates!
+**AuraOrbit** is a next-generation Android application featuring a fully interactive 3D sphere that orbits your favorite apps right on your home screen via customizable widgets or a standalone immersive launcher mode. Built on the high-performance libGDX game engine, it leverages a golden angle Fibonacci distribution to plot your apps perfectly in a 3D space, supporting true 120 FPS hardware refresh rates!
 ![AuraOrbit Logo](assets/logo.svg)
 
 [This is video for how to show on mobile](Video/Full%20details.mp4)
@@ -37,14 +37,10 @@
 - Pin multiple widgets for different groups simultaneously
 
 **Standalone Sphere Mode**
-- Launch AuraOrbit as a fullscreen immersive app from any group widget
+- Launch AuraOrbit as a fullscreen immersive app from any group widget or the app drawer
 - Floats perfectly over your home screen seamlessly with zero black dimming!
 - Swipe-from-edge to reveal system bars; screen stays on
 - Tap apps to launch; tap outside to return home
-
-**Launcher Integration**
-- Optional accessibility service detects which home screen page you're on
-- Sphere auto-shows/hides when switching pages or opening the app drawer
 
 **Performance & Privacy**
 - Advanced memory caching for instant sphere loads
@@ -55,7 +51,6 @@
 ## 🛠️ Architecture
 
 AuraOrbit seamlessly merges standard Android UI with a high-performance C++ OpenGL backend via libGDX:
-- **`MyWallpaperService.java`**: The Android bridge handling the OS lifecycle, 120Hz unlock (`Surface.setFrameRate`), and launcher scroll offsets.
 - **`SphereEngine.java`**: The core 3D engine running libGDX (`ApplicationListener`). Uses `DecalBatch` for ultra-fast 3D billboarding and `ModelBatch` for the translucent group backdrops.
 - **`LiveWallpaperSettings.java`**: A purely code-driven Settings Activity (using `PreferenceFragmentCompat` and programmatically generated dialogs) to curate your apps and build custom-colored groups.
 - **`AppFetcher.java`**: The data pipeline directly interfacing with Android's `PackageManager` to pull high-res application icons and convert them safely into OpenGL textures on the fly.
@@ -85,10 +80,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 ## ⚙️ Configuration
 
-Once installed, navigate to:
-**Settings → Wallpaper & style → Change wallpapers → Live wallpapers → AuraOrbit**. 
-
-Hit the **Settings ⚙️** icon in the preview window to open the AuraOrbit dashboard where you can:
+Once installed, you can open the **AuraOrbit settings dashboard** from your launcher to:
 - Select which apps appear on your orbit.
 - Apply third-party icon packs directly to your 3D sphere.
 - Create color-coded app groups with custom names and colors.
@@ -98,6 +90,12 @@ Hit the **Settings ⚙️** icon in the preview window to open the AuraOrbit das
 - Customize each group's widget: logo, ring color, transparency, text visibility.
 - Set the target framerate (30/60/90/120 FPS).
 - Adjust icon size and rotation speed.
+
+To see the interactive 3D sphere on your home screen, add the **AuraOrbit widget**:
+1. Long-press on any empty space on your home screen.
+2. Select **Widgets** and find **AuraOrbit**.
+3. Drag the widget to your home screen.
+4. Pin specific app groups as widgets directly from the AuraOrbit settings dashboard.
 
 ## 🤝 Contributing
 
