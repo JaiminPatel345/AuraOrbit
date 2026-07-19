@@ -2688,7 +2688,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             renderBackground();
         }
 
-        boolean shouldDrawSphere = activityMode || pinnedGroupName != null || permanentSphereEnabled;
+        boolean shouldDrawSphere = activityMode || pinnedGroupName != null || (permanentSphereEnabled && !MyWallpaperService.isActivityActive);
 
         // ─── Layer 2: Group Backdrop Meshes ─────────────────────────────
         if (shouldDrawSphere && groupBackdrops != null && groupBackdrops.size > 0 && pageVisibility > 0.01f) {

@@ -180,32 +180,7 @@ public class SphereModeActivity extends AndroidApplication {
             getWindow().setBackgroundBlurRadius(0);
         }
         
-        if (blurRadiusPref == 100 || blurRadiusPref == 0) {
-            getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
-        } else {
-            int left = sphereCenterX - windowSize / 2;
-            int top = sphereCenterY - windowSize / 2;
-            int right = screenWidth - (left + windowSize);
-            int bottom = screenHeight - (top + windowSize);
-            
-            android.graphics.drawable.GradientDrawable circle = new android.graphics.drawable.GradientDrawable();
-            circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-            circle.setColor(android.graphics.Color.TRANSPARENT);
-            
-            android.graphics.drawable.InsetDrawable insetDrawable = 
-                new android.graphics.drawable.InsetDrawable(circle, left, top, right, bottom);
-            getWindow().setBackgroundDrawable(insetDrawable);
-        }
-
-        // Set custom OutlineProvider to prevent decor view from clipping glView to circular background outline
-        getWindow().getDecorView().setOutlineProvider(new android.view.ViewOutlineProvider() {
-            @Override
-            public void getOutline(android.view.View view, android.graphics.Outline outline) {
-                outline.setRect(0, 0, view.getWidth(), view.getHeight());
-            }
-        });
-        getWindow().getDecorView().setClipToOutline(false);
-        
+        getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
         getWindow().setAttributes(params);
 
         // ─── Hide system bars (immersive fullscreen) ─────────────────────
