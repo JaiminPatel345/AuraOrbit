@@ -140,11 +140,12 @@ public class SphereModeActivity extends AndroidApplication {
         int sphereCenterX = sphereX + sphereSize / 2;
         int sphereCenterY = sphereY + sphereSize / 2;
         
-        // Position glView absolutely
+        sphereEngine.applyPositionAndScale = true;
+        
+        // Position glView as MATCH_PARENT so 3D camera translation resolves matching the editor
         android.widget.FrameLayout.LayoutParams glParams = new android.widget.FrameLayout.LayoutParams(
-                sphereSize, sphereSize, android.view.Gravity.TOP | android.view.Gravity.START);
-        glParams.leftMargin = sphereX;
-        glParams.topMargin = sphereY;
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT);
         container.addView(glView, glParams);
         
         // Close the activity if the user touches the blurred background outside the sphere
@@ -175,18 +176,22 @@ public class SphereModeActivity extends AndroidApplication {
             getWindow().setBackgroundBlurRadius(0);
         }
         
-        int left = sphereCenterX - windowSize / 2;
-        int top = sphereCenterY - windowSize / 2;
-        int right = screenWidth - (left + windowSize);
-        int bottom = screenHeight - (top + windowSize);
-        
-        android.graphics.drawable.GradientDrawable circle = new android.graphics.drawable.GradientDrawable();
-        circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-        circle.setColor(android.graphics.Color.TRANSPARENT);
-        
-        android.graphics.drawable.InsetDrawable insetDrawable = 
-            new android.graphics.drawable.InsetDrawable(circle, left, top, right, bottom);
-        getWindow().setBackgroundDrawable(insetDrawable);
+        if (blurRadiusPref == 100) {
+            getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        } else {
+            int left = sphereCenterX - windowSize / 2;
+            int top = sphereCenterY - windowSize / 2;
+            int right = screenWidth - (left + windowSize);
+            int bottom = screenHeight - (top + windowSize);
+            
+            android.graphics.drawable.GradientDrawable circle = new android.graphics.drawable.GradientDrawable();
+            circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+            circle.setColor(android.graphics.Color.TRANSPARENT);
+            
+            android.graphics.drawable.InsetDrawable insetDrawable = 
+                new android.graphics.drawable.InsetDrawable(circle, left, top, right, bottom);
+            getWindow().setBackgroundDrawable(insetDrawable);
+        }
         
         getWindow().setAttributes(params);
 
