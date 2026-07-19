@@ -113,8 +113,8 @@ public class SphereModeActivity extends AndroidApplication {
 
         float scale = prefs.getFloat(scalePref, 1.0f);
         String pos = prefs.getString(posPref, "center");
-        int blurRadiusPref = prefs.getInt(radiusPref, 50);
-        int blurStrengthPref = prefs.getInt(strengthPref, 50);
+        int blurRadiusPref = prefs.getInt(radiusPref, 0);
+        int blurStrengthPref = prefs.getInt(strengthPref, 0);
         // Migrate old pref_blur_amount if the new ones don't exist
         if (!prefs.contains(radiusPref) && groupName == null && prefs.contains("pref_blur_amount")) {
             int oldAmount = prefs.getInt("pref_blur_amount", 0);

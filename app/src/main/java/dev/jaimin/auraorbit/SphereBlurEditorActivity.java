@@ -62,9 +62,8 @@ public class SphereBlurEditorActivity extends AppCompatActivity {
 
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
         currentScale = prefs.getFloat(scalePref, 1.0f);
-        // We now have two preferences
-        currentBlurRadius = prefs.getInt(radiusPref, 50);
-        currentBlurStrength = prefs.getInt(strengthPref, 50);
+        currentBlurRadius = prefs.getInt(radiusPref, 0);
+        currentBlurStrength = prefs.getInt(strengthPref, 0);
         
         // Migrate old pref_blur_amount if the new ones don't exist
         if (!prefs.contains(radiusPref) && groupName == null && prefs.contains("pref_blur_amount")) {
@@ -112,6 +111,15 @@ public class SphereBlurEditorActivity extends AppCompatActivity {
         }
         
         blurDialog.show();
+        if (window != null) {
+            window.getDecorView().setOutlineProvider(new ViewOutlineProvider() {
+                @Override
+                public void getOutline(View view, Outline outline) {
+                    outline.setRect(0, 0, view.getWidth(), view.getHeight());
+                }
+            });
+            window.getDecorView().setClipToOutline(false);
+        }
         updateBlurPreview();
     }
     
@@ -202,28 +210,29 @@ public class SphereBlurEditorActivity extends AppCompatActivity {
                 
                 if (currentBlurRadius == 0 || currentBlurStrength == 0) {
                     window.setBackgroundBlurRadius(0);
+                    window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
                 } else {
                     int radius = Math.min(currentBlurStrength * 2, 150); // Scale up to max blur radius
                     if (radius == 0) radius = 1;
                     window.setBackgroundBlurRadius(radius);
-                }
-                
-                float sphereCenterX = sphereX + sphereSize / 2f;
-                float sphereCenterY = sphereY + sphereSize / 2f;
-                
-                // Calculate insets for the blur OVAL
-                int left = (int) (sphereCenterX - blurSize / 2f);
-                int top = (int) (sphereCenterY - blurSize / 2f);
-                int right = screenWidth - (left + blurSize);
-                int bottom = screenHeight - (top + blurSize);
+                    
+                    float sphereCenterX = sphereX + sphereSize / 2f;
+                    float sphereCenterY = sphereY + sphereSize / 2f;
+                    
+                    // Calculate insets for the blur OVAL
+                    int left = (int) (sphereCenterX - blurSize / 2f);
+                    int top = (int) (sphereCenterY - blurSize / 2f);
+                    int right = screenWidth - (left + blurSize);
+                    int bottom = screenHeight - (top + blurSize);
 
-                android.graphics.drawable.GradientDrawable circle = new android.graphics.drawable.GradientDrawable();
-                circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-                circle.setColor(android.graphics.Color.TRANSPARENT);
-                
-                android.graphics.drawable.InsetDrawable insetDrawable = 
-                    new android.graphics.drawable.InsetDrawable(circle, left, top, right, bottom);
-                window.setBackgroundDrawable(insetDrawable);
+                    android.graphics.drawable.GradientDrawable circle = new android.graphics.drawable.GradientDrawable();
+                    circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+                    circle.setColor(android.graphics.Color.TRANSPARENT);
+                    
+                    android.graphics.drawable.InsetDrawable insetDrawable = 
+                        new android.graphics.drawable.InsetDrawable(circle, left, top, right, bottom);
+                    window.setBackgroundDrawable(insetDrawable);
+                }
                 
                 window.setAttributes(params);
                 

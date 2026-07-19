@@ -1071,8 +1071,8 @@ public class WidgetEditFragment extends Fragment {
             float oldX = prefs.getFloat("pref_sphere_x_" + originalWidgetName, prefs.getFloat("pref_sphere_x", 0f));
             float oldY = prefs.getFloat("pref_sphere_y_" + originalWidgetName, prefs.getFloat("pref_sphere_y", 0f));
             float oldScale = prefs.getFloat("pref_sphere_scale_" + originalWidgetName, prefs.getFloat("pref_sphere_scale", 1f));
-            int oldBlurRadius = prefs.getInt("pref_blur_radius_" + originalWidgetName, prefs.getInt("pref_blur_radius", 50));
-            int oldBlurStrength = prefs.getInt("pref_blur_strength_" + originalWidgetName, prefs.getInt("pref_blur_strength", 50));
+            int oldBlurRadius = prefs.getInt("pref_blur_radius_" + originalWidgetName, prefs.getInt("pref_blur_radius", 0));
+            int oldBlurStrength = prefs.getInt("pref_blur_strength_" + originalWidgetName, prefs.getInt("pref_blur_strength", 0));
             
             // Migrate widget widget mappings to new name
             android.appwidget.AppWidgetManager appWidgetManager = android.appwidget.AppWidgetManager.getInstance(requireContext());

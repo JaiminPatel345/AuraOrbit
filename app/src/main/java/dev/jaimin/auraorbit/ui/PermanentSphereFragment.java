@@ -146,7 +146,7 @@ public class PermanentSphereFragment extends Fragment {
 
         // Background Blur
         tvBlurStatus = view.findViewById(R.id.tv_blur_status);
-        updateBlurStatusText(tvBlurStatus, prefs.getInt("pref_blur_radius", 50));
+        updateBlurStatusText(tvBlurStatus, prefs.getInt("pref_blur_radius", 0));
         view.findViewById(R.id.btn_sphere_blur).setOnClickListener(v -> {
             startActivity(new android.content.Intent(requireContext(), SphereBlurEditorActivity.class));
         });
