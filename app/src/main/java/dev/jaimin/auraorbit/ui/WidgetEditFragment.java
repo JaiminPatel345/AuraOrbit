@@ -662,10 +662,9 @@ public class WidgetEditFragment extends Fragment {
     private void updateSpherePositionStatus() {
         if (tvSpherePositionStatus == null) return;
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
-        String position = prefs.getString("pref_sphere_position_" + originalWidgetName, "center");
-        if (originalWidgetName == null && !prefs.contains("pref_sphere_position_" + originalWidgetName)) {
-             position = prefs.getString("pref_sphere_position", "center");
-        }
+        String position = originalWidgetName != null 
+                ? prefs.getString("pref_sphere_position_" + originalWidgetName, "center") 
+                : "center";
         String display = "Center";
         if ("top".equals(position)) display = "Top";
         else if ("bottom".equals(position)) display = "Bottom";
@@ -675,10 +674,9 @@ public class WidgetEditFragment extends Fragment {
 
     private void updateBlurStatusText(SharedPreferences prefs) {
         if (tvBlurStatus == null) return;
-        int amount = prefs.getInt("pref_blur_radius_" + originalWidgetName, 50);
-        if (originalWidgetName == null && !prefs.contains("pref_blur_radius_" + originalWidgetName)) {
-            amount = prefs.getInt("pref_blur_radius", 50);
-        }
+        int amount = originalWidgetName != null 
+                ? prefs.getInt("pref_blur_radius_" + originalWidgetName, 0) 
+                : 0;
         if (amount == 0) tvBlurStatus.setText("No Blur");
         else if (amount <= 33) tvBlurStatus.setText("Sphere Background Only");
         else if (amount <= 66) tvBlurStatus.setText("Nearby Area");
@@ -1130,6 +1128,14 @@ public class WidgetEditFragment extends Fragment {
             }
         }
         
+        if (originalWidgetName == null) {
+            // New widget gets 0 blur (no blur) by default!
+            prefs.edit()
+                .putInt("pref_blur_radius_" + newName, 0)
+                .putInt("pref_blur_strength_" + newName, 0)
+                .apply();
+        }
+
         // Apply pending widget logo changes
         SharedPreferences.Editor ed = prefs.edit()
             .putBoolean("pref_widget_hide_logo_" + newName, isHideLogo)
