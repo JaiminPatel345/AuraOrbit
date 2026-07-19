@@ -1216,7 +1216,14 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         }
         
         if (appNodes.isEmpty()) {
-            appNodes = AppFetcher.fetchSelectedApps(context, null);
+            java.util.List<android.content.pm.ResolveInfo> launchable = AppFetcher.getAllLaunchableApps(context);
+            java.util.List<String> pkgs = new java.util.ArrayList<>();
+            for (android.content.pm.ResolveInfo ri : launchable) {
+                if (ri.activityInfo != null && ri.activityInfo.packageName != null) {
+                    pkgs.add(ri.activityInfo.packageName);
+                }
+            }
+            appNodes = AppFetcher.fetchAppsByPackages(context, pkgs);
         }
 
         if (pinnedGroupName != null && (tempPackages == null || tempPackages.isEmpty())) {

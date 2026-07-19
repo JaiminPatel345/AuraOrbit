@@ -999,6 +999,31 @@ public class WidgetEditFragment extends Fragment {
             return false;
         }
 
+        // Validate: workingMembers must not be empty.
+        if (workingMembers.isEmpty()) {
+            Toast.makeText(requireContext(), "App selection is required", Toast.LENGTH_LONG).show();
+            androidx.core.widget.NestedScrollView scrollView = root.findViewById(R.id.scroll_view);
+            if (scrollView != null) {
+                if (originalWidgetName == null) {
+                    View cardApps = root.findViewById(R.id.card_apps);
+                    if (cardApps != null) {
+                        scrollView.smoothScrollTo(0, cardApps.getTop());
+                    }
+                    TextView tvAppsTitle = root.findViewById(R.id.tv_apps_title);
+                    if (tvAppsTitle != null) {
+                        tvAppsTitle.setTextColor(Color.RED);
+                    }
+                } else {
+                    View btnEditApps = root.findViewById(R.id.btn_edit_apps);
+                    if (btnEditApps != null) {
+                        scrollView.smoothScrollTo(0, btnEditApps.getTop() - 100);
+                        btnEditApps.requestFocus();
+                    }
+                }
+            }
+            return false;
+        }
+
         // Reload latest widget list to prevent stale-data issues (another agent
         // may have saved widgets while this fragment was open, but in practice
         // the list is fresh because WidgetStore.load is side-effect-free here).
@@ -1285,6 +1310,18 @@ public class WidgetEditFragment extends Fragment {
                 } else {
                     workingMembers.add(row.packageName);
                     holder.check.setChecked(true);
+                }
+
+                if (!workingMembers.isEmpty()) {
+                    View rView = getView();
+                    if (rView != null) {
+                        TextView tvAppsTitle = rView.findViewById(R.id.tv_apps_title);
+                        if (tvAppsTitle != null) {
+                            TypedValue typedValue = new TypedValue();
+                            requireContext().getTheme().resolveAttribute(android.R.attr.textColorPrimary, typedValue, true);
+                            tvAppsTitle.setTextColor(typedValue.data);
+                        }
+                    }
                 }
             });
         }
