@@ -195,9 +195,21 @@ public class SphereModeActivity extends AndroidApplication {
         // fully decorated and the insets controller is available.
         hideSystemBars();
 
-        // ─── Empty state popup ────────────────────────────────────────────
-        java.util.Set<String> selectedApps = prefs.getStringSet(AppFetcher.PREF_SELECTED_APPS, new java.util.HashSet<>());
-        if (selectedApps.isEmpty()) {
+        boolean isEmpty = false;
+        if (groupName != null) {
+            java.util.List<WidgetStore.Widget> widgets = WidgetStore.load(prefs);
+            WidgetStore.Widget w = WidgetStore.find(widgets, groupName);
+            if (w == null || w.packages.isEmpty()) {
+                isEmpty = true;
+            }
+        } else {
+            java.util.Set<String> selectedApps = prefs.getStringSet(AppFetcher.PREF_SELECTED_APPS, new java.util.HashSet<>());
+            if (selectedApps.isEmpty()) {
+                isEmpty = true;
+            }
+        }
+
+        if (isEmpty) {
             new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
                 .setTitle("No Apps Selected")
                 .setMessage("You need to select at least one app to see it in the AuraOrbit sphere.")
