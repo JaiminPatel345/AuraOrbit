@@ -92,18 +92,20 @@ public class PermanentSphereFragment extends Fragment {
 
         // Toggle switch
         MaterialSwitch switchPermanentSphere = view.findViewById(R.id.switch_permanent_sphere);
+        View btnInfoPermanentSphere = view.findViewById(R.id.btn_info_permanent_sphere);
         boolean enabled = prefs.getBoolean(PREF_PERMANENT_SPHERE_ENABLED, false);
         switchPermanentSphere.setChecked(enabled);
         sectionSphereSettings.setVisibility(enabled ? View.VISIBLE : View.GONE);
+
+        if (btnInfoPermanentSphere != null) {
+            btnInfoPermanentSphere.setOnClickListener(v -> showPermanentSphereGuideDialog(false));
+        }
 
         switchPermanentSphere.setOnCheckedChangeListener((buttonView, isChecked) -> {
             prefs.edit().putBoolean(PREF_PERMANENT_SPHERE_ENABLED, isChecked).apply();
             sectionSphereSettings.setVisibility(isChecked ? View.VISIBLE : View.GONE);
             if (isChecked) {
-                android.content.Intent intent = new android.content.Intent(android.app.WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER);
-                intent.putExtra(android.app.WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
-                        new android.content.ComponentName(requireContext(), MyWallpaperService.class));
-                startActivity(intent);
+                showPermanentSphereGuideDialog(true);
             }
         });
 
@@ -223,6 +225,11 @@ public class PermanentSphereFragment extends Fragment {
 
         View layoutDebugGestureBounds = view.findViewById(R.id.layout_debug_gesture_bounds);
         com.google.android.material.materialswitch.MaterialSwitch switchDebugGestureBounds = view.findViewById(R.id.switch_debug_gesture_bounds);
+
+        View btnInfoBlockGestures = view.findViewById(R.id.btn_info_block_gestures);
+        if (btnInfoBlockGestures != null) {
+            btnInfoBlockGestures.setOnClickListener(v -> showPermanentSphereGuideDialog(false));
+        }
 
         com.google.android.material.materialswitch.MaterialSwitch switchBlockLauncherGestures = view.findViewById(R.id.switch_block_launcher_gestures);
         if (switchBlockLauncherGestures != null) {
@@ -405,6 +412,29 @@ public class PermanentSphereFragment extends Fragment {
         else if (amount <= 66) tv.setText("Nearby Area");
         else if (amount < 100) tv.setText("Almost Full Screen");
         else tv.setText("Full Screen Blur");
+    }
+
+    private void showPermanentSphereGuideDialog(boolean launchWallpaperPicker) {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Permanent Sphere Guide")
+                .setMessage("🌐 Permanent Sphere:\n" +
+                           "Renders an interactive 3D app sphere as your live wallpaper directly on your home screen background.\n\n" +
+                           "🛡️ Block Launcher Gestures:\n" +
+                           "Prevents your home screen launcher from accidentally swiping pages or pulling down notifications while you rotate or interact with the 3D sphere.")
+                .setPositiveButton(launchWallpaperPicker ? "Set Wallpaper" : "Got It", (dialog, which) -> {
+                    if (launchWallpaperPicker) {
+                        try {
+                            android.content.Intent intent = new android.content.Intent(android.app.WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER);
+                            intent.putExtra(android.app.WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
+                                    new android.content.ComponentName(requireContext(), MyWallpaperService.class));
+                            startActivity(intent);
+                        } catch (Exception e) {
+                            Toast.makeText(requireContext(), "Could not launch wallpaper picker", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                })
+                .setNegativeButton(launchWallpaperPicker ? "Cancel" : null, null)
+                .show();
     }
 
     private void navigateTo(@NonNull Fragment fragment) {

@@ -35,13 +35,30 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Show Permanent Sphere"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="?android:attr/textColorPrimary" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Show Permanent Sphere"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="?android:attr/textColorPrimary" />
+
+                        <ImageButton
+                            android:id="@+id/btn_info_permanent_sphere"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_info"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:scaleType="fitCenter"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -411,12 +428,29 @@
                             android:layout_height="wrap_content"
                             android:orientation="vertical">
 
-                            <TextView
+                            <LinearLayout
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Block Launcher Gestures"
-                                android:textColor="?android:attr/textColorPrimary"
-                                android:textSize="16sp" />
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Block Launcher Gestures"
+                                    android:textColor="?android:attr/textColorPrimary"
+                                    android:textSize="16sp" />
+
+                                <ImageButton
+                                    android:id="@+id/btn_info_block_gestures"
+                                    android:layout_width="18dp"
+                                    android:layout_height="18dp"
+                                    android:layout_marginStart="8dp"
+                                    android:src="@drawable/ic_info"
+                                    android:background="?attr/selectableItemBackgroundBorderless"
+                                    android:scaleType="fitCenter"
+                                    app:tint="?attr/colorOnSurfaceVariant" />
+                            </LinearLayout>
 
                             <TextView
                                 android:layout_width="wrap_content"
