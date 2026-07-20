@@ -15,7 +15,9 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="20dp">
+            android:paddingHorizontal="20dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="100dp">
 
         <!-- Widget Preview Card -->
         <LinearLayout
@@ -161,6 +163,13 @@
                         app:icon="@drawable/ic_add" />
                 </LinearLayout>
 
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="?attr/colorOutlineVariant"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="20dp"/>
+
                 <!-- Widget Logo -->
                 <RelativeLayout
                     android:layout_width="match_parent"
@@ -299,7 +308,7 @@
                         android:layout_width="18dp"
                         android:layout_height="18dp"
                         android:layout_marginStart="8dp"
-                        android:src="@android:drawable/ic_dialog_info"
+                        android:src="@drawable/ic_info"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:scaleType="fitCenter"
                         app:tint="?attr/colorOnSurfaceVariant" />
@@ -317,7 +326,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="12dp"
                     android:gravity="center_vertical">
                     <TextView
                         android:layout_width="wrap_content"
@@ -330,7 +339,7 @@
                         android:layout_width="18dp"
                         android:layout_height="18dp"
                         android:layout_marginStart="8dp"
-                        android:src="@android:drawable/ic_dialog_info"
+                        android:src="@drawable/ic_info"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:scaleType="fitCenter"
                         app:tint="?attr/colorOnSurfaceVariant" />
@@ -349,7 +358,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginTop="8dp">
+                    android:layout_marginTop="12dp">
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -361,7 +370,7 @@
                         android:layout_width="18dp"
                         android:layout_height="18dp"
                         android:layout_marginStart="8dp"
-                        android:src="@android:drawable/ic_dialog_info"
+                        android:src="@drawable/ic_info"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:scaleType="fitCenter"
                         app:tint="?attr/colorOnSurfaceVariant" />
@@ -380,7 +389,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginTop="8dp">
+                    android:layout_marginTop="12dp">
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -392,7 +401,7 @@
                         android:layout_width="18dp"
                         android:layout_height="18dp"
                         android:layout_marginStart="8dp"
-                        android:src="@android:drawable/ic_dialog_info"
+                        android:src="@drawable/ic_info"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:scaleType="fitCenter"
                         app:tint="?attr/colorOnSurfaceVariant" />
@@ -431,7 +440,7 @@
                         android:layout_width="18dp"
                         android:layout_height="18dp"
                         android:layout_marginStart="8dp"
-                        android:src="@android:drawable/ic_dialog_info"
+                        android:src="@drawable/ic_info"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:scaleType="fitCenter"
                         app:tint="?attr/colorOnSurfaceVariant" />
