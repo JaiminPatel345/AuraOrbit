@@ -22,9 +22,7 @@ public class LauncherStateService extends AccessibilityService {
         public static volatile boolean systemUiVisible = false;
     }
 
-    public static void updateOverlayState(boolean interactive, int size) {
-        // Reserved for future two-way IPC if needed
-    }
+    public static void updateOverlayState(boolean interactive, int size) {}
 
     @Override
     protected void onServiceConnected() {
@@ -43,7 +41,6 @@ public class LauncherStateService extends AccessibilityService {
         String packageName = packageNameSeq != null ? packageNameSeq.toString() : "";
         String className = classNameSeq != null ? classNameSeq.toString() : "";
 
-        // Check for Recents / Recent Apps / App Drawer / System UI window changes
         boolean isRecentsOrDrawer = false;
         boolean isExternalApp = false;
 
@@ -56,21 +53,26 @@ public class LauncherStateService extends AccessibilityService {
             isRecentsOrDrawer = true;
         }
 
-        // If package is not launcher package and not empty
         if (!packageName.isEmpty() && !lowerPkg.contains("launcher") && !lowerPkg.contains("home")
-                && !lowerPkg.contains("aurorbit") && !lowerPkg.contains("systemui")) {
+                && !lowerPkg.contains("auraorbit") && !lowerPkg.contains("systemui")) {
             isExternalApp = true;
         }
 
-        LauncherState.drawerOpen = isRecentsOrDrawer;
-        LauncherState.systemUiVisible = isExternalApp || isRecentsOrDrawer;
+        LauncherState.systemUiVisible = isExternalApp;
+        if (isRecentsOrDrawer) {
+            LauncherState.drawerOpen = true;
+        }
         LauncherState.updatedNanos = System.nanoTime();
 
-        // Scan window for page indicators
         AccessibilityNodeInfo root = getRootInActiveWindow();
         if (root != null) {
             try {
-                scanNodeTree(root);
+                boolean foundDrawerInTree = scanNodeTree(root);
+                if (foundDrawerInTree) {
+                    LauncherState.drawerOpen = true;
+                } else if (!isRecentsOrDrawer) {
+                    LauncherState.drawerOpen = false;
+                }
             } catch (Exception e) {
                 // Ignore transient node traversal exceptions
             } finally {
@@ -79,8 +81,19 @@ public class LauncherStateService extends AccessibilityService {
         }
     }
 
-    private void scanNodeTree(AccessibilityNodeInfo node) {
-        if (node == null) return;
+    private boolean scanNodeTree(AccessibilityNodeInfo node) {
+        if (node == null) return false;
+        boolean drawerFound = false;
+
+        String viewId = node.getViewIdResourceName();
+        if (viewId != null) {
+            String lowerId = viewId.toLowerCase();
+            if (lowerId.contains("apps_grid") || lowerId.contains("apps_picker")
+                    || lowerId.contains("apps_page_indicator") || lowerId.contains("search_box")
+                    || lowerId.contains("apps_content") || lowerId.contains("all_apps")) {
+                drawerFound = true;
+            }
+        }
 
         CharSequence descSeq = node.getContentDescription();
         if (descSeq != null) {
@@ -105,10 +118,13 @@ public class LauncherStateService extends AccessibilityService {
         for (int i = 0; i < childCount; i++) {
             AccessibilityNodeInfo child = node.getChild(i);
             if (child != null) {
-                scanNodeTree(child);
+                if (scanNodeTree(child)) {
+                    drawerFound = true;
+                }
                 child.recycle();
             }
         }
+        return drawerFound;
     }
 
     @Override

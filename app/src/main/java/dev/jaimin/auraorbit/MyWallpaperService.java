@@ -292,24 +292,75 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
             }
         }
 
+        private float touchStartX = 0f;
+        private float touchStartY = 0f;
+        private boolean isDragging = false;
+        private static final float DRAG_THRESHOLD_PX = 16f;
+
         @Override
         public boolean onTouchEvent(MotionEvent event) {
             if (app != null && app.getApplicationListener() instanceof SphereEngine) {
                 SphereEngine engine = (SphereEngine) app.getApplicationListener();
                 if (!engine.isOverlayInteractive()) {
+                    isDragging = false;
                     return false;
                 }
             }
+
+            int action = event.getActionMasked();
+            switch (action) {
+                case MotionEvent.ACTION_DOWN:
+                    touchStartX = event.getX();
+                    touchStartY = event.getY();
+                    isDragging = false;
+                    forwardToGdx(event);
+                    return true;
+
+                case MotionEvent.ACTION_MOVE:
+                    float dx = event.getX() - touchStartX;
+                    float dy = event.getY() - touchStartY;
+                    if (dx * dx + dy * dy > DRAG_THRESHOLD_PX * DRAG_THRESHOLD_PX) {
+                        isDragging = true;
+                    }
+                    if (isDragging) {
+                        forwardToGdx(event);
+                        return true;
+                    }
+                    return true;
+
+                case MotionEvent.ACTION_UP:
+                    if (isDragging) {
+                        forwardToGdx(event);
+                        isDragging = false;
+                        return true;
+                    } else {
+                        // Quick tap (< 16px): send cancel to GDX and return false to let Android pass tap to 2D App Drawer / Recent Apps / Wallpaper
+                        MotionEvent cancelEvent = MotionEvent.obtain(event);
+                        cancelEvent.setAction(MotionEvent.ACTION_CANCEL);
+                        forwardToGdx(cancelEvent);
+                        cancelEvent.recycle();
+                        isDragging = false;
+                        return false;
+                    }
+
+                case MotionEvent.ACTION_CANCEL:
+                    isDragging = false;
+                    forwardToGdx(event);
+                    return false;
+            }
+            return false;
+        }
+
+        private void forwardToGdx(MotionEvent event) {
             if (app != null) {
                 com.badlogic.gdx.Graphics g = app.getGraphics();
                 if (g instanceof com.badlogic.gdx.backends.android.AndroidGraphics) {
                     View v = ((com.badlogic.gdx.backends.android.AndroidGraphics) g).getView();
                     if (v != null) {
-                        return v.dispatchTouchEvent(event);
+                        v.dispatchTouchEvent(event);
                     }
                 }
             }
-            return false;
         }
 
         @Override
