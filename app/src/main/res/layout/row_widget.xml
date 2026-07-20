@@ -18,21 +18,35 @@
          android:padding="16dp">
 
         <FrameLayout
+            android:id="@+id/widget_icon_frame"
             android:layout_width="48dp"
-            android:layout_height="48dp">
-            
+            android:layout_height="48dp"
+            android:background="@drawable/rounded_bg_solid">
+
+            <!-- Color dot behind planet (used for background tint) -->
             <View
                 android:id="@+id/widget_color_dot"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
-                
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+
+            <!-- Layer 1: White Planet -->
             <ImageView
                 android:id="@+id/widget_icon_planet"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:padding="8dp"
                 android:src="@drawable/ic_widget_planet" />
-                
+
+            <!-- Layer 2: Colored Ring (same as home screen widget) -->
+            <ImageView
+                android:id="@+id/widget_icon_ring"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="8dp"
+                android:src="@drawable/ic_widget_ring" />
+
+            <!-- Layer 3: Custom Logo (replaces planet+ring) -->
             <ImageView
                 android:id="@+id/widget_custom_logo"
                 android:layout_width="match_parent"

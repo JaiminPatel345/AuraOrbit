@@ -2,7 +2,6 @@ package dev.jaimin.auraorbit.ui;
 
 import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -134,34 +133,54 @@ public class WidgetListFragment extends Fragment {
         public void onBindViewHolder(@NonNull VH holder, int position) {
             WidgetStore.Widget widget = items.get(position);
 
-            GradientDrawable oval = new GradientDrawable();
-            oval.setShape(GradientDrawable.OVAL);
-            try {
-                oval.setColor(Color.parseColor(widget.color));
-            } catch (IllegalArgumentException e) {
-                oval.setColor(Color.WHITE);
-            }
-            holder.colorDot.setBackground(oval);
-            
-            boolean hideLogo = PreferenceManager.getDefaultSharedPreferences(requireContext())
-                    .getBoolean("pref_widget_hide_logo_" + widget.name, false);
-                    
+            android.content.SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+            boolean hideLogo = prefs.getBoolean("pref_widget_hide_logo_" + widget.name, false);
+            boolean isTransparent = prefs.getBoolean("pref_widget_transparent_" + widget.name, false);
+            boolean useThemeColor = prefs.getBoolean("pref_widget_use_theme_color_" + widget.name, true);
+
             if (hideLogo) {
+                // Logo hidden — hide everything, show transparent frame
                 holder.planetIcon.setVisibility(View.GONE);
-                holder.colorDot.setVisibility(View.GONE);
+                holder.ringIcon.setVisibility(View.GONE);
                 holder.customLogo.setVisibility(View.GONE);
+                holder.iconFrame.setBackground(null);
             } else if (dev.jaimin.auraorbit.WidgetLogoStore.exists(requireContext(), widget.name)) {
+                // Custom logo — hide planet+ring, show logo
                 holder.planetIcon.setVisibility(View.GONE);
-                holder.colorDot.setVisibility(View.GONE);
+                holder.ringIcon.setVisibility(View.GONE);
                 holder.customLogo.setVisibility(View.VISIBLE);
-                android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeFile(dev.jaimin.auraorbit.WidgetLogoStore.file(requireContext(), widget.name).getAbsolutePath());
+                android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeFile(
+                        dev.jaimin.auraorbit.WidgetLogoStore.file(requireContext(), widget.name).getAbsolutePath());
                 if (bitmap != null) {
                     holder.customLogo.setImageBitmap(bitmap);
                 }
+                if (isTransparent) {
+                    holder.iconFrame.setBackground(null);
+                } else {
+                    holder.iconFrame.setBackgroundResource(R.drawable.rounded_bg_solid);
+                }
             } else {
+                // Default logo — show planet + color-tinted ring
                 holder.planetIcon.setVisibility(View.VISIBLE);
-                holder.colorDot.setVisibility(View.VISIBLE);
+                holder.ringIcon.setVisibility(View.VISIBLE);
                 holder.customLogo.setVisibility(View.GONE);
+
+                // Apply ring color (same logic as SphereWidgetProvider)
+                try {
+                    if (useThemeColor) {
+                        holder.ringIcon.setColorFilter(requireContext().getColor(R.color.widget_theme_color));
+                    } else {
+                        holder.ringIcon.setColorFilter(Color.parseColor(widget.color));
+                    }
+                } catch (Exception e) {
+                    holder.ringIcon.setColorFilter(Color.WHITE);
+                }
+
+                if (isTransparent) {
+                    holder.iconFrame.setBackground(null);
+                } else {
+                    holder.iconFrame.setBackgroundResource(R.drawable.rounded_bg_solid);
+                }
             }
 
             holder.name.setText(widget.name);
@@ -179,7 +198,9 @@ public class WidgetListFragment extends Fragment {
 
         final class VH extends RecyclerView.ViewHolder {
             final View     colorDot;
+            final View     iconFrame;
             final android.widget.ImageView planetIcon;
+            final android.widget.ImageView ringIcon;
             final android.widget.ImageView customLogo;
             final TextView name;
             final TextView count;
@@ -188,7 +209,9 @@ public class WidgetListFragment extends Fragment {
             VH(@NonNull View itemView) {
                 super(itemView);
                 colorDot  = itemView.findViewById(R.id.widget_color_dot);
+                iconFrame = itemView.findViewById(R.id.widget_icon_frame);
                 planetIcon = itemView.findViewById(R.id.widget_icon_planet);
+                ringIcon  = itemView.findViewById(R.id.widget_icon_ring);
                 customLogo = itemView.findViewById(R.id.widget_custom_logo);
                 name      = itemView.findViewById(R.id.widget_name);
                 count     = itemView.findViewById(R.id.widget_count);
