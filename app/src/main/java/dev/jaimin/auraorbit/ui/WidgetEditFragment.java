@@ -156,6 +156,7 @@ public class WidgetEditFragment extends Fragment {
     private TextView tvSpherePositionStatus;
     private TextView tvBlurStatus;
     private TextView tvBackgroundStatus;
+    private TextView tvSelectedAppsCount;
 
     // ─── Color palette (from res/values/colors.xml) ───────────────────────
     // Loaded in onViewCreated; stored as fields so color-circle click lambdas
@@ -242,14 +243,17 @@ public class WidgetEditFragment extends Fragment {
         // ─── Views ────────────────────────────────────────────────────────
         TextInputEditText nameInput    = root.findViewById(R.id.group_name_input);
         LinearLayout      colorRow    = root.findViewById(R.id.color_row);
-        TextInputEditText memberSearch = root.findViewById(R.id.member_search_input);
-        RecyclerView      memberList  = root.findViewById(R.id.member_list);
         MaterialButton    btnPinWidget= root.findViewById(R.id.btn_pin_widget);
         View btnInfoPinWidget = root.findViewById(R.id.btn_info_pin_widget);
 
-        memberList.setLayoutManager(new LinearLayoutManager(requireContext()));
         memberAdapter = new MemberAdapter();
-        memberList.setAdapter(memberAdapter);
+        tvSelectedAppsCount = root.findViewById(R.id.tv_selected_apps_count);
+        View btnManageApps = root.findViewById(R.id.btn_manage_apps);
+        View btnEditAppsAction = root.findViewById(R.id.btn_edit_apps_action);
+
+        View.OnClickListener openAppsPicker = v -> showSelectAppsDialog();
+        if (btnManageApps != null) btnManageApps.setOnClickListener(openAppsPicker);
+        if (btnEditAppsAction != null) btnEditAppsAction.setOnClickListener(openAppsPicker);
         
         previewIconContainer = root.findViewById(R.id.preview_icon_container);
         previewPlanet = root.findViewById(R.id.preview_icon_planet);
@@ -457,43 +461,6 @@ public class WidgetEditFragment extends Fragment {
             }
         }
 
-        // ─── Edit Apps Button (Edit Mode) ──────────────────────────────────
-        if (originalWidgetName != null) {
-            MaterialButton btnEditApps = root.findViewById(R.id.btn_edit_apps);
-            View cardApps = root.findViewById(R.id.card_apps);
-            View tvAppsTitle = root.findViewById(R.id.tv_apps_title);
-            View editAppsDivider = root.findViewById(R.id.edit_apps_divider);
-            
-            if (btnEditApps != null) btnEditApps.setVisibility(View.VISIBLE);
-            if (editAppsDivider != null) editAppsDivider.setVisibility(View.VISIBLE);
-            if (cardApps != null) cardApps.setVisibility(View.GONE);
-            if (tvAppsTitle != null) tvAppsTitle.setVisibility(View.GONE);
-            
-            if (btnEditApps != null && cardApps != null) {
-                btnEditApps.setOnClickListener(v -> {
-                    ViewGroup parent = (ViewGroup) cardApps.getParent();
-                    if (parent != null) {
-                        parent.removeView(cardApps);
-                    }
-                    cardApps.setVisibility(View.VISIBLE);
-                    new MaterialAlertDialogBuilder(requireContext())
-                        .setTitle("Edit Apps")
-                        .setView(cardApps)
-                        .setPositiveButton("Done", null)
-                        .setOnDismissListener(dialog -> {
-                            ViewGroup dp = (ViewGroup) cardApps.getParent();
-                            if (dp != null) dp.removeView(cardApps);
-                            cardApps.setVisibility(View.GONE);
-                            ViewGroup constraintLayout = (ViewGroup) tvAppsTitle.getParent();
-                            if (constraintLayout != null) {
-                                constraintLayout.addView(cardApps, constraintLayout.indexOfChild(tvAppsTitle) + 1);
-                            }
-                        })
-                        .show();
-                });
-            }
-        }
-        
         // ─── Bottom Bar Buttons (Save / Delete) ───────────────────────────
         MaterialButton btnSaveNewGroup = root.findViewById(R.id.btn_save_new_widget);
         MaterialButton btnDelete = root.findViewById(R.id.btn_delete);
@@ -515,15 +482,6 @@ public class WidgetEditFragment extends Fragment {
                 btnDelete.setOnClickListener(v -> confirmDeleteWidget());
             }
         }
-
-        // ─── Member search ────────────────────────────────────────────────
-        memberSearch.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void afterTextChanged(Editable s) {}
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                memberAdapter.filter(s == null ? "" : s.toString());
-            }
-        });
 
         // ─── Load members asynchronously ──────────────────────────────────
         loadMembersAsync(prefs, widgets);
@@ -664,6 +622,50 @@ public class WidgetEditFragment extends Fragment {
                 .setTitle(title)
                 .setMessage(message)
                 .setPositiveButton("Got it", null)
+                .show();
+    }
+
+    private void updateAppsSummary() {
+        if (tvSelectedAppsCount == null) return;
+        int count = workingMembers.size();
+        if (count == 0) {
+            tvSelectedAppsCount.setText("No apps selected");
+        } else if (count == 1) {
+            tvSelectedAppsCount.setText("1 app selected");
+        } else {
+            tvSelectedAppsCount.setText(count + " apps selected");
+        }
+    }
+
+    private void showSelectAppsDialog() {
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_select_apps, null);
+        TextInputEditText searchInput = dialogView.findViewById(R.id.dialog_member_search_input);
+        RecyclerView recyclerView = dialogView.findViewById(R.id.dialog_member_list);
+        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+        recyclerView.setAdapter(memberAdapter);
+
+        // Reset filter
+        memberAdapter.filter("");
+
+        searchInput.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                memberAdapter.filter(s == null ? "" : s.toString());
+            }
+            @Override public void afterTextChanged(Editable s) {}
+        });
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Apps in Widget")
+                .setView(dialogView)
+                .setPositiveButton("Done", (dialog, which) -> {
+                    updateAppsSummary();
+                    updateLivePreview();
+                })
+                .setOnDismissListener(dialog -> {
+                    updateAppsSummary();
+                    updateLivePreview();
+                })
                 .show();
     }
 
@@ -979,6 +981,7 @@ public class WidgetEditFragment extends Fragment {
             mainHandler.post(() -> {
                 if (!isAdded()) return; // Fragment detached while loading
                 memberAdapter.setItems(rows);
+                updateAppsSummary();
             });
         });
     }
@@ -1021,24 +1024,13 @@ public class WidgetEditFragment extends Fragment {
 
         // Validate: workingMembers must not be empty.
         if (workingMembers.isEmpty()) {
-            Toast.makeText(requireContext(), "App selection is required", Toast.LENGTH_LONG).show();
+            Toast.makeText(requireContext(), "Select at least 1 app for this widget", Toast.LENGTH_LONG).show();
             androidx.core.widget.NestedScrollView scrollView = root.findViewById(R.id.scroll_view);
             if (scrollView != null) {
-                if (originalWidgetName == null) {
-                    View cardApps = root.findViewById(R.id.card_apps);
-                    if (cardApps != null) {
-                        scrollView.smoothScrollTo(0, cardApps.getTop());
-                    }
-                    TextView tvAppsTitle = root.findViewById(R.id.tv_apps_title);
-                    if (tvAppsTitle != null) {
-                        tvAppsTitle.setTextColor(Color.RED);
-                    }
-                } else {
-                    View btnEditApps = root.findViewById(R.id.btn_edit_apps);
-                    if (btnEditApps != null) {
-                        scrollView.smoothScrollTo(0, btnEditApps.getTop() - 100);
-                        btnEditApps.requestFocus();
-                    }
+                View btnManageApps = root.findViewById(R.id.btn_manage_apps);
+                if (btnManageApps != null) {
+                    scrollView.smoothScrollTo(0, btnManageApps.getTop() - 100);
+                    btnManageApps.requestFocus();
                 }
             }
             return false;
@@ -1339,18 +1331,7 @@ public class WidgetEditFragment extends Fragment {
                     workingMembers.add(row.packageName);
                     holder.check.setChecked(true);
                 }
-
-                if (!workingMembers.isEmpty()) {
-                    View rView = getView();
-                    if (rView != null) {
-                        TextView tvAppsTitle = rView.findViewById(R.id.tv_apps_title);
-                        if (tvAppsTitle != null) {
-                            TypedValue typedValue = new TypedValue();
-                            requireContext().getTheme().resolveAttribute(android.R.attr.textColorPrimary, typedValue, true);
-                            tvAppsTitle.setTextColor(typedValue.data);
-                        }
-                    }
-                }
+                updateAppsSummary();
             });
         }
 
