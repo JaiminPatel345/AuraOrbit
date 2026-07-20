@@ -674,14 +674,10 @@ public class WidgetEditFragment extends Fragment {
 
     private void updateBlurStatusText(SharedPreferences prefs) {
         if (tvBlurStatus == null) return;
-        int strength = originalWidgetName != null 
-                ? prefs.getInt("pref_blur_strength_" + originalWidgetName, 50) 
+        int strength = originalWidgetName != null
+                ? prefs.getInt("pref_blur_strength_" + originalWidgetName, 50)
                 : 50;
-        if (strength == 0) {
-            tvBlurStatus.setText("No Blur");
-        } else {
-            tvBlurStatus.setText("Full Screen (" + strength + "%)");
-        }
+        tvBlurStatus.setText(strength == 0 ? "Disabled" : "Enabled");
     }
 
     private void updateBackgroundStatus() {
