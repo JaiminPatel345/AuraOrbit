@@ -166,7 +166,6 @@ public class PermanentSphereFragment extends Fragment {
         });
 
         // Page Settings
-        MaterialSwitch switchDynamicLastPage = view.findViewById(R.id.switch_dynamic_last_page);
         View layoutActivePage = view.findViewById(R.id.layout_active_page);
         TextView tvActivePageValue = view.findViewById(R.id.tv_active_page_value);
         com.google.android.material.button.MaterialButton btnDecrementActivePage = view.findViewById(R.id.btn_decrement_active_page);
@@ -177,14 +176,7 @@ public class PermanentSphereFragment extends Fragment {
         com.google.android.material.button.MaterialButton btnDecrementTotalPages = view.findViewById(R.id.btn_decrement_total_pages);
         com.google.android.material.button.MaterialButton btnIncrementTotalPages = view.findViewById(R.id.btn_increment_total_pages);
 
-        boolean dynamicLastPage = prefs.getBoolean("pref_dynamic_last_page", false);
-        switchDynamicLastPage.setChecked(dynamicLastPage);
-        layoutActivePage.setVisibility(dynamicLastPage ? View.GONE : View.VISIBLE);
-
-        switchDynamicLastPage.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            prefs.edit().putBoolean("pref_dynamic_last_page", isChecked).apply();
-            layoutActivePage.setVisibility(isChecked ? View.GONE : View.VISIBLE);
-        });
+        layoutActivePage.setVisibility(View.VISIBLE);
 
         // Active Page Stepper
         int activePage = prefs.getInt("pref_active_page", 1);

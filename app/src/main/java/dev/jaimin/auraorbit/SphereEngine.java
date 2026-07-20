@@ -768,7 +768,6 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             "pref_icon_size",
             "pref_rotation_speed",
             "pref_active_page",
-            "pref_dynamic_last_page",
             "pref_total_pages",
             "pref_target_fps",
             "pref_sphere_x",
@@ -946,13 +945,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // User-facing value is 1-based (UI: 1 = first page, SeekBar range 1..9).
         // Internally we use 0-based index for all page-visibility math.
         // Default raw value 1 → internal 0 (first page).
-        boolean dynamicLastPage = prefs.getBoolean("pref_dynamic_last_page", false);
-        int totalPages = prefs.getInt("pref_total_pages", 3);
-        if (dynamicLastPage) {
-            activePage = Math.max(0, totalPages - 1);
-        } else {
-            activePage = Math.max(0, prefs.getInt("pref_active_page", 1) - 1);
-        }
+        activePage = Math.max(0, prefs.getInt("pref_active_page", 1) - 1);
 
         // Sphere radius: pref value 20–100 mapped to world units 3.0–8.0
         int radiusPref = prefs.getInt("pref_sphere_radius", 50);
@@ -1028,7 +1021,6 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         sb.append(speedPref).append('|');
         
         sb.append(prefs.getInt("pref_active_page", 1)).append('|'); // raw 1-based value (UI default)
-        sb.append(prefs.getBoolean("pref_dynamic_last_page", false)).append('|');
         sb.append(prefs.getInt("pref_total_pages", 3)).append('|');
         
         String fpsPref = prefs.getString("pref_target_fps", "120");
@@ -2993,27 +2985,11 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
         // Fetch preference values
         SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
-        boolean dynamicLastPage = sharedPrefs.getBoolean("pref_dynamic_last_page", false);
         int totalPages = sharedPrefs.getInt("pref_total_pages", 3);
         int targetActivePage = activePage;
 
         boolean offsetsLive = offsetEverSeen
                 && (System.nanoTime() - lastOffsetTimeNanos) < 10_000_000_000L;
-
-        if (xOffsetStep > 0f && offsetsLive) {
-            int livePageCount = Math.round(1f / xOffsetStep) + 1;
-            if (dynamicLastPage) {
-                targetActivePage = livePageCount - 1;
-            }
-        } else if (a11yFresh && LauncherStateService.LauncherState.pageCount > 0) {
-            if (dynamicLastPage) {
-                targetActivePage = LauncherStateService.LauncherState.pageCount - 1;
-            }
-        } else {
-            if (dynamicLastPage) {
-                targetActivePage = Math.max(0, totalPages - 1);
-            }
-        }
 
         if (a11yFresh) {
             int a11yPage = LauncherStateService.LauncherState.page;
@@ -3930,10 +3906,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // On offset-reporting launchers (Pixel Launcher, etc.) this field is
             // unused — the assignment is harmless.
             if (!LauncherStateService.LauncherState.serviceConnected) {
-                SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
-                boolean dynamicLastPage = sharedPrefs.getBoolean("pref_dynamic_last_page", false);
-                int totalPages = sharedPrefs.getInt("pref_total_pages", 3);
-                int targetActivePage = dynamicLastPage ? Math.max(0, totalPages - 1) : activePage;
+                int targetActivePage = activePage;
 
                 inferredPage = targetActivePage;
                 Log.d(TAG, "setVisible: re-anchored inferredPage=" + inferredPage
