@@ -70,24 +70,43 @@
         </com.google.android.material.card.MaterialCardView>
 
         <!-- Widget Preview Card -->
-        <TextView
-            android:id="@+id/tv_preview_title"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:id="@+id/preview_header"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Widget Preview"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="?android:attr/textColorPrimary"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
             android:layout_marginTop="16dp"
             app:layout_constraintTop_toBottomOf="@id/card_apps"
-            app:layout_constraintStart_toStartOf="parent" />
+            app:layout_constraintStart_toStartOf="parent">
+
+            <TextView
+                android:id="@+id/tv_preview_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Widget Preview"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="?android:attr/textColorPrimary" />
+
+            <ImageButton
+                android:id="@+id/btn_info_pin_widget"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_marginStart="8dp"
+                android:src="@drawable/ic_info"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:scaleType="fitCenter"
+                app:tint="?attr/colorOnSurfaceVariant"
+                android:visibility="gone" />
+        </LinearLayout>
 
         <include
             layout="@layout/layout_widget_preview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            app:layout_constraintTop_toBottomOf="@id/tv_preview_title" />
+            app:layout_constraintTop_toBottomOf="@id/preview_header" />
 
         <!-- General Settings Card -->
         <TextView
@@ -691,32 +710,15 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_delete"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="wrap_content"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/btn_delete_widget"
                 app:icon="@android:drawable/ic_menu_delete"
                 app:iconTint="#E53935"
                 android:textColor="#E53935"
+                app:strokeColor="#E53935"
                 android:visibility="gone" />
-
-            <View
-                android:id="@+id/actions_spacer"
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:visibility="gone" />
-
-
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_pin_widget"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Pin Widget"
-                android:visibility="gone"
-                style="@style/Widget.Material3.Button.TextButton"
-                app:icon="@drawable/ic_pin" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_save_new_widget"
@@ -726,17 +728,6 @@
                 android:visibility="gone"
                 style="@style/Widget.Material3.Button"
                 app:icon="@android:drawable/ic_menu_save" />
-
-            <ImageButton
-                android:id="@+id/btn_info_pin_widget"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_marginStart="-4dp"
-                android:padding="6dp"
-                android:src="@drawable/ic_info"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:scaleType="fitCenter"
-                android:visibility="gone" />
 
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>

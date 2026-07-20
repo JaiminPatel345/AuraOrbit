@@ -427,7 +427,7 @@ public class WidgetEditFragment extends Fragment {
             btnPinWidget.setVisibility(View.VISIBLE);
             if (btnInfoPinWidget != null) {
                 btnInfoPinWidget.setVisibility(View.VISIBLE);
-                btnInfoPinWidget.setOnClickListener(v -> showInfoDialog("Pin Widget", "Adds a shortcut to this widget directly on your home screen."));
+                btnInfoPinWidget.setOnClickListener(v -> showInfoDialog("Add to Home Screen", "Adds a shortcut to this widget directly on your home screen for quick access."));
             }
             btnPinWidget.setOnClickListener(v -> {
                 int[] appWidgetIds = appWidgetManager.getAppWidgetIds(new ComponentName(requireContext(), SphereWidgetProvider.class));
@@ -442,7 +442,7 @@ public class WidgetEditFragment extends Fragment {
                 if (alreadyPinned) {
                     new MaterialAlertDialogBuilder(requireContext())
                         .setTitle("Widget Already Pinned")
-                        .setMessage("A widget for this widget is already present on your home screen. Do you want to add another one?")
+                        .setMessage("A shortcut for this widget is already on your home screen. Do you want to add another one?")
                         .setPositiveButton("Add Another", (dialog, which) -> requestPinWidget(originalWidgetName))
                         .setNegativeButton("Cancel", null)
                         .show();
@@ -450,61 +450,69 @@ public class WidgetEditFragment extends Fragment {
                     requestPinWidget(originalWidgetName);
                 }
             });
-            
+        } else {
+            btnPinWidget.setVisibility(View.GONE);
+            if (btnInfoPinWidget != null) {
+                btnInfoPinWidget.setVisibility(View.GONE);
+            }
+        }
+
+        // ─── Edit Apps Button (Edit Mode) ──────────────────────────────────
+        if (originalWidgetName != null) {
             MaterialButton btnEditApps = root.findViewById(R.id.btn_edit_apps);
             View cardApps = root.findViewById(R.id.card_apps);
             View tvAppsTitle = root.findViewById(R.id.tv_apps_title);
             View editAppsDivider = root.findViewById(R.id.edit_apps_divider);
             
-            btnEditApps.setVisibility(View.VISIBLE);
-            if (editAppsDivider != null) {
-                editAppsDivider.setVisibility(View.VISIBLE);
-            }
-            cardApps.setVisibility(View.GONE);
-            tvAppsTitle.setVisibility(View.GONE);
+            if (btnEditApps != null) btnEditApps.setVisibility(View.VISIBLE);
+            if (editAppsDivider != null) editAppsDivider.setVisibility(View.VISIBLE);
+            if (cardApps != null) cardApps.setVisibility(View.GONE);
+            if (tvAppsTitle != null) tvAppsTitle.setVisibility(View.GONE);
             
-            btnEditApps.setOnClickListener(v -> {
-                ViewGroup parent = (ViewGroup) cardApps.getParent();
-                if (parent != null) {
-                    parent.removeView(cardApps);
-                }
-                cardApps.setVisibility(View.VISIBLE);
-                new MaterialAlertDialogBuilder(requireContext())
-                    .setTitle("Edit Apps")
-                    .setView(cardApps)
-                    .setPositiveButton("Done", null)
-                    .setOnDismissListener(dialog -> {
-                        ViewGroup dp = (ViewGroup) cardApps.getParent();
-                        if (dp != null) dp.removeView(cardApps);
-                        cardApps.setVisibility(View.GONE);
-                        ViewGroup constraintLayout = (ViewGroup) tvAppsTitle.getParent();
-                        if (constraintLayout != null) {
-                            constraintLayout.addView(cardApps, constraintLayout.indexOfChild(tvAppsTitle) + 1);
-                        }
-                    })
-                    .show();
-            });
+            if (btnEditApps != null && cardApps != null) {
+                btnEditApps.setOnClickListener(v -> {
+                    ViewGroup parent = (ViewGroup) cardApps.getParent();
+                    if (parent != null) {
+                        parent.removeView(cardApps);
+                    }
+                    cardApps.setVisibility(View.VISIBLE);
+                    new MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Edit Apps")
+                        .setView(cardApps)
+                        .setPositiveButton("Done", null)
+                        .setOnDismissListener(dialog -> {
+                            ViewGroup dp = (ViewGroup) cardApps.getParent();
+                            if (dp != null) dp.removeView(cardApps);
+                            cardApps.setVisibility(View.GONE);
+                            ViewGroup constraintLayout = (ViewGroup) tvAppsTitle.getParent();
+                            if (constraintLayout != null) {
+                                constraintLayout.addView(cardApps, constraintLayout.indexOfChild(tvAppsTitle) + 1);
+                            }
+                        })
+                        .show();
+                });
+            }
         }
         
+        // ─── Bottom Bar Buttons (Save / Delete) ───────────────────────────
         MaterialButton btnSaveNewGroup = root.findViewById(R.id.btn_save_new_widget);
-        View actionsSpacer = root.findViewById(R.id.actions_spacer);
+        MaterialButton btnDelete = root.findViewById(R.id.btn_delete);
+        
         if (originalWidgetName == null) {
-            btnSaveNewGroup.setVisibility(View.VISIBLE);
-            if (actionsSpacer != null) {
-                actionsSpacer.setVisibility(View.GONE);
+            if (btnSaveNewGroup != null) {
+                btnSaveNewGroup.setVisibility(View.VISIBLE);
+                btnSaveNewGroup.setOnClickListener(v -> saveData());
             }
-            btnSaveNewGroup.setOnClickListener(v -> {
-                if (saveData()) {
-                    btnSaveNewGroup.setVisibility(View.GONE);
-                    if (actionsSpacer != null) {
-                        actionsSpacer.setVisibility(View.VISIBLE);
-                    }
-                }
-            });
+            if (btnDelete != null) {
+                btnDelete.setVisibility(View.GONE);
+            }
         } else {
-            btnSaveNewGroup.setVisibility(View.GONE);
-            if (actionsSpacer != null) {
-                actionsSpacer.setVisibility(View.VISIBLE);
+            if (btnSaveNewGroup != null) {
+                btnSaveNewGroup.setVisibility(View.GONE);
+            }
+            if (btnDelete != null) {
+                btnDelete.setVisibility(View.VISIBLE);
+                btnDelete.setOnClickListener(v -> confirmDeleteWidget());
             }
         }
 
@@ -656,6 +664,24 @@ public class WidgetEditFragment extends Fragment {
                 .setTitle(title)
                 .setMessage(message)
                 .setPositiveButton("Got it", null)
+                .show();
+    }
+
+    private void confirmDeleteWidget() {
+        if (originalWidgetName == null) return;
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Delete Widget")
+                .setMessage("Are you sure you want to delete \"" + originalWidgetName + "\"? This cannot be undone.")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+                    List<WidgetStore.Widget> widgets = WidgetStore.load(prefs);
+                    WidgetStore.delete(widgets, originalWidgetName);
+                    WidgetStore.save(prefs, widgets);
+                    SphereWidgetProvider.updateAllWidgets(requireContext());
+                    Toast.makeText(requireContext(), "Widget deleted", Toast.LENGTH_SHORT).show();
+                    getParentFragmentManager().popBackStack();
+                })
+                .setNegativeButton("Cancel", null)
                 .show();
     }
     
