@@ -2111,12 +2111,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 // signal, but the service gives a more reliable drawer flag.
                 // Suppress launching when the drawer is freshly detected open.
                 if (!isPreviewMode && isA11yDrawerOpenFresh()) return false;
-
-                // ─── Drawer guard #2 (zoom fallback) ─────────────────────
-                // One UI zooms the wallpaper when leaving the plain home view
-                // (drawer, recents, edit mode). Suppress launching while zoomed
-                // as a fallback when the accessibility service is not enabled.
-                if (!isPreviewMode && wallpaperZoom > 0.4f) return false;
+                if (!isPreviewMode && wallpaperZoom > 0.05f) return false;
+                if (!isOverlayInteractive()) return false;
 
                 return raycastAndLaunch(x, y);
             }
@@ -3003,29 +2999,27 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             }
         }
 
-        if (xOffsetStep > 0f && offsetsLive) {
-            float currentPage = currentXOffset / xOffsetStep;
+        float step = xOffsetStep > 0f ? xOffsetStep : (totalPages > 1 ? 1f / (totalPages - 1) : 0f);
+        if (step > 0f && offsetsLive) {
+            float currentPage = currentXOffset / step;
             float pageDistance = Math.abs(currentPage - targetActivePage);
             targetVisibility = MathUtils.clamp(1f - (pageDistance - 0.3f) * 1.5f, 0f, 1f);
-        } else if (!offsetsLive) {
+        } else {
             float pageDistance = Math.abs(inferredPage - targetActivePage);
             targetVisibility = MathUtils.clamp(1f - (pageDistance - 0.3f) * 1.5f, 0f, 1f);
-        } else {
-            targetVisibility = 1f;
         }
 
         // Smooth lerp to target
         pageVisibility = MathUtils.lerp(pageVisibility, targetVisibility, delta * 8f);
 
         if (dbg) {
-            logVisDebug(xOffsetStep > 0f && offsetsLive ? "OFFSETS"
-                    : (!offsetsLive ? "DEAD-RECKONING" : "TRANSIENT"), targetVisibility);
+            logVisDebug(step > 0f && offsetsLive ? "OFFSETS" : "DEAD-RECKONING", targetVisibility);
         }
 
         // ─── Touch Overlay Update ──────────────────────────────────────────
         boolean isSysUiOpen = LauncherStateService.LauncherState.systemUiVisible 
             && (System.nanoTime() - LauncherStateService.LauncherState.updatedNanos) < 5_000_000_000L;
-        boolean interactive = (pageVisibility > 0.9f) && (returnAnim > 0.9f) && !isA11yDrawerOpenFresh() && !isPreviewMode && !isSysUiOpen && (wallpaperZoom < 0.2f);
+        boolean interactive = (pageVisibility > 0.8f) && (returnAnim > 0.8f) && !isA11yDrawerOpenFresh() && !isPreviewMode && !isSysUiOpen && (wallpaperZoom < 0.05f);
         int size = 0;
         int centerX = Gdx.graphics.getWidth() / 2;
         int centerY = Gdx.graphics.getHeight() / 2;
@@ -3659,6 +3653,20 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         long ageNs = System.nanoTime() - LauncherStateService.LauncherState.updatedNanos;
         if (ageNs > 5_000_000_000L) return false; // stale → fall through
         return LauncherStateService.LauncherState.drawerOpen;
+    }
+
+    public boolean isOverlayInteractive() {
+        if (isPreviewMode) return false;
+        if (pageVisibility < 0.8f) return false;
+        if (returnAnim < 0.8f) return false;
+        if (wallpaperZoom > 0.05f) return false;
+        if (isA11yDrawerOpenFresh()) return false;
+        if (LauncherStateService.LauncherState.drawerOpen) return false;
+        if (LauncherStateService.LauncherState.systemUiVisible &&
+                (System.nanoTime() - LauncherStateService.LauncherState.updatedNanos) < 5_000_000_000L) {
+            return false;
+        }
+        return true;
     }
 
     // ═══════════════════════════════════════════════════════════════════════

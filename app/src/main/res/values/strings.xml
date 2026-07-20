@@ -108,6 +108,8 @@
     <!-- Accessibility service description (shown in Settings → Accessibility) -->
     <string name="a11y_service_description">Reads the Samsung launcher\'s page indicator (e.g. "Page 1 of 4") to show the 3D sphere on the correct home page and to detect when the app drawer is open. Only the launcher\'s page indicator is read — no other app content is accessed.</string>
 
+    <string name="accessibility_service_description">Detects home screen page numbers, recents overview, and app drawer state for AuraOrbit 3D permanent sphere.</string>
+
     <!-- Exact page detection preference category -->
     <string name="pref_category_sphere_detection">Launcher Integration</string>
 

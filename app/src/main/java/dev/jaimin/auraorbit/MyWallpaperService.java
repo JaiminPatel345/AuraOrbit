@@ -294,7 +294,12 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
 
         @Override
         public boolean onTouchEvent(MotionEvent event) {
-            // Forward touch event to the libGDX GL surface view!
+            if (app != null && app.getApplicationListener() instanceof SphereEngine) {
+                SphereEngine engine = (SphereEngine) app.getApplicationListener();
+                if (!engine.isOverlayInteractive()) {
+                    return false;
+                }
+            }
             if (app != null) {
                 com.badlogic.gdx.Graphics g = app.getGraphics();
                 if (g instanceof com.badlogic.gdx.backends.android.AndroidGraphics) {
