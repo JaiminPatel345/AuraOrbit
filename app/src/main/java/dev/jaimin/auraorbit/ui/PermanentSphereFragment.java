@@ -273,6 +273,16 @@ public class PermanentSphereFragment extends Fragment {
                 startActivity(new android.content.Intent(requireContext(), GestureRadiusEditorActivity.class));
             });
         }
+
+        View btnWarningGithub = view.findViewById(R.id.btn_warning_github_pr);
+        if (btnWarningGithub != null) {
+            btnWarningGithub.setOnClickListener(v -> {
+                android.content.Intent browserIntent = new android.content.Intent(
+                        android.content.Intent.ACTION_VIEW,
+                        android.net.Uri.parse("https://github.com/JaiminPatel345/AuraOrbit"));
+                startActivity(browserIntent);
+            });
+        }
     }
 
     @Override

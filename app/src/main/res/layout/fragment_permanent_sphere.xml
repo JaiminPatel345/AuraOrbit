@@ -56,11 +56,24 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Due to some restrictions, Permanent Sphere may not work properly in some launchers like One UI."
+                        android:text="Due to system restrictions, Permanent Sphere may not work properly on certain launchers like One UI. If you are a developer, feel free to contribute a fix for your launcher and submit a Pull Request on GitHub."
                         android:textSize="13sp"
                         android:textColor="#FFECB3"
                         android:layout_marginTop="4dp"
                         android:lineSpacingExtra="2dp" />
+
+                    <TextView
+                        android:id="@+id/btn_warning_github_pr"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Submit a Pull Request on GitHub ↗"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:textColor="#FFE082"
+                        android:layout_marginTop="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground" />
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
