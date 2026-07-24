@@ -52,7 +52,17 @@ public class DashboardFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+        // App Version
+        TextView tvAppVersion = view.findViewById(R.id.tv_app_version);
+        if (tvAppVersion != null) {
+            try {
+                String versionName = requireContext().getPackageManager()
+                        .getPackageInfo(requireContext().getPackageName(), 0).versionName;
+                tvAppVersion.setText("v" + versionName);
+            } catch (Exception e) {
+                tvAppVersion.setText("v3.0.0");
+            }
+        }
 
         // Navigation Cards
         MaterialCardView cardPermanentSphere = view.findViewById(R.id.card_permanent_sphere);
