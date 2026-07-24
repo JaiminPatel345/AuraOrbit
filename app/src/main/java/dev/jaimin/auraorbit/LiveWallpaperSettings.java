@@ -5,6 +5,7 @@ import android.accessibilityservice.AccessibilityServiceInfo;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -89,25 +90,11 @@ public class LiveWallpaperSettings extends AppCompatActivity {
         Intent intent = getIntent();
         int appWidgetId = intent.getIntExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID, android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID);
         android.util.Log.d("AuraOrbit", "CONFIGURE check. action=" + intent.getAction() + " appWidgetId=" + appWidgetId);
-        
-        if (appWidgetId != android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID) {
-            Intent resultValue = new Intent();
-            resultValue.putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
-            setResult(RESULT_OK, resultValue);
-            finish();
-            return;
-        }
 
         // Inflate the activity layout that owns the MaterialToolbar + settings_container.
-        // This replaces the implicit android.R.id.content-only approach so that
-        // AppBarLayout.fitsSystemWindows handles the status-bar inset and
-        // appbar_scrolling_view_behavior positions the container below the toolbar —
-        // fixing the Android 15+ edge-to-edge enforcement issue.
         setContentView(R.layout.activity_settings);
 
-        // Register the MaterialToolbar as the support action bar so that
-        // getSupportActionBar(), setTitle(), setDisplayHomeAsUpEnabled(), etc.
-        // all work as expected without a decor action bar.
+        // Register the MaterialToolbar as the support action bar
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -115,8 +102,7 @@ public class LiveWallpaperSettings extends AppCompatActivity {
         btnApplyWallpaper = findViewById(R.id.btn_apply_wallpaper);
         btnApplyWallpaper.setOnClickListener(v -> launchLiveWallpaperPreview());
 
-        // Apply bottom window inset to the container so list content is not
-        // hidden behind the gesture navigation bar (or 3-button nav bar).
+        // Apply bottom window inset to the container
         View container = findViewById(R.id.settings_container);
         ViewCompat.setOnApplyWindowInsetsListener(container, (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -124,27 +110,47 @@ public class LiveWallpaperSettings extends AppCompatActivity {
             return insets;
         });
 
-        // Only push the root fragment on a clean launch — the FragmentManager
-        // already restores the back stack on config-change (rotation, etc.).
+        // Only push the root fragment on a clean launch
         if (savedInstanceState == null) {
-            getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.settings_container, new dev.jaimin.auraorbit.ui.DashboardFragment())
-                    .commit();
+            if (appWidgetId != android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID) {
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+                String widgetName = prefs.getString("widget_group_" + appWidgetId, null);
+                if (widgetName == null) {
+                    widgetName = prefs.getString("widget_name_" + appWidgetId, null);
+                }
+                
+                if (widgetName != null && WidgetStore.find(WidgetStore.load(prefs), widgetName) != null) {
+                    getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.settings_container, dev.jaimin.auraorbit.ui.WidgetEditFragment.newInstance(widgetName, appWidgetId))
+                            .commit();
+                } else {
+                    getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.settings_container, new dev.jaimin.auraorbit.ui.WidgetListFragment())
+                            .commit();
+                }
+            } else {
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.settings_container, new dev.jaimin.auraorbit.ui.DashboardFragment())
+                        .commit();
 
-            if ("apps".equals(getIntent().getStringExtra("open_fragment"))) {
-                getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.settings_container, new dev.jaimin.auraorbit.ui.AppPickerFragment())
-                        .addToBackStack(null)
-                        .commit();
-            } else if (getIntent().hasExtra("open_group")) {
-                String widgetName = getIntent().getStringExtra("open_group");
-                getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.settings_container, dev.jaimin.auraorbit.ui.WidgetEditFragment.newInstance(widgetName))
-                        .addToBackStack(null)
-                        .commit();
+                if ("apps".equals(getIntent().getStringExtra("open_fragment"))) {
+                    getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.settings_container, new dev.jaimin.auraorbit.ui.AppPickerFragment())
+                            .addToBackStack(null)
+                            .commit();
+                } else if (getIntent().hasExtra("open_widget") || getIntent().hasExtra("open_group")) {
+                    String widgetName = getIntent().getStringExtra("open_widget");
+                    if (widgetName == null) widgetName = getIntent().getStringExtra("open_group");
+                    getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.settings_container, dev.jaimin.auraorbit.ui.WidgetEditFragment.newInstance(widgetName))
+                            .addToBackStack(null)
+                            .commit();
+                }
             }
         }
 

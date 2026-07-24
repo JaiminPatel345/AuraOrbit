@@ -56,7 +56,7 @@
     <string name="dialog_gesture_tips_ok">Got it</string>
     <string name="dialog_widget_name_hint">Widget name (e.g., Social)</string>
     <string name="dialog_delete_confirm">Delete widget &#8220;%1$s&#8221;?</string>
-    <string name="dialog_delete_confirm_msg">The apps in this widget will become ungrouped.</string>
+    <string name="dialog_delete_confirm_msg">Are you sure you want to delete this widget?</string>
 
     <!-- Buttons -->
     <string name="btn_save">Save</string>

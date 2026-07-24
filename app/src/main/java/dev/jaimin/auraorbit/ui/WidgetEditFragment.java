@@ -105,8 +105,9 @@ import dev.jaimin.auraorbit.R;
  */
 public class WidgetEditFragment extends Fragment {
 
-    // ─── Fragment argument key ────────────────────────────────────────────
+    // ─── Fragment argument keys ───────────────────────────────────────────
     private static final String ARG_WIDGET_NAME = "widget_name";
+    private static final String ARG_APPWIDGET_ID = "app_widget_id";
 
     // ─── Background loader (icons + labels) ──────────────────────────────
     private ExecutorService executor;
@@ -114,6 +115,7 @@ public class WidgetEditFragment extends Fragment {
     // ─── State ────────────────────────────────────────────────────────────
     /** The original name of the widget being edited, or {@code null} in create mode. */
     @Nullable private String originalWidgetName;
+    private int targetAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
     /** Currently selected color hex string. */
     private String selectedColor;
     /**
@@ -181,9 +183,15 @@ public class WidgetEditFragment extends Fragment {
      */
     @NonNull
     public static WidgetEditFragment newInstance(@Nullable String widgetName) {
+        return newInstance(widgetName, AppWidgetManager.INVALID_APPWIDGET_ID);
+    }
+
+    @NonNull
+    public static WidgetEditFragment newInstance(@Nullable String widgetName, int appWidgetId) {
         WidgetEditFragment f = new WidgetEditFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_WIDGET_NAME, widgetName); // putString(key, null) is valid
+        args.putString(ARG_WIDGET_NAME, widgetName);
+        args.putInt(ARG_APPWIDGET_ID, appWidgetId);
         f.setArguments(args);
         return f;
     }
@@ -197,9 +205,10 @@ public class WidgetEditFragment extends Fragment {
         super.onCreate(savedInstanceState);
         executor = Executors.newSingleThreadExecutor();
 
-        // Read the argument once; keep in a field for use across methods.
+        // Read the arguments once; keep in fields for use across methods.
         if (getArguments() != null) {
             originalWidgetName = getArguments().getString(ARG_WIDGET_NAME);
+            targetAppWidgetId = getArguments().getInt(ARG_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
         }
         
         pickMedia = registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
@@ -241,7 +250,7 @@ public class WidgetEditFragment extends Fragment {
                 .getStringArray(R.array.group_color_names);
 
         // ─── Views ────────────────────────────────────────────────────────
-        TextInputEditText nameInput    = root.findViewById(R.id.group_name_input);
+        TextInputEditText nameInput    = root.findViewById(R.id.widget_name_input);
         LinearLayout      colorRow    = root.findViewById(R.id.color_row);
         MaterialButton    btnPinWidget= root.findViewById(R.id.btn_pin_widget);
         View btnInfoPinWidget = root.findViewById(R.id.btn_info_pin_widget);
@@ -542,7 +551,7 @@ public class WidgetEditFragment extends Fragment {
     private void updateLivePreview() {
         if (!isAdded()) return;
         
-        TextInputEditText nameInput = requireView().findViewById(R.id.group_name_input);
+        TextInputEditText nameInput = requireView().findViewById(R.id.widget_name_input);
         String name = nameInput.getText().toString();
         if (name.isEmpty()) name = "Widget Name";
         previewLabel.setText(name);
@@ -1001,7 +1010,7 @@ public class WidgetEditFragment extends Fragment {
     private boolean saveData() {
         View root = getView();
         if (root == null) return false;
-        TextInputEditText nameInput = root.findViewById(R.id.group_name_input);
+        TextInputEditText nameInput = root.findViewById(R.id.widget_name_input);
         if (nameInput == null) return false;
         
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
@@ -1176,7 +1185,16 @@ public class WidgetEditFragment extends Fragment {
 
 
 
-        if (originalWidgetName == null) {
+        if (targetAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+            prefs.edit().putString("widget_group_" + targetAppWidgetId, newName).apply();
+            Intent resultValue = new Intent();
+            resultValue.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, targetAppWidgetId);
+            if (getActivity() != null) {
+                getActivity().setResult(android.app.Activity.RESULT_OK, resultValue);
+            }
+        }
+
+        if (originalWidgetName == null && targetAppWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
             // Automatically prompt the user to pin the widget to their home screen for new widgets
             requestPinWidget(newName);
         } else {
@@ -1189,6 +1207,9 @@ public class WidgetEditFragment extends Fragment {
         // Update originalWidgetName so subsequent auto-saves (e.g. after config change)
         // know the new identity of this widget.
         originalWidgetName = newName;
+        if (targetAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID && getActivity() != null) {
+            getActivity().finish();
+        }
         return true;
     }
 
