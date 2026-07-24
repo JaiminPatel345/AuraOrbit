@@ -52,6 +52,8 @@ public class DashboardFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+
         // App Version
         TextView tvAppVersion = view.findViewById(R.id.tv_app_version);
         if (tvAppVersion != null) {
