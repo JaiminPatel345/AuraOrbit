@@ -10,8 +10,8 @@ android {
         applicationId "dev.jaimin.auraorbit"
         minSdk rootProject.ext.androidMinSdk
         targetSdk rootProject.ext.androidTargetSdk
-        versionCode 9
-        versionName "2.4.0"
+        versionCode 10
+        versionName "3.0.0"
     }
 
     signingConfigs {
@@ -88,6 +88,9 @@ dependencies {
 
     // ─── Settings UI / Activity Result APIs ───────────────────────────
     implementation 'androidx.activity:activity:1.9.3'
+
+    // ─── Hidden API Bypass ─────────────────────────────────────────────
+    implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:4.3'
 
     // ─── Unit tests (GroupStore runs on host JVM; org.json is stubbed
     //     in android.jar, so pull the real artifact for tests) ─────────

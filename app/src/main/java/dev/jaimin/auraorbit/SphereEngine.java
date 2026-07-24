@@ -187,6 +187,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * guard that did not exist before — wallpaper-mode behavior is unchanged.
      */
     private final boolean activityMode;
+    public boolean applyPositionAndScale = false;
+    private boolean touchStartedOutsideSphere = false;
+    private boolean permanentSphereEnabled = false;
 
     // ─── Camera & Rendering ─────────────────────────────────────────────
     private PerspectiveCamera camera;
@@ -235,6 +238,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     private float sphereRadius;            // Slider-defined maximum sphere radius (world units)
     private float iconSize;                // Configurable icon dimensions
     private float rotationSpeedFactor;     // Multiplier for auto-spin and fling
+    private float sphereScale = 1.0f;      // Custom size multiplier from position editor
 
     /**
      * Adaptive layout radius — computed after apps are loaded in buildScene.
@@ -757,14 +761,20 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      */
     private static final Set<String> RELEVANT_KEYS = Set.of(
             "selected_app_packages",
-            GroupStore.PREF_GROUPS_JSON,
+            WidgetStore.PREF_WIDGETS_JSON,
             "pref_show_background",
             BackgroundStore.PREF_BACKGROUND_VERSION,
             "pref_sphere_radius",
             "pref_icon_size",
             "pref_rotation_speed",
             "pref_active_page",
-            "pref_target_fps"
+            "pref_total_pages",
+            "pref_target_fps",
+            "pref_sphere_x",
+            "pref_sphere_y",
+            "pref_sphere_scale",
+            "pref_sphere_position",
+            "pref_gesture_capture_scale_percent"
     );
 
     /**
@@ -791,6 +801,11 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * and should only render apps belonging to this specific group.
      */
     private String pinnedGroupName = null;
+    private java.util.List<String> tempPackages = null;
+
+    public void setTempPackages(java.util.List<String> tempPackages) {
+        this.tempPackages = tempPackages;
+    }
 
     // ═══════════════════════════════════════════════════════════════════════
     //  Constructor
@@ -891,7 +906,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // the WeakHashMap inside SharedPreferences from GC-ing the listener.
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         prefListener = (p, key) -> {
-            if (key != null && RELEVANT_KEYS.contains(key)) {
+            if (key != null && (RELEVANT_KEYS.contains(key) || (pinnedGroupName != null && key.endsWith("_" + pinnedGroupName)))) {
                 Gdx.app.postRunnable(this::applyConfig);
             }
         };
@@ -921,8 +936,10 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * @param prefs  SharedPreferences to read from
      */
     private void readConfig(SharedPreferences prefs) {
+        permanentSphereEnabled = prefs.getBoolean("pref_permanent_sphere_enabled", false);
+
         // Background visibility (replaces old pref_keep_wallpaper)
-        showBackground = prefs.getBoolean("pref_show_background", true);
+        showBackground = !activityMode && prefs.getBoolean("pref_show_background", true);
 
         // Active home-screen page for visibility fade.
         // User-facing value is 1-based (UI: 1 = first page, SeekBar range 1..9).
@@ -984,11 +1001,13 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         StringBuilder sb = new StringBuilder();
 
+        sb.append(prefs.getBoolean("pref_permanent_sphere_enabled", false)).append('|');
+
         // selected_app_packages — sort for deterministic ordering
         Set<String> selectedApps = prefs.getStringSet("selected_app_packages", new java.util.HashSet<>());
         sb.append(new TreeSet<>(selectedApps)).append('|');
 
-        sb.append(prefs.getString(GroupStore.PREF_GROUPS_JSON, "")).append('|');
+        sb.append(prefs.getString(WidgetStore.PREF_WIDGETS_JSON, "")).append('|');
         sb.append(prefs.getBoolean("pref_show_background", true)).append('|');
         sb.append(prefs.getInt(BackgroundStore.PREF_BACKGROUND_VERSION, 0)).append('|');
         sb.append(prefs.getInt("pref_sphere_radius", 50)).append('|');
@@ -1002,10 +1021,21 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         sb.append(speedPref).append('|');
         
         sb.append(prefs.getInt("pref_active_page", 1)).append('|'); // raw 1-based value (UI default)
+        sb.append(prefs.getInt("pref_total_pages", 3)).append('|');
         
         String fpsPref = prefs.getString("pref_target_fps", "120");
         if (pinnedGroupName != null) fpsPref = prefs.getString("pref_target_fps_" + pinnedGroupName, fpsPref);
         sb.append(fpsPref).append('|');
+
+        String scaleKey = pinnedGroupName != null ? "pref_sphere_scale_" + pinnedGroupName : "pref_sphere_scale";
+        String posKey = pinnedGroupName != null ? "pref_sphere_position_" + pinnedGroupName : "pref_sphere_position";
+        String xKey = pinnedGroupName != null ? "pref_sphere_x_" + pinnedGroupName : "pref_sphere_x";
+        String yKey = pinnedGroupName != null ? "pref_sphere_y_" + pinnedGroupName : "pref_sphere_y";
+
+        sb.append(prefs.getFloat(scaleKey, prefs.getFloat("pref_sphere_scale", 1.0f))).append('|');
+        sb.append(prefs.getString(posKey, prefs.getString("pref_sphere_position", "center"))).append('|');
+        sb.append(prefs.getFloat(xKey, prefs.getFloat("pref_sphere_x", 0f))).append('|');
+        sb.append(prefs.getFloat(yKey, prefs.getFloat("pref_sphere_y", 0f))).append('|');
 
         // System-wallpaper mirror: changing the system wallpaper or granting
         // MANAGE_EXTERNAL_STORAGE must both trigger a background rebuild on next
@@ -1030,7 +1060,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * ─── What is rebuilt ─────────────────────────────────────────────────
      *
      * - All app icon textures (disposed then re-fetched from PackageManager)
-     * - Group backdrop 3D models (disposed then rebuilt from new GroupStore data)
+     * - Group backdrop 3D models (disposed then rebuilt from new WidgetStore data)
      * - Background texture (disposed then reloaded from BackgroundStore)
      * - Uniform Fibonacci node distribution (recalculated with new effectiveRadius)
      * - Decals (recreated with new iconSize)
@@ -1044,7 +1074,87 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * - gradientTexture (never changes — only depends on color constants)
      * - hintFont / hintLayout (only rebuilt if density changes, which is rare)
      */
-    private void applyConfig() {
+    private void getActivePositionAndScale(float[] outDxDyScale) {
+        int screenW = context.getResources().getDisplayMetrics().widthPixels;
+        int screenH = context.getResources().getDisplayMetrics().heightPixels;
+        float dx = 0;
+        float dy = 0;
+        float scale = 1.0f;
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        if (!activityMode || applyPositionAndScale) {
+            String scaleKey = pinnedGroupName != null ? "pref_sphere_scale_" + pinnedGroupName : "pref_sphere_scale";
+            String posKey = pinnedGroupName != null ? "pref_sphere_position_" + pinnedGroupName : "pref_sphere_position";
+            String xKey = pinnedGroupName != null ? "pref_sphere_x_" + pinnedGroupName : "pref_sphere_x";
+            String yKey = pinnedGroupName != null ? "pref_sphere_y_" + pinnedGroupName : "pref_sphere_y";
+
+            if (pinnedGroupName != null) {
+                scale = prefs.getFloat(scaleKey, 1.0f);
+                String posType = prefs.getString(posKey, "center");
+
+                if ("custom".equals(posType)) {
+                    float defaultX = (screenW - (screenW * scale)) / 2f;
+                    float defaultY = (screenH - (screenW * scale)) / 2f;
+                    float sphereX = prefs.getFloat(xKey, defaultX);
+                    float sphereY = prefs.getFloat(yKey, defaultY);
+                    float centerX = sphereX + (screenW * scale) / 2f;
+                    float centerY = sphereY + (screenW * scale) / 2f;
+                    float offsetX = centerX - screenW / 2f;
+                    float offsetY = centerY - screenH / 2f;
+                    dx = offsetX * (16f / screenW);
+                    dy = -offsetY * (16f / screenW);
+                } else if ("top".equals(posType)) {
+                    float centerX = screenW / 2f;
+                    float centerY = screenH * 0.25f;
+                    float offsetX = centerX - screenW / 2f;
+                    float offsetY = centerY - screenH / 2f;
+                    dx = offsetX * (16f / screenW);
+                    dy = -offsetY * (16f / screenW);
+                } else if ("bottom".equals(posType)) {
+                    float centerX = screenW / 2f;
+                    float centerY = screenH * 0.75f;
+                    float offsetX = centerX - screenW / 2f;
+                    float offsetY = centerY - screenH / 2f;
+                    dx = offsetX * (16f / screenW);
+                    dy = -offsetY * (16f / screenW);
+                }
+            } else {
+                scale = Math.max(0.1f, prefs.getFloat(scaleKey, 1.0f));
+                String posType = prefs.getString(posKey, "center");
+
+                if ("custom".equals(posType)) {
+                    float sphereX = prefs.getFloat(xKey, 0f);
+                    float sphereY = prefs.getFloat(yKey, 0f);
+                    float centerX = sphereX + (screenW * scale) / 2f;
+                    float centerY = sphereY + (screenW * scale) / 2f;
+                    float offsetX = centerX - screenW / 2f;
+                    float offsetY = centerY - screenH / 2f;
+                    dx = offsetX * (16f / screenW);
+                    dy = -offsetY * (16f / screenW);
+                } else if ("top".equals(posType)) {
+                    float centerX = screenW / 2f;
+                    float centerY = screenH * 0.25f;
+                    float offsetX = centerX - screenW / 2f;
+                    float offsetY = centerY - screenH / 2f;
+                    dx = offsetX * (16f / screenW);
+                    dy = -offsetY * (16f / screenW);
+                } else if ("bottom".equals(posType)) {
+                    float centerX = screenW / 2f;
+                    float centerY = screenH * 0.75f;
+                    float offsetX = centerX - screenW / 2f;
+                    float offsetY = centerY - screenH / 2f;
+                    dx = offsetX * (16f / screenW);
+                    dy = -offsetY * (16f / screenW);
+                }
+            }
+        }
+
+        outDxDyScale[0] = dx;
+        outDxDyScale[1] = dy;
+        outDxDyScale[2] = scale;
+    }
+
+    public void applyConfig() {
         String snapshot = configSnapshot();
         if (snapshot.equals(lastConfigSnapshot)) {
             Log.d(TAG, "applyConfig: snapshot unchanged, skipping rebuild");
@@ -1100,12 +1210,19 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 + " (activePage=" + activePage + ", offsetEverSeen=" + offsetEverSeen + ")");
 
         // ─── Update camera position for new radius ───────────────────────
-        // Camera uses sphereRadius (the slider) as its reference so that the
-        // maximum sphere always fills screen width exactly; effectiveRadius is
-        // computed inside distributeNodesOnSphere() after app count is known.
         float vpW = camera.viewportWidth  > 0 ? camera.viewportWidth  : Gdx.graphics.getWidth();
         float vpH = camera.viewportHeight > 0 ? camera.viewportHeight : Gdx.graphics.getHeight();
-        camera.position.set(0f, 0f, computeCameraDistance(vpW, vpH));
+        
+        float[] dxDyScale = new float[3];
+        getActivePositionAndScale(dxDyScale);
+        float dx = dxDyScale[0];
+        float dy = dxDyScale[1];
+        float scale = dxDyScale[2];
+        sphereScale = scale;
+        
+        float camDist = computeCameraDistance(vpW, vpH) / scale;
+        camera.position.set(-dx, -dy, camDist);
+        camera.lookAt(-dx, -dy, 0f);
         camera.update();
 
         // ─── Reset animation state on rebuild ────────────────────────────
@@ -1128,20 +1245,25 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         gestureSnapshotValid = false;
         lastGestureEndNanos = Long.MIN_VALUE / 2;
 
-        // ─── Re-fetch apps, redistribute, recreate decals and backdrops ──
-        appNodes = AppFetcher.fetchSelectedApps(context);
+        boolean isFallback = false;
+        if (tempPackages != null && !tempPackages.isEmpty()) {
+            appNodes = AppFetcher.fetchAppsByPackages(context, tempPackages);
+        } else {
+            appNodes = AppFetcher.fetchSelectedApps(context, pinnedGroupName);
+        }
         
-        if (pinnedGroupName != null) {
-            java.util.List<AppFetcher.AppNode> filtered = new java.util.ArrayList<>();
-            for (AppFetcher.AppNode node : appNodes) {
-                if (pinnedGroupName.equals(node.groupId)) {
-                    filtered.add(node);
-                } else {
-                    if (node.iconTexture != null) node.iconTexture.dispose();
+        if (appNodes.isEmpty()) {
+            java.util.List<android.content.pm.ResolveInfo> launchable = AppFetcher.getAllLaunchableApps(context);
+            java.util.List<String> pkgs = new java.util.ArrayList<>();
+            for (android.content.pm.ResolveInfo ri : launchable) {
+                if (ri.activityInfo != null && ri.activityInfo.packageName != null) {
+                    pkgs.add(ri.activityInfo.packageName);
                 }
             }
-            appNodes = filtered;
+            appNodes = AppFetcher.fetchAppsByPackages(context, pkgs);
+            isFallback = true;
         }
+
         
         distributeNodesOnSphere();
         createDecals();
@@ -1177,6 +1299,29 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         lastConfigSnapshot = snapshot;
 
         Log.i(TAG, "applyConfig: done — " + appNodes.size() + " apps, effectiveRadius=" + effectiveRadius);
+    }
+
+    public void updateCameraPositionAndScale(float customX, float customY, float newScale) {
+        com.badlogic.gdx.Gdx.app.postRunnable(() -> {
+            if (camera == null) return;
+            sphereScale = newScale;
+            
+            int screenW = context.getResources().getDisplayMetrics().widthPixels;
+            int screenH = context.getResources().getDisplayMetrics().heightPixels;
+            
+            float centerX = customX + (screenW * sphereScale) / 2f;
+            float centerY = customY + (screenW * sphereScale) / 2f;
+            float offsetX = centerX - screenW / 2f;
+            float offsetY = centerY - screenH / 2f;
+            
+            float dx = offsetX * (16f / screenW);
+            float dy = -offsetY * (16f / screenW);
+            
+            float camDist = computeCameraDistance(screenW, screenH) / sphereScale;
+            camera.position.set(-dx, -dy, camDist);
+            camera.lookAt(-dx, -dy, 0f);
+            camera.update();
+        });
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -1839,6 +1984,32 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
      * intercepts both touchCancelled and touchDown so the outer pinchActive
      * flag is always consistent with the actual touch state.
      */
+    private boolean shouldIgnoreInput() {
+        if (activityMode) {
+            return false;
+        }
+        if (isPreviewMode) {
+            return false;
+        }
+        // If an app activity is active, ignore wallpaper touches
+        if (MyWallpaperService.isActivityActive) {
+            return true;
+        }
+        // If the sphere is not visible on the current page, ignore touch input
+        if (pageVisibility < 0.9f) {
+            return true;
+        }
+        // If wallpaper is zoomed out (app drawer or recents open)
+        if (wallpaperZoom > 0.2f) {
+            return true;
+        }
+        // If accessibility service reports drawer is open
+        if (isA11yDrawerOpenFresh()) {
+            return true;
+        }
+        return false;
+    }
+
     private void setupInput() {
         // Subclass GestureDetector to intercept touchCancelled and touchDown
         // before the gesture listener sees them.  Signature verified against
@@ -1874,13 +2045,55 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
              */
             @Override
             public boolean tap(float x, float y, int count, int button) {
+                if (shouldIgnoreInput()) return false;
                 // ─── Activity mode: exclusive input — launch directly ─────
                 // Inside our own activity the sphere owns all input. No launcher
                 // gesture conflict, no command gating, no zoom/drawer guards.
                 if (activityMode) {
-                    boolean hit = raycastAndLaunch(x, y);
-                    if (!hit && context instanceof android.app.Activity) {
-                        Gdx.app.postRunnable(() -> ((android.app.Activity) context).finish());
+                    if (raycastAndLaunch(x, y)) {
+                        return true;
+                    }
+                    
+                    int screenW = Gdx.graphics.getWidth();
+                    int screenH = Gdx.graphics.getHeight();
+                    
+                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+                    String scaleKey = pinnedGroupName != null ? "pref_sphere_scale_" + pinnedGroupName : "pref_sphere_scale";
+                    String posKey = pinnedGroupName != null ? "pref_sphere_position_" + pinnedGroupName : "pref_sphere_position";
+                    String xKey = pinnedGroupName != null ? "pref_sphere_x_" + pinnedGroupName : "pref_sphere_x";
+                    String yKey = pinnedGroupName != null ? "pref_sphere_y_" + pinnedGroupName : "pref_sphere_y";
+
+                    float scale = prefs.getFloat(scaleKey, 1.0f);
+                    String posType = prefs.getString(posKey, "center");
+                    
+                    float sphereX = (screenW - (screenW * scale)) / 2f;
+                    float sphereY = (screenH - (screenW * scale)) / 2f;
+                    
+                    if ("top".equals(posType)) {
+                        sphereY = 100;
+                    } else if ("bottom".equals(posType)) {
+                        sphereY = screenH - (screenW * scale) - 100;
+                    } else if ("custom".equals(posType)) {
+                        sphereX = prefs.getFloat(xKey, sphereX);
+                        sphereY = prefs.getFloat(yKey, sphereY);
+                    }
+                    
+                    float centerX = sphereX + (screenW * scale) / 2f;
+                    float centerY = sphereY + (screenW * scale) / 2f;
+                    
+                    int radiusPref = prefs.getInt("pref_sphere_radius", 50);
+                    int iconPref = prefs.getInt("pref_icon_size", 50);
+                    if (pinnedGroupName != null) {
+                        iconPref = prefs.getInt("pref_icon_size_" + pinnedGroupName, iconPref);
+                    }
+                    float worldRadius = 3.0f + 5.0f * (radiusPref / 100f);
+                    float worldIconSize = 0.6f + 1.4f * (iconPref / 100f);
+                    float effRadius = worldRadius + worldIconSize * 0.75f;
+                    float visualRadius = (effRadius * (screenW / 16f)) * scale;
+
+                    float dist = com.badlogic.gdx.math.Vector2.dst(x, y, centerX, centerY);
+                    if (dist > visualRadius) {
+                        fanOutAndFinish();
                     }
                     return true;
                 }
@@ -1898,12 +2111,8 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 // signal, but the service gives a more reliable drawer flag.
                 // Suppress launching when the drawer is freshly detected open.
                 if (!isPreviewMode && isA11yDrawerOpenFresh()) return false;
-
-                // ─── Drawer guard #2 (zoom fallback) ─────────────────────
-                // One UI zooms the wallpaper when leaving the plain home view
-                // (drawer, recents, edit mode). Suppress launching while zoomed
-                // as a fallback when the accessibility service is not enabled.
-                if (!isPreviewMode && wallpaperZoom > 0.4f) return false;
+                if (!isPreviewMode && wallpaperZoom > 0.05f) return false;
+                if (!isOverlayInteractive()) return false;
 
                 return raycastAndLaunch(x, y);
             }
@@ -1930,6 +2139,9 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
              */
             @Override
             public boolean pan(float x, float y, float deltaX, float deltaY) {
+                if (shouldIgnoreInput()) return false;
+                if (touchStartedOutsideSphere) return false;
+
                 // ─── Two-finger drag has priority — suppress one-finger pan ─
                 // GestureDetector may still fire pan() for the first pointer
                 // while a two-finger drag is active.  We must ignore it here
@@ -2016,6 +2228,11 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
              */
             @Override
             public boolean fling(float velocityX, float velocityY, int button) {
+                if (shouldIgnoreInput()) return false;
+                if (touchStartedOutsideSphere) {
+                    touchStartedOutsideSphere = false;
+                    return false;
+                }
                 userInteracting = false;
 
                 // ─── Edge exclusion: no momentum from system-born gestures ───
@@ -2069,6 +2286,11 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
             @Override
             public boolean panStop(float x, float y, int pointer, int button) {
+                if (shouldIgnoreInput()) return false;
+                if (touchStartedOutsideSphere) {
+                    touchStartedOutsideSphere = false;
+                    return false;
+                }
                 userInteracting = false;
 
                 // ─── Edge exclusion: system-born gesture ends without effects ─
@@ -2119,6 +2341,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             @Override
             public boolean pinch(Vector2 initialPointer1, Vector2 initialPointer2,
                                  Vector2 pointer1, Vector2 pointer2) {
+                if (shouldIgnoreInput()) return false;
                 // Midpoint of the two current pointer positions (screen pixels).
                 float midX = (pointer1.x + pointer2.x) * 0.5f;
                 float midY = (pointer1.y + pointer2.y) * 0.5f;
@@ -2195,6 +2418,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
              */
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+                if (shouldIgnoreInput()) return false;
                 if (pointer == 0) {
                     // New gesture starts: clear any stale pinch state so the next
                     // pinch() re-arms from the current midpoint (no rotation jolt).
@@ -2218,25 +2442,20 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                     // exclusion zones are needed; every gesture is ours.
                     if (activityMode) {
                         edgeClaimedGesture = false;
-                        
-                        // If touch starts outside the sphere (with 30% padding), close immediately 
-                        // so the user can interact with their launcher (e.g. swipe notifications).
-                        if (camera != null) {
-                            com.badlogic.gdx.math.collision.Ray ray = camera.getPickRay(screenX, screenY);
-                            float radius = sphereRadius * 1.3f;
-                            if (!com.badlogic.gdx.math.Intersector.intersectRaySphere(ray, com.badlogic.gdx.math.Vector3.Zero, radius, tmpVec)) {
-                                if (context instanceof android.app.Activity) {
-                                    Gdx.app.postRunnable(() -> ((android.app.Activity) context).finish());
-                                }
-                                // Return false so we don't consume the touch, 
-                                // letting the system handle the swipe if possible.
-                                return false;
-                            }
-                        }
+                        touchStartedOutsideSphere = false;
                     } else {
                         float hFrac = (float) screenY / Math.max(1, Gdx.graphics.getHeight());
                         edgeClaimedGesture = hFrac < EDGE_EXCLUSION_FRACTION
                                 || hFrac > 1f - EDGE_EXCLUSION_FRACTION;
+
+                        if (camera != null) {
+                            com.badlogic.gdx.math.collision.Ray ray = camera.getPickRay(screenX, screenY);
+                            float radius = sphereRadius;
+                            boolean hit = com.badlogic.gdx.math.Intersector.intersectRaySphere(ray, com.badlogic.gdx.math.Vector3.Zero, radius, tmpVec);
+                            touchStartedOutsideSphere = !hit;
+                        } else {
+                            touchStartedOutsideSphere = false;
+                        }
                     }
 
                     // ── Gesture rotation snapshot for launcher-claim revert ──────
@@ -2284,6 +2503,15 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
                 totalDx = 0f;
                 totalDy = 0f;
                 return super.touchCancelled(screenX, screenY, pointer, button);
+            }
+
+            @Override
+            public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+                if (shouldIgnoreInput()) return false;
+                if (pointer == 0) {
+                    touchStartedOutsideSphere = false;
+                }
+                return super.touchUp(screenX, screenY, pointer, button);
             }
         };
 
@@ -2395,7 +2623,17 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         // totalDx for path A.  Both are negative for left-swipe (→ next page).
         float directionSignal = velocityFlick ? velocityX : totalDx;
         int delta = directionSignal < 0 ? 1 : -1;
-        inferredPage = MathUtils.clamp(inferredPage + delta, 0, 8);
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
+        int totalPages = sharedPrefs.getInt("pref_total_pages", 3);
+        if (xOffsetStep > 0f && offsetsLive) {
+            totalPages = Math.round(1f / xOffsetStep) + 1;
+        } else if (LauncherStateService.LauncherState.serviceConnected 
+                && (System.nanoTime() - LauncherStateService.LauncherState.updatedNanos) < 5_000_000_000L
+                && LauncherStateService.LauncherState.pageCount > 0) {
+            totalPages = LauncherStateService.LauncherState.pageCount;
+        }
+        int maxPageIdx = Math.max(0, totalPages - 1);
+        inferredPage = MathUtils.clamp(inferredPage + delta, 0, maxPageIdx);
 
         Log.d(TAG, "commitPageSwipe: totalDx=" + totalDx + " velocityX=" + velocityX
                 + " path=" + (velocityFlick ? "FLING" : "DRAG")
@@ -2483,21 +2721,23 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             renderBackground();
         }
 
+        boolean shouldDrawSphere = activityMode || pinnedGroupName != null || (permanentSphereEnabled && !MyWallpaperService.isActivityActive);
+
         // ─── Layer 2: Group Backdrop Meshes ─────────────────────────────
-        if (groupBackdrops != null && groupBackdrops.size > 0 && pageVisibility > 0.01f) {
+        if (shouldDrawSphere && groupBackdrops != null && groupBackdrops.size > 0 && pageVisibility > 0.01f) {
             renderGroupBackdrops();
         }
 
         // ─── Layer 3: App Icon Decals (Billboarded) ─────────────────────
         // Guard also on returnAnim > 0.01f to avoid rendering fully-transparent
         // decals during the first few frames of the return animation.
-        if (decals != null && decals.size > 0 && pageVisibility > 0.01f && returnAnim > 0.01f) {
+        if (shouldDrawSphere && decals != null && decals.size > 0 && pageVisibility > 0.01f && returnAnim > 0.01f) {
             renderDecals();
         }
 
         // ─── Layer 4: Empty-state hint ───────────────────────────────────
         // Drawn on top of everything when no apps are configured.
-        if (appNodes == null || appNodes.isEmpty()) {
+        if (shouldDrawSphere && (appNodes == null || appNodes.isEmpty())) {
             if (!activityMode) {
                 renderEmptyHint();
             }
@@ -2726,123 +2966,79 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             return;
         }
 
-        // ─── Highest-priority source: accessibility service (opt-in, One UI) ──
-        // When LauncherStateService is connected AND its last update is fresh
-        // (within 5 seconds), use the exact page reported by the page indicator
-        // instead of dead-reckoning or offsets.  Falls through when stale or
-        // when the service is not enabled by the user.
-        //
-        // LauncherState.page is 0-based (converted from the 1-based indicator).
-        // activePage is 0-based.  The same falloff formula used by the offset
-        // and dead-reckoning paths keeps behaviour identical.
-        //
-        // Statics are volatile — reads on the GL thread see writes from the
-        // service's main thread without explicit synchronization.
-        final long A11Y_FRESHNESS_NS = 5_000_000_000L; // 5 s
-        boolean a11yFresh = LauncherStateService.LauncherState.serviceConnected
-                && (System.nanoTime() - LauncherStateService.LauncherState.updatedNanos)
-                   < A11Y_FRESHNESS_NS;
-        if (a11yFresh) {
+        if (!activityMode && userInteracting) {
+            targetVisibility = 1f;
+            pageVisibility = MathUtils.lerp(pageVisibility, targetVisibility, delta * 8f);
+            if (dbg) logVisDebug("USER-INTERACTING", targetVisibility);
+            return;
+        }
+
+
+        // Fetch preference values
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
+        int totalPages = sharedPrefs.getInt("pref_total_pages", 3);
+        int targetActivePage = activePage;
+
+        boolean offsetsLive = offsetEverSeen;
+
+        if (LauncherStateService.LauncherState.serviceConnected) {
             int a11yPage = LauncherStateService.LauncherState.page;
-            // One UI home page indicator only exists mid-swipe (the dots fade out at
-            // rest, removing/blanking the node).  Before the first swipe, the service
-            // reports page=0 which means "no data yet", NOT "first page".  Treat
-            // page < 1 as no data and fall through to the next source so the sphere
-            // is visible instead of collapsing immediately after the wallpaper applies.
             if (a11yPage >= 1) {
-                // Sync dead-reckoning so it takes over seamlessly if the service dies
-                // or data goes stale between swipes.
                 inferredPage = a11yPage - 1; // convert back to 0-based
-                float pageDistance = Math.abs(a11yPage - 1 - activePage);
+                float pageDistance = Math.abs(a11yPage - 1 - targetActivePage);
                 targetVisibility = MathUtils.clamp(1f - (pageDistance - 0.3f) * 1.5f, 0f, 1f);
-                // Smooth lerp to target
                 pageVisibility = MathUtils.lerp(pageVisibility, targetVisibility, delta * 8f);
                 if (dbg) logVisDebug("A11Y", targetVisibility);
                 return;
             }
-            // a11yPage == 0: service is connected and fresh but has never parsed a
-            // page indicator — fall through to offsets / dead-reckoning below.
         }
 
-        // ─── Determine whether launcher offsets are currently live ────────────
-        // Offsets are "live" when the launcher has ever reported a valid step AND
-        // a step > 0 arrived within the last 10 seconds.
-        //
-        // Rationale for the recency window: on real offset-reporting launchers
-        // (Pixel Launcher, etc.) xOffsetStep events arrive continuously while the
-        // user swipes, so lastOffsetTimeNanos is always fresh and offsets stay live
-        // indefinitely.  On offset-silent launchers (e.g. Samsung One UI) no events
-        // ever arrive and offsetEverSeen stays false — dead-reckoning is used from
-        // the start.  A problematic third case is OEM transitions that emit a single
-        // spurious offset event with step > 0: without the recency window that one
-        // event would permanently latch the engine onto the offset path with stale
-        // values (symptom: sphere frozen visible-everywhere or hidden-everywhere).
-        // With a 10-second window the spurious event expires and dead-reckoning
-        // resumes automatically.
-        //
-        // nanoTime arithmetic: both values are from System.nanoTime() so the
-        // subtraction is monotonic and safe from clock-skew.  lastOffsetTimeNanos
-        // is initialised to Long.MIN_VALUE/2 so the initial age is safely huge.
-        boolean offsetsLive = offsetEverSeen
-                && (System.nanoTime() - lastOffsetTimeNanos) < 10_000_000_000L;
-
-        if (xOffsetStep > 0f && offsetsLive) {
-            // ─── Real offset path: launcher reports page positions ──────────
-            // Calculate current page number from continuous offset.
-            float currentPage = currentXOffset / xOffsetStep;
-            float pageDistance = Math.abs(currentPage - activePage);
-
-            // Full visibility when within 0.3 pages, fading to 0 beyond 1 page.
-            // Clamp floor is 0f (not 0.1f) so the sphere fully disappears on
-            // non-active pages — the user configured this sphere for one page only.
-            // Falloff slope 1.5 (not 1.4): at exactly pageDistance = 1.0 the
-            // target must reach 0 — with 1.4 it left a 2% ghost (1−0.7×1.4=0.02)
-            // visible on the adjacent page.
-            targetVisibility = MathUtils.clamp(1f - (pageDistance - 0.3f) * 1.5f, 0f, 1f);
-        } else if (!offsetsLive) {
-            // ─── Dead-reckoning path: offset-silent launcher (e.g. Samsung One UI) ─
-            // The launcher has never reported a valid step, OR the last valid step
-            // was more than 10 seconds ago (spurious-event guard).  Use the inferred
-            // page count maintained by commitPageSwipe().  Apply the same falloff
-            // formula so the "Sphere page" preference is functional on One UI.
-            // Dead-reckoning caveat: partial swipes / multi-page flings may drift;
-            // clamping at [0,8] in commitPageSwipe re-syncs at the boundaries.
-            float pageDistance = Math.abs(inferredPage - activePage);
+        float step = xOffsetStep > 0f ? xOffsetStep : (totalPages > 1 ? 1f / (totalPages - 1) : 0f);
+        if (step > 0f && offsetsLive) {
+            float currentPage = currentXOffset / step;
+            float pageDistance = Math.abs(currentPage - targetActivePage);
             targetVisibility = MathUtils.clamp(1f - (pageDistance - 0.3f) * 1.5f, 0f, 1f);
         } else {
-            // ─── Transient zero-step: offsets are live but step momentarily 0 ──
-            // Launcher normally reports offsets but the step is transiently zero
-            // (e.g. during a launcher animation or home-screen reset).  Keep the
-            // sphere visible to avoid a brief invisible flash.
-            targetVisibility = 1f;
+            float pageDistance = Math.abs(inferredPage - targetActivePage);
+            targetVisibility = MathUtils.clamp(1f - (pageDistance - 0.3f) * 1.5f, 0f, 1f);
         }
 
         // Smooth lerp to target
         pageVisibility = MathUtils.lerp(pageVisibility, targetVisibility, delta * 8f);
 
         if (dbg) {
-            logVisDebug(xOffsetStep > 0f && offsetsLive ? "OFFSETS"
-                    : (!offsetsLive ? "DEAD-RECKONING" : "TRANSIENT"), targetVisibility);
+            logVisDebug(step > 0f && offsetsLive ? "OFFSETS" : "DEAD-RECKONING", targetVisibility);
         }
 
         // ─── Touch Overlay Update ──────────────────────────────────────────
-        // Only valid if the accessibility service is running
-        if (LauncherStateService.LauncherState.serviceConnected) {
-            boolean isSysUiOpen = LauncherStateService.LauncherState.systemUiVisible 
-                && (System.nanoTime() - LauncherStateService.LauncherState.updatedNanos) < 5_000_000_000L;
-            boolean interactive = (pageVisibility > 0.9f) && (returnAnim > 0.9f) && !isA11yDrawerOpenFresh() && !isPreviewMode && !isSysUiOpen;
-            int size = 0;
-            if (interactive) {
-                float effRadius = sphereRadius + iconSize * 0.75f;
-                tmpVec2.set(effRadius, 0, 0);
-                camera.project(tmpVec2);
-                size = (int) Math.abs(tmpVec2.x - Gdx.graphics.getWidth() / 2f) * 2;
-            }
+        boolean isSysUiOpen = LauncherStateService.LauncherState.systemUiVisible 
+            && (System.nanoTime() - LauncherStateService.LauncherState.updatedNanos) < 5_000_000_000L;
+        boolean interactive = (pageVisibility > 0.8f) && (returnAnim > 0.8f) && !isA11yDrawerOpenFresh() && !isPreviewMode && !isSysUiOpen && (wallpaperZoom < 0.05f);
+        int size = 0;
+        int centerX = Gdx.graphics.getWidth() / 2;
+        int centerY = Gdx.graphics.getHeight() / 2;
+        if (interactive) {
+            float multiplier = sharedPrefs.getInt("pref_gesture_capture_scale_percent", 100) / 100f;
+            float effRadius = (sphereRadius + iconSize * 0.75f) * multiplier;
 
-            if (interactive != lastOverlayInteractive || Math.abs(size - lastOverlaySize) > 5) {
-                lastOverlayInteractive = interactive;
-                lastOverlaySize = size;
+            tmpVec.set(0f, 0f, 0f);
+            camera.project(tmpVec);
+            centerX = (int) tmpVec.x;
+            centerY = (int) (Gdx.graphics.getHeight() - tmpVec.y);
+
+            tmpVec2.set(effRadius, 0f, 0f);
+            camera.project(tmpVec2);
+            size = (int) Math.abs(tmpVec2.x - tmpVec.x) * 2;
+        }
+
+        if (interactive != lastOverlayInteractive || Math.abs(size - lastOverlaySize) > 5) {
+            lastOverlayInteractive = interactive;
+            lastOverlaySize = size;
+            if (LauncherStateService.LauncherState.serviceConnected) {
                 LauncherStateService.updateOverlayState(interactive, size);
+            }
+            if (!activityMode && context instanceof MyWallpaperService) {
+                ((MyWallpaperService) context).updateOverlay(interactive, centerX, centerY, size);
             }
         }
     }
@@ -3218,6 +3414,48 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     }
 
     // ═══════════════════════════════════════════════════════════════════════
+    //  Public — Visual Sphere Pixel Radius (shared by blur editors)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Converts the 3D sphere world-radius into an on-screen pixel radius using
+     * the same perspective math as {@link #computeCameraDistance}.
+     *
+     * This is the single source of truth used by {@link SphereBlurEditorActivity}
+     * and {@link SphereModeActivity} to size the background-blur oval so it
+     * exactly matches the visible sphere circle on screen.
+     *
+     * Formula derivation (portrait device, horizontal FOV dominates):
+     * <pre>
+     *   camDist  = effRadius / sin(halfH) × 1.05          (same as computeCameraDistance)
+     *   pixelR   = (worldRadius / camDist) × (screenW/2) / tan(halfH)
+     *            = worldRadius × cos(halfH) / (effRadius × 1.05) × (screenW/2)
+     * </pre>
+     *
+     * @param worldRadius  Sphere radius in world units (no icon overhang, = pref-driven)
+     * @param effRadius    Sphere radius + icon overhang used for camera placement
+     * @param fovDegrees   Vertical field-of-view in degrees (engine uses 67°)
+     * @param screenW      Screen width in pixels
+     * @param screenH      Screen height in pixels
+     * @param scale        Sphere scale factor from position-editor (1.0 = default)
+     * @return On-screen pixel radius of the sphere silhouette
+     */
+    public static float computeVisualSpherePixelRadius(
+            float worldRadius, float effRadius, float fovDegrees,
+            int screenW, int screenH, float scale) {
+        double halfV = Math.toRadians(fovDegrees / 2.0);
+        float aspect = (float) screenW / screenH;
+        double halfH = Math.atan(Math.tan(halfV) * aspect);
+
+        // Camera Z distance (mirrors computeCameraDistance, portrait path)
+        double camDist = effRadius / Math.sin(halfH) * 1.05;
+
+        // Perspective projection onto screen pixels
+        double pixelRadius = (worldRadius / camDist) * (screenW / 2.0) / Math.tan(halfH);
+        return (float) (pixelRadius * scale);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
     //  Color Parsing Utility
     // ═══════════════════════════════════════════════════════════════════════
 
@@ -3409,6 +3647,49 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         long ageNs = System.nanoTime() - LauncherStateService.LauncherState.updatedNanos;
         if (ageNs > 5_000_000_000L) return false; // stale → fall through
         return LauncherStateService.LauncherState.drawerOpen;
+    }
+
+    public boolean isOverlayInteractive() {
+        if (isPreviewMode) return false;
+        if (pageVisibility < 0.5f) return false;
+        if (returnAnim < 0.5f) return false;
+        if (wallpaperZoom > 0.20f) return false;
+        if (isA11yDrawerOpenFresh()) return false;
+        if (LauncherStateService.LauncherState.drawerOpen) return false;
+        if (LauncherStateService.LauncherState.systemUiVisible &&
+                (System.nanoTime() - LauncherStateService.LauncherState.updatedNanos) < 3_000_000_000L) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Triggers a 3D raycast and app launch for quick taps originating from TouchOverlayView.
+     *
+     * @param x Screen-relative X coordinate in pixels
+     * @param y Screen-relative Y coordinate in pixels
+     * @return true if overlay is interactive and tap was posted, false otherwise
+     */
+    public boolean performTapLaunch(float x, float y) {
+        Log.d(TAG, "performTapLaunch called at raw (" + x + ", " + y + ")");
+        if (!isOverlayInteractive()) {
+            Log.d(TAG, "performTapLaunch: isOverlayInteractive returned false (pageVis=" + pageVisibility + ", returnAnim=" + returnAnim + ", zoom=" + wallpaperZoom + ")");
+            return false;
+        }
+        if (Gdx.app != null) {
+            final float fx = x;
+            final float fy = y;
+            Gdx.app.postRunnable(() -> {
+                if (isA11yDrawerOpenFresh()) {
+                    Log.d(TAG, "performTapLaunch: suppressed by a11y drawer open");
+                    return;
+                }
+                boolean launched = raycastAndLaunch(fx, fy);
+                Log.d(TAG, "performTapLaunch: raycastAndLaunch result=" + launched + " for raw (" + fx + ", " + fy + ")");
+            });
+            return true;
+        }
+        return false;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -3656,9 +3937,11 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // On offset-reporting launchers (Pixel Launcher, etc.) this field is
             // unused — the assignment is harmless.
             if (!LauncherStateService.LauncherState.serviceConnected) {
-                inferredPage = activePage;
+                int targetActivePage = activePage;
+
+                inferredPage = targetActivePage;
                 Log.d(TAG, "setVisible: re-anchored inferredPage=" + inferredPage
-                        + " (activePage=" + activePage + ")");
+                        + " (activePage=" + targetActivePage + ")");
             } else {
                 Log.d(TAG, "setVisible: skipped re-anchor, relying on LauncherStateService");
             }
@@ -3696,7 +3979,16 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             // after an orientation change the binding dimension may flip, so we
             // always recalculate to keep the sphere+icons inside the screen.
             if (width > 0 && height > 0) {
-                camera.position.set(0f, 0f, computeCameraDistance(width, height));
+                float[] dxDyScale = new float[3];
+                getActivePositionAndScale(dxDyScale);
+                float dx = dxDyScale[0];
+                float dy = dxDyScale[1];
+                float scale = dxDyScale[2];
+                sphereScale = scale;
+                
+                float camDist = computeCameraDistance(width, height) / scale;
+                camera.position.set(-dx, -dy, camDist);
+                camera.lookAt(-dx, -dy, 0f);
             }
             camera.update();
         }

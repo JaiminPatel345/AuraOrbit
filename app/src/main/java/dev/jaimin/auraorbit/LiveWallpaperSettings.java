@@ -5,6 +5,7 @@ import android.accessibilityservice.AccessibilityServiceInfo;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -40,7 +41,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import dev.jaimin.auraorbit.ui.AppPickerFragment;
-import dev.jaimin.auraorbit.ui.GroupListFragment;
+import dev.jaimin.auraorbit.ui.WidgetListFragment;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
@@ -50,7 +51,7 @@ import dev.jaimin.auraorbit.ui.GroupListFragment;
  * Architecture:
  *   AppCompatActivity (this) → hosts → MainSettingsFragment (PreferenceFragmentCompat)
  *                                    → navigates → AppPickerFragment (Fragment)
- *                                    → navigates → GroupListFragment → GroupEditFragment
+ *                                    → navigates → WidgetListFragment → WidgetEditFragment
  *
  * All fragment navigation uses {@code R.id.settings_container} as the container and
  * {@code addToBackStack} so the system back button and the action-bar up arrow
@@ -89,25 +90,11 @@ public class LiveWallpaperSettings extends AppCompatActivity {
         Intent intent = getIntent();
         int appWidgetId = intent.getIntExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID, android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID);
         android.util.Log.d("AuraOrbit", "CONFIGURE check. action=" + intent.getAction() + " appWidgetId=" + appWidgetId);
-        
-        if (appWidgetId != android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID) {
-            Intent resultValue = new Intent();
-            resultValue.putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
-            setResult(RESULT_OK, resultValue);
-            finish();
-            return;
-        }
 
         // Inflate the activity layout that owns the MaterialToolbar + settings_container.
-        // This replaces the implicit android.R.id.content-only approach so that
-        // AppBarLayout.fitsSystemWindows handles the status-bar inset and
-        // appbar_scrolling_view_behavior positions the container below the toolbar —
-        // fixing the Android 15+ edge-to-edge enforcement issue.
         setContentView(R.layout.activity_settings);
 
-        // Register the MaterialToolbar as the support action bar so that
-        // getSupportActionBar(), setTitle(), setDisplayHomeAsUpEnabled(), etc.
-        // all work as expected without a decor action bar.
+        // Register the MaterialToolbar as the support action bar
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -115,8 +102,7 @@ public class LiveWallpaperSettings extends AppCompatActivity {
         btnApplyWallpaper = findViewById(R.id.btn_apply_wallpaper);
         btnApplyWallpaper.setOnClickListener(v -> launchLiveWallpaperPreview());
 
-        // Apply bottom window inset to the container so list content is not
-        // hidden behind the gesture navigation bar (or 3-button nav bar).
+        // Apply bottom window inset to the container
         View container = findViewById(R.id.settings_container);
         ViewCompat.setOnApplyWindowInsetsListener(container, (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -124,27 +110,47 @@ public class LiveWallpaperSettings extends AppCompatActivity {
             return insets;
         });
 
-        // Only push the root fragment on a clean launch — the FragmentManager
-        // already restores the back stack on config-change (rotation, etc.).
+        // Only push the root fragment on a clean launch
         if (savedInstanceState == null) {
-            getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.settings_container, new dev.jaimin.auraorbit.ui.DashboardFragment())
-                    .commit();
+            if (appWidgetId != android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID) {
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+                String widgetName = prefs.getString("widget_group_" + appWidgetId, null);
+                if (widgetName == null) {
+                    widgetName = prefs.getString("widget_name_" + appWidgetId, null);
+                }
+                
+                if (widgetName != null && WidgetStore.find(WidgetStore.load(prefs), widgetName) != null) {
+                    getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.settings_container, dev.jaimin.auraorbit.ui.WidgetEditFragment.newInstance(widgetName, appWidgetId))
+                            .commit();
+                } else {
+                    getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.settings_container, new dev.jaimin.auraorbit.ui.WidgetListFragment())
+                            .commit();
+                }
+            } else {
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.settings_container, new dev.jaimin.auraorbit.ui.DashboardFragment())
+                        .commit();
 
-            if ("apps".equals(getIntent().getStringExtra("open_fragment"))) {
-                getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.settings_container, new dev.jaimin.auraorbit.ui.AppPickerFragment())
-                        .addToBackStack(null)
-                        .commit();
-            } else if (getIntent().hasExtra("open_group")) {
-                String groupName = getIntent().getStringExtra("open_group");
-                getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.settings_container, dev.jaimin.auraorbit.ui.GroupEditFragment.newInstance(groupName))
-                        .addToBackStack(null)
-                        .commit();
+                if ("apps".equals(getIntent().getStringExtra("open_fragment"))) {
+                    getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.settings_container, new dev.jaimin.auraorbit.ui.AppPickerFragment())
+                            .addToBackStack(null)
+                            .commit();
+                } else if (getIntent().hasExtra("open_widget") || getIntent().hasExtra("open_group")) {
+                    String widgetName = getIntent().getStringExtra("open_widget");
+                    if (widgetName == null) widgetName = getIntent().getStringExtra("open_group");
+                    getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.settings_container, dev.jaimin.auraorbit.ui.WidgetEditFragment.newInstance(widgetName))
+                            .addToBackStack(null)
+                            .commit();
+                }
             }
         }
 
@@ -152,7 +158,7 @@ public class LiveWallpaperSettings extends AppCompatActivity {
         // whenever the back stack changes. The arrow is shown as soon as any
         // fragment is added to the back stack (i.e., once the user navigates
         // away from MainSettingsFragment). The Apply button is hidden on child
-        // screens so it doesn't crowd toolbar menus in pickers/groups.
+        // screens so it doesn't crowd toolbar menus in pickers/widgets.
         getSupportFragmentManager().addOnBackStackChangedListener(() -> {
             boolean canGoBack = getSupportFragmentManager().getBackStackEntryCount() > 0;
             if (getSupportActionBar() != null) {
@@ -194,7 +200,7 @@ public class LiveWallpaperSettings extends AppCompatActivity {
      * active wallpaper (owner request: a hidden button reads as "removed").
      * Tapping it while active simply re-opens the live-wallpaper preview, which
      * is harmless and doubles as a quick way to reach the system preview.
-     * It is hidden only on child screens (app picker / groups) where the
+     * It is hidden only on child screens (app picker / widgets) where the
      * toolbar belongs to that screen's own actions.</p>
      */
     private void refreshApplyButtonVisibility() {
@@ -231,7 +237,7 @@ public class LiveWallpaperSettings extends AppCompatActivity {
      * attaches custom click listeners for the three action preferences:
      * <ul>
      *   <li>{@code pref_select_apps}     → navigates to {@link AppPickerFragment}</li>
-     *   <li>{@code pref_manage_groups}   → navigates to {@link GroupListFragment}</li>
+     *   <li>{@code pref_manage_widgets}   → navigates to {@link WidgetListFragment}</li>
      *   <li>{@code pref_background_image}→ launches the system photo picker or shows
      *                                      a replace/remove dialog if an image exists</li>
      * </ul>
@@ -285,11 +291,11 @@ public class LiveWallpaperSettings extends AppCompatActivity {
                 });
             }
 
-            // ─── pref_manage_groups → GroupListFragment ───────────────────
-            Preference manageGroups = findPreference("pref_manage_groups");
+            // ─── pref_manage_widgets → WidgetListFragment ───────────────────
+            Preference manageGroups = findPreference("pref_manage_widgets");
             if (manageGroups != null) {
                 manageGroups.setOnPreferenceClickListener(pref -> {
-                    navigateTo(new GroupListFragment());
+                    navigateTo(new WidgetListFragment());
                     return true;
                 });
             }
@@ -666,13 +672,13 @@ public class LiveWallpaperSettings extends AppCompatActivity {
             }
 
             // ─── Groups summary ───────────────────────────────────────────
-            Preference manageGroups = findPreference("pref_manage_groups");
+            Preference manageGroups = findPreference("pref_manage_widgets");
             if (manageGroups != null) {
-                List<GroupStore.Group> groups = GroupStore.load(prefs);
-                int count = groups.size();
+                List<WidgetStore.Widget> widgets = WidgetStore.load(prefs);
+                int count = widgets.size();
                 manageGroups.setSummary(count == 0
-                        ? getString(R.string.summary_no_groups)
-                        : getString(R.string.summary_groups_count, count));
+                        ? getString(R.string.summary_no_widgets)
+                        : getString(R.string.summary_widgets_count, count));
             }
 
             // ─── Background summary ───────────────────────────────────────

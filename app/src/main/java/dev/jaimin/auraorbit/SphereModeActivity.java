@@ -5,6 +5,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -83,13 +85,17 @@ public class SphereModeActivity extends AndroidApplication {
         config.b = 8;
         config.a = 8;
 
-        // Read group_name extra if opened from a pinned group widget
+        // Read group_name / widget_name extra if opened from a pinned widget
         String groupName = getIntent().getStringExtra("group_name");
+        if (groupName == null) {
+            groupName = getIntent().getStringExtra("widget_name");
+        }
 
         // Initialize libGDX with activityMode=true so the engine bypasses all
         // wallpaper-specific guards (page isolation, edge exclusion, zoom revert,
         // command gating).
         sphereEngine = new SphereEngine(this, true, groupName);
+        sphereEngine.applyPositionAndScale = true;
         View glView = initializeForView(sphereEngine, config);
         glView.setClickable(true); // Ensure glView consumes clicks
         if (graphics.getView() instanceof android.view.SurfaceView) {
@@ -106,7 +112,7 @@ public class SphereModeActivity extends AndroidApplication {
 
         float scale = prefs.getFloat(scalePref, 1.0f);
         String pos = prefs.getString(posPref, "center");
-        int blurRadiusPref = prefs.getInt(radiusPref, 50);
+        int blurRadiusPref = prefs.getInt(radiusPref, 10);
         int blurStrengthPref = prefs.getInt(strengthPref, 50);
         // Migrate old pref_blur_amount if the new ones don't exist
         if (!prefs.contains(radiusPref) && groupName == null && prefs.contains("pref_blur_amount")) {
@@ -123,35 +129,43 @@ public class SphereModeActivity extends AndroidApplication {
         android.widget.FrameLayout container = new android.widget.FrameLayout(this);
         
         // ─── Window Bounds ────────────────────────────────────────────────
-        int sphereX = (screenWidth - sphereSize) / 2;
-        int sphereY = (screenHeight - sphereSize) / 2;
-        if ("top".equals(pos)) {
-            sphereY = 100;
+        int sphereCenterX, sphereCenterY;
+        if ("custom".equals(pos)) {
+            float defaultX = (screenWidth - (screenWidth * scale)) / 2f;
+            float defaultY = (screenHeight - (screenWidth * scale)) / 2f;
+            float sphereX = prefs.getFloat(xPref, defaultX);
+            float sphereY = prefs.getFloat(yPref, defaultY);
+            sphereCenterX = (int) (sphereX + (screenWidth * scale) / 2f);
+            sphereCenterY = (int) (sphereY + (screenWidth * scale) / 2f);
+        } else if ("top".equals(pos)) {
+            sphereCenterX = screenWidth / 2;
+            sphereCenterY = (int) (screenHeight * 0.25f);
         } else if ("bottom".equals(pos)) {
-            sphereY = screenHeight - sphereSize - 100;
-        } else if ("custom".equals(pos)) {
-            sphereX = (int) prefs.getFloat(xPref, sphereX);
-            sphereY = (int) prefs.getFloat(yPref, sphereY);
+            sphereCenterX = screenWidth / 2;
+            sphereCenterY = (int) (screenHeight * 0.75f);
+        } else { // "center"
+            sphereCenterX = screenWidth / 2;
+            sphereCenterY = screenHeight / 2;
         }
         
-        int sphereCenterX = sphereX + sphereSize / 2;
-        int sphereCenterY = sphereY + sphereSize / 2;
-        
-        // Position glView absolutely
+        // Position glView to cover the full screen so that the engine renders matching the preview and wallpaper
         android.widget.FrameLayout.LayoutParams glParams = new android.widget.FrameLayout.LayoutParams(
-                sphereSize, sphereSize, android.view.Gravity.TOP | android.view.Gravity.START);
-        glParams.leftMargin = sphereX;
-        glParams.topMargin = sphereY;
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT);
         container.addView(glView, glParams);
         
         // Close the activity if the user touches the blurred background outside the sphere
-        container.setOnClickListener(v -> finish());
+        container.setOnClickListener(v -> {
+            if (sphereEngine != null) {
+                sphereEngine.fanOutAndFinish();
+            } else {
+                finish();
+            }
+        });
         
         setContentView(container);
 
-        int maxDim = Math.max(screenWidth, screenHeight) * 2;
-        int windowSize = (int) (sphereSize + (maxDim - sphereSize) * (blurRadiusPref / 100.0f));
-        if (blurRadiusPref == 0) windowSize = sphereSize;
+
         
         WindowManager.LayoutParams params = getWindow().getAttributes();
         params.width = WindowManager.LayoutParams.MATCH_PARENT;
@@ -164,7 +178,7 @@ public class SphereModeActivity extends AndroidApplication {
         params.flags |= WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
         params.flags |= WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
         
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && blurRadiusPref > 0 && blurStrengthPref > 0) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && blurStrengthPref > 0) {
             int radius = Math.min(blurStrengthPref * 2, 150);
             if (radius == 0) radius = 1;
             getWindow().setBackgroundBlurRadius(radius);
@@ -172,18 +186,7 @@ public class SphereModeActivity extends AndroidApplication {
             getWindow().setBackgroundBlurRadius(0);
         }
         
-        int left = sphereCenterX - windowSize / 2;
-        int top = sphereCenterY - windowSize / 2;
-        int right = screenWidth - (left + windowSize);
-        int bottom = screenHeight - (top + windowSize);
-        
-        android.graphics.drawable.GradientDrawable circle = new android.graphics.drawable.GradientDrawable();
-        circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-        circle.setColor(android.graphics.Color.TRANSPARENT);
-        
-        android.graphics.drawable.InsetDrawable insetDrawable = 
-            new android.graphics.drawable.InsetDrawable(circle, left, top, right, bottom);
-        getWindow().setBackgroundDrawable(insetDrawable);
+        getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
         
         getWindow().setAttributes(params);
 
@@ -192,24 +195,7 @@ public class SphereModeActivity extends AndroidApplication {
         // fully decorated and the insets controller is available.
         hideSystemBars();
 
-        // ─── Empty state popup ────────────────────────────────────────────
-        java.util.Set<String> selectedApps = prefs.getStringSet(AppFetcher.PREF_SELECTED_APPS, new java.util.HashSet<>());
-        if (selectedApps.isEmpty()) {
-            new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-                .setTitle("No Apps Selected")
-                .setMessage("You need to select at least one app to see it in the AuraOrbit sphere.")
-                .setPositiveButton("Go to Apps", (dialog, which) -> {
-                    Intent intent = new Intent(this, LiveWallpaperSettings.class);
-                    intent.putExtra("open_fragment", "apps");
-                    startActivity(intent);
-                    finish();
-                })
-                .setNegativeButton("Close", (dialog, which) -> {
-                    finish();
-                })
-                .setCancelable(false)
-                .show();
-        }
+
     }
 
     /**
@@ -243,6 +229,9 @@ public class SphereModeActivity extends AndroidApplication {
         // update the engine with the new group name!
         if (sphereEngine != null) {
             String groupName = intent.getStringExtra("group_name");
+            if (groupName == null) {
+                groupName = intent.getStringExtra("widget_name");
+            }
             sphereEngine.setPinnedGroupName(groupName);
         }
     }
@@ -295,6 +284,34 @@ public class SphereModeActivity extends AndroidApplication {
             sphereEngine.fanOutAndFinish();
         } else {
             super.onBackPressed();
+        }
+    }
+
+    private static class BlurBackgroundDrawable extends android.graphics.drawable.GradientDrawable {
+        private final int customLeft;
+        private final int customTop;
+        private final int customRight;
+        private final int customBottom;
+
+        public BlurBackgroundDrawable(int left, int top, int right, int bottom) {
+            super();
+            setShape(OVAL);
+            setColor(android.graphics.Color.TRANSPARENT);
+            this.customLeft = left;
+            this.customTop = top;
+            this.customRight = right;
+            this.customBottom = bottom;
+            super.setBounds(left, top, right, bottom);
+        }
+
+        @Override
+        public void setBounds(int left, int top, int right, int bottom) {
+            super.setBounds(customLeft, customTop, customRight, customBottom);
+        }
+
+        @Override
+        public void setBounds(@NonNull android.graphics.Rect bounds) {
+            super.setBounds(customLeft, customTop, customRight, customBottom);
         }
     }
 }

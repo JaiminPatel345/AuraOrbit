@@ -6,7 +6,7 @@
     android:background="?android:attr/windowBackground">
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/group_list"
+        android:id="@+id/widget_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
@@ -35,7 +35,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="No Groups Yet"
+            android:text="No Widgets Yet"
             android:textAppearance="?attr/textAppearanceHeadline6"
             android:textColor="?android:attr/textColorPrimary" />
 
@@ -43,7 +43,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Tap the + button to create a new cluster"
+            android:text="Tap the + button to create a new widget"
             android:textAppearance="?attr/textAppearanceBody2"
             android:textColor="?android:attr/textColorSecondary" />
     </LinearLayout>
@@ -54,7 +54,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="24dp"
         android:layout_marginBottom="24dp"
-        android:text="Create Group"
+        android:text="Create Widget"
         app:icon="@android:drawable/ic_menu_add"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

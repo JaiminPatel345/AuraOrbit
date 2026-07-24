@@ -5,11 +5,26 @@
     android:layout_height="match_parent"
     android:background="#88000000">
 
-    <!-- Sphere Mock -->
-    <dev.jaimin.auraorbit.ui.InterceptingFrameLayout
-        android:id="@+id/sphere_mock"
+    <!-- Center Container for Sphere and Overlay Zone -->
+    <FrameLayout
+        android:id="@+id/editor_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent">
+
+        <!-- Sphere Mock -->
+        <FrameLayout
+            android:id="@+id/sphere_mock"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- Gesture Capture Zone Mock (Placed on top of the sphere so the blue lines are visible) -->
+        <View
+            android:id="@+id/gesture_zone_mock"
+            android:layout_width="300dp"
+            android:layout_height="300dp"
+            android:background="@drawable/gesture_capture_mock"
+            android:layout_gravity="top|start" />
+    </FrameLayout>
 
     <!-- Top Bar (Buttons) -->
     <FrameLayout
@@ -52,31 +67,44 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Drag the circle to position it."
+            android:text="Adjust Gesture Capture Area"
             android:textColor="#FFFFFF"
-            android:textSize="16sp"
+            android:textSize="18sp"
             android:textStyle="bold"
             android:layout_gravity="center_horizontal"/>
-            
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Size"
+            android:text="The blue dashed zone shows where gestures spin the sphere. Touches outside it control the launcher."
             android:textColor="#CCCCCC"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:layout_marginTop="4dp"
+            android:layout_gravity="center_horizontal"/>
+            
+        <TextView
+            android:id="@+id/tv_percent_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="100%"
+            android:textColor="#00E6FF"
+            android:textSize="20sp"
+            android:textStyle="bold"
             android:layout_marginTop="16dp"
             android:layout_gravity="center_horizontal"/>
             
         <com.google.android.material.slider.Slider
-            android:id="@+id/slider_scale"
+            android:id="@+id/slider_capture_radius"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:valueFrom="0.3"
-            android:valueTo="2.0"
-            android:value="1.0"
-            android:stepSize="0.1"
-            app:thumbColor="#FFFFFF"
-            app:trackColorActive="#FFFFFF"
-            app:trackColorInactive="#88FFFFFF"/>
+            android:valueFrom="50"
+            android:valueTo="150"
+            android:value="100"
+            android:stepSize="1"
+            app:thumbColor="#00E6FF"
+            app:trackColorActive="#00E6FF"
+            app:trackColorInactive="#8800E6FF"/>
     </LinearLayout>
 
 </FrameLayout>

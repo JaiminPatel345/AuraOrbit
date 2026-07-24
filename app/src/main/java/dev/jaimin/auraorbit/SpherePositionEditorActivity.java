@@ -7,18 +7,30 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
+import com.badlogic.gdx.backends.android.AndroidApplication;
+import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.google.android.material.slider.Slider;
+import dev.jaimin.auraorbit.ui.InterceptingFrameLayout;
 
-public class SpherePositionEditorActivity extends AppCompatActivity {
+public class SpherePositionEditorActivity extends AndroidApplication {
 
-    private View sphereMock;
+    private InterceptingFrameLayout sphereMock;
+    private SphereEngine sphereEngine;
+    
     private float dX, dY;
+    private float startX, startY;
+    private float currentX, currentY;
     
     private float currentScale = 1.0f;
     private int screenWidth;
+    private int screenHeight;
     private SharedPreferences prefs;
+
+    private String xPref;
+    private String yPref;
+    private String scalePref;
+    private String posPref;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -39,39 +51,122 @@ public class SpherePositionEditorActivity extends AppCompatActivity {
 
         DisplayMetrics metrics = getResources().getDisplayMetrics();
         screenWidth = metrics.widthPixels;
+        screenHeight = metrics.heightPixels;
 
         String groupName = getIntent().getStringExtra("group_name");
-        String scalePref = groupName != null ? "pref_sphere_scale_" + groupName : "pref_sphere_scale";
-        String xPref = groupName != null ? "pref_sphere_x_" + groupName : "pref_sphere_x";
-        String yPref = groupName != null ? "pref_sphere_y_" + groupName : "pref_sphere_y";
+        scalePref = groupName != null ? "pref_sphere_scale_" + groupName : "pref_sphere_scale";
+        xPref = groupName != null ? "pref_sphere_x_" + groupName : "pref_sphere_x";
+        yPref = groupName != null ? "pref_sphere_y_" + groupName : "pref_sphere_y";
+        posPref = groupName != null ? "pref_sphere_position_" + groupName : "pref_sphere_position";
 
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
         currentScale = prefs.getFloat(scalePref, 1.0f);
-        float initX = prefs.getFloat(xPref, 0f);
-        float initY = prefs.getFloat(yPref, (metrics.heightPixels - screenWidth)/2f);
-
-        updateSphereSize();
         
-        sphereMock.post(() -> {
-            sphereMock.setX(initX);
-            sphereMock.setY(initY);
-        });
+        // Initialize currentX/Y based on the active posType at startup to prevent jumping on first drag
+        String posType = prefs.getString(posPref, "center");
+        if ("custom".equals(posType)) {
+            currentX = prefs.getFloat(xPref, 0f);
+            currentY = prefs.getFloat(yPref, (screenHeight - screenWidth) / 2f);
+        } else if ("top".equals(posType)) {
+            currentX = (screenWidth * (1f - currentScale)) / 2f;
+            currentY = screenHeight * 0.25f - (screenWidth * currentScale) / 2f;
+        } else if ("bottom".equals(posType)) {
+            currentX = (screenWidth * (1f - currentScale)) / 2f;
+            currentY = screenHeight * 0.75f - (screenWidth * currentScale) / 2f;
+        } else { // "center"
+            currentX = (screenWidth * (1f - currentScale)) / 2f;
+            currentY = screenHeight / 2f - (screenWidth * currentScale) / 2f;
+        }
+
+        // ─── Initialize LibGDX 3D View ───────────────────────────────────
+        AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
+        config.useAccelerometer = false;
+        config.useCompass = false;
+        config.useGyroscope = false;
+        config.depth = 16;
+        config.stencil = 0;
+        config.numSamples = 0;
+        config.r = 8;
+        config.g = 8;
+        config.b = 8;
+        config.a = 8;
+
+        sphereEngine = new SphereEngine(this, true, groupName);
+        java.util.ArrayList<String> tempPackages = getIntent().getStringArrayListExtra("temp_packages");
+        if (tempPackages != null) {
+            sphereEngine.setTempPackages(tempPackages);
+        }
+        sphereEngine.applyPositionAndScale = true; // Tell engine to translate camera like wallpaper mode
+        sphereEngine.setPreviewModeAuthoritative(true); // Ensure app decals are loaded and rendered immediately
+        
+        View glView = initializeForView(sphereEngine, config);
+        
+        // Pass touches through the glView so dragging is handled by sphereMock container
+        glView.setClickable(false);
+        glView.setFocusable(false);
+        glView.setOnTouchListener((v, event) -> false);
+
+        if (graphics.getView() instanceof android.view.SurfaceView) {
+            android.view.SurfaceView surfaceView = (android.view.SurfaceView) graphics.getView();
+            surfaceView.getHolder().setFormat(android.graphics.PixelFormat.TRANSLUCENT);
+            surfaceView.setZOrderOnTop(true);
+        }
+
+        sphereMock.addView(glView, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+        ));
 
         sliderScale.setValue(currentScale);
         sliderScale.addOnChangeListener((slider, value, fromUser) -> {
             currentScale = value;
-            updateSphereSize();
+            
+            // Constrain positions on scale changes so at least 10% remains visible
+            float sphereDiameter = screenWidth * currentScale;
+            float minMargin = 0.1f * sphereDiameter;
+            
+            float minX = -0.9f * sphereDiameter;
+            float maxX = screenWidth - minMargin;
+            currentX = Math.max(minX, Math.min(maxX, currentX));
+            
+            float minY = -0.9f * sphereDiameter;
+            float maxY = screenHeight - minMargin;
+            currentY = Math.max(minY, Math.min(maxY, currentY));
+            
+            sphereEngine.updateCameraPositionAndScale(currentX, currentY, currentScale);
         });
 
         sphereMock.setOnTouchListener((view, event) -> {
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
-                    dX = view.getX() - event.getRawX();
-                    dY = view.getY() - event.getRawY();
+                    dX = event.getRawX();
+                    dY = event.getRawY();
+                    startX = currentX;
+                    startY = currentY;
                     break;
                 case MotionEvent.ACTION_MOVE:
-                    view.setX(event.getRawX() + dX);
-                    view.setY(event.getRawY() + dY);
+                    float deltaX = event.getRawX() - dX;
+                    float deltaY = event.getRawY() - dY;
+                    
+                    float nextX = startX + deltaX;
+                    float nextY = startY + deltaY;
+                    
+                    float sphereDiameter = screenWidth * currentScale;
+                    float minMargin = 0.1f * sphereDiameter;
+                    
+                    // Clamp coordinates so at least 10% of the sphere is visible on screen
+                    float minX = -0.9f * sphereDiameter;
+                    float maxX = screenWidth - minMargin;
+                    nextX = Math.max(minX, Math.min(maxX, nextX));
+                    
+                    float minY = -0.9f * sphereDiameter;
+                    float maxY = screenHeight - minMargin;
+                    nextY = Math.max(minY, Math.min(maxY, nextY));
+                    
+                    currentX = nextX;
+                    currentY = nextY;
+                    
+                    sphereEngine.updateCameraPositionAndScale(currentX, currentY, currentScale);
                     break;
                 default:
                     return false;
@@ -80,27 +175,15 @@ public class SpherePositionEditorActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btn_cancel).setOnClickListener(v -> finish());
+        
         findViewById(R.id.btn_save).setOnClickListener(v -> {
-            String saveGroupName = getIntent().getStringExtra("group_name");
-            String saveXPref = saveGroupName != null ? "pref_sphere_x_" + saveGroupName : "pref_sphere_x";
-            String saveYPref = saveGroupName != null ? "pref_sphere_y_" + saveGroupName : "pref_sphere_y";
-            String saveScalePref = saveGroupName != null ? "pref_sphere_scale_" + saveGroupName : "pref_sphere_scale";
-            String savePosPref = saveGroupName != null ? "pref_sphere_position_" + saveGroupName : "pref_sphere_position";
-            
             prefs.edit()
-                 .putFloat(saveXPref, sphereMock.getX())
-                 .putFloat(saveYPref, sphereMock.getY())
-                 .putFloat(saveScalePref, currentScale)
-                 .putString(savePosPref, "custom")
+                 .putFloat(xPref, currentX)
+                 .putFloat(yPref, currentY)
+                 .putFloat(scalePref, currentScale)
+                 .putString(posPref, "custom")
                  .apply();
             finish();
         });
-    }
-    
-    private void updateSphereSize() {
-        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) sphereMock.getLayoutParams();
-        params.width = (int) (screenWidth * currentScale);
-        params.height = (int) (screenWidth * currentScale);
-        sphereMock.setLayoutParams(params);
     }
 }

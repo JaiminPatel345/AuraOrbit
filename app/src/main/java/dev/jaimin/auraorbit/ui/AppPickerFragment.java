@@ -10,9 +10,6 @@ import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
@@ -21,9 +18,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Lifecycle;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -39,47 +34,24 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import dev.jaimin.auraorbit.AppFetcher;
-import dev.jaimin.auraorbit.GroupStore;
+import dev.jaimin.auraorbit.WidgetStore;
 import dev.jaimin.auraorbit.R;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
  * AppPickerFragment.java — Full-app list with search + persistent selection
  * ═══════════════════════════════════════════════════════════════════════════════
- *
- * Inflates {@code fragment_app_picker} (ids: {@code search_input}, {@code app_list}).
- * Each row uses {@code row_app} (ids: {@code app_icon}, {@code app_label},
- * {@code app_group_badge}, {@code app_check}).
- *
- * ─── Data loading ────────────────────────────────────────────────────────────
- *
- * {@link AppFetcher#getAllLaunchableApps} and icon/label loading are performed on
- * a background {@link ExecutorService} field so the UI thread is never blocked.
- * Results are posted to the main thread via {@link Handler} and guarded by
- * {@link #isAdded()} before any UI access.
- *
- * ─── Selection persistence ───────────────────────────────────────────────────
- *
- * Every row click toggles its checked state AND immediately writes a FRESH
- * {@code Set<String>} to SharedPreferences under {@link AppFetcher#PREF_SELECTED_APPS}.
- * Writing a fresh set (not the same instance returned by {@code getStringSet}) is
- * required by the SharedPreferences contract — mutating the returned set has no
- * effect and loses data.
- *
- * ─── Filtering ───────────────────────────────────────────────────────────────
- *
- * The adapter keeps both a full list and a filtered list. A {@link TextWatcher}
- * on {@code search_input} re-filters by {@code label} or {@code packageName}
- * (case-insensitive contains) on every keystroke.
  */
 public class AppPickerFragment extends Fragment {
 
     // ─── Background loader ────────────────────────────────────────────────
-    // Single-thread so loads don't stack if the fragment is re-entered.
     private ExecutorService executor;
 
     // ─── Adapter reference kept for search-filter updates ────────────────
     private AppAdapter adapter;
+
+    // ─── Local selection set (persisted only when clicking Save button) ───
+    private final Set<String> localSelectedApps = new HashSet<>();
 
     // ─────────────────────────────────────────────────────────────────────
     //  Fragment lifecycle
@@ -111,11 +83,25 @@ public class AppPickerFragment extends Fragment {
         SharedPreferences prefs =
                 PreferenceManager.getDefaultSharedPreferences(requireContext());
 
-        // Create adapter with an empty list; the background task fills it.
-        adapter = new AppAdapter(prefs);
+        // Initialize localSelectedApps with currently saved packages (or all apps by default)
+        localSelectedApps.clear();
+        Set<String> savedApps = prefs.getStringSet(AppFetcher.PREF_SELECTED_APPS, null);
+        if (savedApps == null || savedApps.isEmpty()) {
+            List<ResolveInfo> launchable = AppFetcher.getAllLaunchableApps(requireContext());
+            for (ResolveInfo info : launchable) {
+                if (info.activityInfo != null && info.activityInfo.packageName != null) {
+                    localSelectedApps.add(info.activityInfo.packageName);
+                }
+            }
+        } else {
+            localSelectedApps.addAll(savedApps);
+        }
+
+        // Create adapter with empty list; background loader populates it
+        adapter = new AppAdapter();
         list.setAdapter(adapter);
 
-        // Wire the search box to filter the adapter.
+        // Wire search box to filter the adapter
         searchInput.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void afterTextChanged(Editable s) {}
@@ -125,8 +111,7 @@ public class AppPickerFragment extends Fragment {
             }
         });
 
-        // Wire up the new "Select All" checkbox next to the search bar.
-        // It selects/deselects all currently visible apps based on the active filter.
+        // Wire "Select All" checkbox
         com.google.android.material.checkbox.MaterialCheckBox cbSelectAll = root.findViewById(R.id.cb_select_all);
         cbSelectAll.setOnClickListener(v -> {
             if (cbSelectAll.isChecked()) {
@@ -138,18 +123,19 @@ public class AppPickerFragment extends Fragment {
 
         // Wire up the Save button at the bottom.
         root.findViewById(R.id.btn_save).setOnClickListener(v -> {
+            prefs.edit().putStringSet(AppFetcher.PREF_SELECTED_APPS, new HashSet<>(localSelectedApps)).apply();
+            dev.jaimin.auraorbit.SphereWidgetProvider.updateAllWidgets(requireContext());
             android.widget.Toast.makeText(requireContext(), "Saved!", android.widget.Toast.LENGTH_SHORT).show();
             getParentFragmentManager().popBackStack();
         });
 
-        // Kick off the background data load.
+        // Kick off background load
         loadAppsAsync(prefs);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        // Restore title and update the selected count.
         updateTitle();
     }
 
@@ -166,15 +152,6 @@ public class AppPickerFragment extends Fragment {
     //  Background data loading
     // ─────────────────────────────────────────────────────────────────────
 
-    /**
-     * Loads all launchable apps, their labels, icons, and group membership
-     * on a background thread, then hands the result to the adapter on the
-     * main thread.
-     *
-     * <p>Guarded by {@link #isAdded()} before any UI access so that a slow
-     * device completing the load after the user has left the fragment does
-     * not crash with an {@code IllegalStateException}.</p>
-     */
     private void loadAppsAsync(@NonNull SharedPreferences prefs) {
         android.content.Context appCtx = requireContext().getApplicationContext();
         Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -184,13 +161,8 @@ public class AppPickerFragment extends Fragment {
             List<ResolveInfo> resolvedApps = AppFetcher.getAllLaunchableApps(appCtx);
             dev.jaimin.auraorbit.IconPackManager iconPackManager = dev.jaimin.auraorbit.IconPackManager.getInstance(appCtx);
 
-            // Build the group reverse-lookup once for O(1) per-app lookup.
-            List<GroupStore.Group> groups = GroupStore.load(prefs);
-            Map<String, GroupStore.Group> pkgToGroup = GroupStore.packageToGroup(groups);
-
-            // Read the current selection so we can pre-check rows.
-            Set<String> selectedSet = prefs.getStringSet(
-                    AppFetcher.PREF_SELECTED_APPS, new HashSet<>());
+            List<WidgetStore.Widget> widgets = WidgetStore.load(prefs);
+            Map<String, WidgetStore.Widget> pkgToWidget = WidgetStore.packageToWidget(widgets);
 
             List<AppRow> rows = new ArrayList<>(resolvedApps.size());
             for (ResolveInfo ri : resolvedApps) {
@@ -204,17 +176,16 @@ public class AppPickerFragment extends Fragment {
                     icon = ri.loadIcon(pm);
                 }
 
-                // Determine group membership (null → no badge shown).
-                GroupStore.Group owningGroup = pkgToGroup.get(pkg);
-                String groupName = owningGroup != null ? owningGroup.name : null;
+                WidgetStore.Widget owningWidget = pkgToWidget.get(pkg);
+                String widgetName = owningWidget != null ? owningWidget.name : null;
 
-                AppRow row = new AppRow(pkg, label, icon, groupName,
-                        selectedSet.contains(pkg));
+                AppRow row = new AppRow(pkg, label, icon, widgetName,
+                        localSelectedApps.contains(pkg));
                 rows.add(row);
             }
 
             mainHandler.post(() -> {
-                if (!isAdded()) return; // Fragment detached while loading
+                if (!isAdded()) return;
                 adapter.setItems(rows);
                 updateTitle();
             });
@@ -225,68 +196,32 @@ public class AppPickerFragment extends Fragment {
     //  Title helper
     // ─────────────────────────────────────────────────────────────────────
 
-    /**
-     * Updates the Activity title to show the current selection count,
-     * e.g. "3 selected". Called after load and after every toggle.
-     */
     private void updateTitle() {
         if (!isAdded()) return;
-        SharedPreferences prefs =
-                PreferenceManager.getDefaultSharedPreferences(requireContext());
-        int count = prefs.getStringSet(
-                AppFetcher.PREF_SELECTED_APPS, new HashSet<>()).size();
+        int count = localSelectedApps.size();
         requireActivity().setTitle(getString(R.string.selected_count, count));
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    //  Bulk-selection actions (wired from the toolbar menu)
+    //  Bulk-selection actions
     // ─────────────────────────────────────────────────────────────────────
 
-    /**
-     * Adds every app currently shown in the (possibly filtered) list to the
-     * selection.  When no search filter is active this is equivalent to
-     * "select all installed launchable apps".
-     *
-     * <p>Follows the same read → copy → mutate → write pattern used by the
-     * row click handler to satisfy the SharedPreferences contract.</p>
-     */
     private void selectAllVisible() {
         if (!isAdded() || adapter == null) return;
-        SharedPreferences prefs =
-                PreferenceManager.getDefaultSharedPreferences(requireContext());
-
-        // Start from the current persisted selection so we don't lose items
-        // that are selected but scrolled off the visible window.
-        Set<String> sel = new HashSet<>(prefs.getStringSet(
-                AppFetcher.PREF_SELECTED_APPS, new HashSet<>()));
         for (AppRow row : adapter.displayItems) {
             row.checked = true;
-            sel.add(row.packageName);
+            localSelectedApps.add(row.packageName);
         }
-        prefs.edit().putStringSet(AppFetcher.PREF_SELECTED_APPS, sel).apply();
-
         adapter.notifyDataSetChanged();
         updateTitle();
     }
 
-    /**
-     * Clears the entire selection — not limited to the currently filtered
-     * view — and immediately persists the empty set.
-     */
     private void clearAllSelection() {
         if (!isAdded() || adapter == null) return;
-        SharedPreferences prefs =
-                PreferenceManager.getDefaultSharedPreferences(requireContext());
-
-        // Start from current persisted selection and remove visible items
-        Set<String> sel = new HashSet<>(prefs.getStringSet(
-                AppFetcher.PREF_SELECTED_APPS, new HashSet<>()));
         for (AppRow row : adapter.displayItems) {
             row.checked = false;
-            sel.remove(row.packageName);
+            localSelectedApps.remove(row.packageName);
         }
-        prefs.edit().putStringSet(AppFetcher.PREF_SELECTED_APPS, sel).apply();
-
         adapter.notifyDataSetChanged();
         updateTitle();
     }
@@ -295,25 +230,19 @@ public class AppPickerFragment extends Fragment {
     //  Row model
     // ═════════════════════════════════════════════════════════════════════
 
-    /**
-     * Immutable-ish data bag for a single row in the app picker.
-     * {@code checked} is mutable so the adapter can toggle it in-place
-     * without rebuilding the list.
-     */
     private static final class AppRow {
         final String packageName;
         final String label;
         final Drawable icon;
-        /** Display name of the group this app belongs to, or {@code null}. */
-        @Nullable final String groupName;
+        @Nullable final String widgetName;
         boolean checked;
 
         AppRow(String packageName, String label, Drawable icon,
-               @Nullable String groupName, boolean checked) {
+               @Nullable String widgetName, boolean checked) {
             this.packageName = packageName;
             this.label       = label;
             this.icon        = icon;
-            this.groupName   = groupName;
+            this.widgetName   = widgetName;
             this.checked     = checked;
         }
     }
@@ -322,50 +251,21 @@ public class AppPickerFragment extends Fragment {
     //  RecyclerView Adapter
     // ═════════════════════════════════════════════════════════════════════
 
-    /**
-     * Adapter for the app picker list.
-     *
-     * <p>Maintains two lists: {@link #allItems} (full data set) and
-     * {@link #displayItems} (the currently-filtered subset). Both point to
-     * the same {@link AppRow} objects so a toggle on a filtered row is
-     * reflected in the full list — no sync needed.</p>
-     *
-     * <p>The checkbox in each row is {@code clickable=false} (as declared in
-     * {@code row_app.xml}), so the row's root {@code OnClickListener} is the
-     * only interaction surface. This prevents double-toggle when the user
-     * taps directly on the checkbox area.</p>
-     */
-    private final class AppAdapter
-            extends RecyclerView.Adapter<AppAdapter.VH> {
+    private final class AppAdapter extends RecyclerView.Adapter<AppAdapter.VH> {
 
-        private final SharedPreferences prefs;
-        /** Complete (unfiltered) list of all launchable apps. */
         private final List<AppRow> allItems = new ArrayList<>();
-        /** Subset shown in the RecyclerView, updated by {@link #filter}. */
         private final List<AppRow> displayItems = new ArrayList<>();
-        /** Current filter query (lowercase); empty string means "show all". */
         private String currentQuery = "";
 
-        AppAdapter(@NonNull SharedPreferences prefs) {
-            this.prefs = prefs;
+        AppAdapter() {
         }
 
-        /**
-         * Replaces the full data set and re-applies the current filter.
-         * Called once after the background load completes.
-         */
         void setItems(@NonNull List<AppRow> items) {
             allItems.clear();
             allItems.addAll(items);
             filter(currentQuery);
         }
 
-        /**
-         * Filters the displayed list to rows whose label or package name
-         * contains {@code query} (case-insensitive).
-         *
-         * @param query  Search string; empty/null means show all rows.
-         */
         void filter(@Nullable String query) {
             currentQuery = query == null ? "" : query.trim().toLowerCase();
             displayItems.clear();
@@ -397,42 +297,26 @@ public class AppPickerFragment extends Fragment {
             holder.icon.setImageDrawable(row.icon);
             holder.label.setText(row.label);
 
-            // ─── Group badge ──────────────────────────────────────────────
-            // Must explicitly handle BOTH visibility states on every bind
-            // because RecyclerView recycles views — a row that was VISIBLE
-            // before must be reset to GONE if the new data has no group.
-            if (row.groupName != null) {
-                holder.groupBadge.setText(row.groupName);
-                holder.groupBadge.setVisibility(View.VISIBLE);
+            if (row.widgetName != null) {
+                holder.widgetBadge.setText(row.widgetName);
+                holder.widgetBadge.setVisibility(View.VISIBLE);
             } else {
-                holder.groupBadge.setVisibility(View.GONE);
+                holder.widgetBadge.setVisibility(View.GONE);
             }
 
-            // Detach listener before setting state to avoid re-entrant calls.
             holder.check.setOnCheckedChangeListener(null);
             holder.check.setChecked(row.checked);
 
-            // Row click toggles selection and immediately persists the new set.
             holder.itemView.setOnClickListener(v -> {
                 row.checked = !row.checked;
 
-                // Always read → copy → mutate → write to satisfy the
-                // SharedPreferences contract: never mutate the returned Set.
-                Set<String> sel = new HashSet<>(prefs.getStringSet(
-                        AppFetcher.PREF_SELECTED_APPS, new HashSet<>()));
                 if (row.checked) {
-                    sel.add(row.packageName);
+                    localSelectedApps.add(row.packageName);
                 } else {
-                    sel.remove(row.packageName);
+                    localSelectedApps.remove(row.packageName);
                 }
-                prefs.edit()
-                        .putStringSet(AppFetcher.PREF_SELECTED_APPS, sel)
-                        .apply();
 
-                // Sync the checkbox visual (it is non-clickable, so we drive it).
                 holder.check.setChecked(row.checked);
-
-                // Reflect the new count in the Activity title.
                 updateTitle();
             });
         }
@@ -442,21 +326,17 @@ public class AppPickerFragment extends Fragment {
             return displayItems.size();
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        //  ViewHolder
-        // ─────────────────────────────────────────────────────────────────
-
         final class VH extends RecyclerView.ViewHolder {
             final ImageView icon;
             final TextView  label;
-            final TextView  groupBadge;
+            final TextView  widgetBadge;
             final CheckBox  check;
 
             VH(@NonNull View itemView) {
                 super(itemView);
                 icon       = itemView.findViewById(R.id.app_icon);
                 label      = itemView.findViewById(R.id.app_label);
-                groupBadge = itemView.findViewById(R.id.app_group_badge);
+                widgetBadge = itemView.findViewById(R.id.app_widget_badge);
                 check      = itemView.findViewById(R.id.app_check);
             }
         }

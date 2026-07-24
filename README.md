@@ -1,4 +1,4 @@
-# AuraOrbit 🌍✨
+# AuraOrbit 🌍✨ (v3.0.0)
 
 **AuraOrbit** is a next-generation Android application featuring a fully interactive 3D sphere that orbits your favorite apps right on your home screen via customizable widgets or a standalone immersive launcher mode. Built on the high-performance libGDX game engine, it leverages a golden angle Fibonacci distribution to plot your apps perfectly in a 3D space, supporting true 120 FPS hardware refresh rates!
 ![AuraOrbit Logo](assets/logo.svg)
@@ -7,40 +7,36 @@
 
 ![Homescreen Sphere](docs/images/homescreen-sphere.png)
 
-## 🚀 Core Features
+## 🚀 Core Features (v3.0.0)
 
-**3D Sphere**
+**3D Sphere Engine**
 - Rotate apps with natural quaternion-based momentum at up to 120 FPS (30/60/90/120 selectable)
-- Drag-and-drop sphere positioning — center, top, bottom, or anywhere via a custom editor (which also scales the sphere radius!)
+- Drag-and-drop sphere positioning — center, top, bottom, or anywhere via custom position editor
 - Adjustable icon size and rotation speed
 
-**Background & Blur**
+**Background & Full-Screen Blur**
 - Upload a custom background image or use the default gradient
-- Dual blur system: independent Blur Radius (area) and Blur Strength (intensity) controls
-- Five blur presets from "No Blur" to "Full Screen Blur" with real-time preview
+- Full-screen background blur radius with granular Blur Strength control (0% to 100%)
 
 **Icon Pack Support**
-- Apply third-party icon packs (Nova, Apex, etc.) to all apps orbiting your sphere
-- Automatically applies to your group widgets, app picker, and the central AuraOrbit logo
+- Apply third-party icon packs (Nova, Apex, Arcticons, etc.) to all apps orbiting your sphere
+- Automatically applies across group widgets, app picker, and the central logo
 
-**App Groups**
-- Create color-coded groups with 8 presets + custom RGB color picker
-- Assign apps to groups; groups appear as 3D translucent backdrops on the sphere
-- **Individual Group Overrides**: Configure Sphere Position, Background Image, and Blur explicitly for each group!
-- Search and bulk-select apps in the picker with an intuitive Edit Apps popup dialog
+**Independent Widget Spheres (v3.0.0)**
+- Create and pin multiple independent 3D widget spheres to your home screen
+- Each widget maintains its own app selection, sphere position, scale, blur strength, icon size, orbit color, and custom logo
+- Multi-layer widget icons matching home screen (Planet + Color-Tinted Ring + Custom Logo)
+- Enhanced widget editor with dedicated app selection dialog and integrated "Add to Home Screen" pin button
 
-**Home Screen Widgets**
-- Per-group widgets with live color-coded previews
-- Custom logo upload per widget (or use the default planet icon)
-- Toggle: transparent background, hide logo, hide text, system Material You color
-- Custom orbit/ring color per group
-- Pin multiple widgets for different groups simultaneously
+**Smart Gesture & Launcher Compatibility (v3.0.0)**
+- **Smart Touch Pass-Through:** `TouchOverlayView` separates drag gestures (> 16px) for sphere rotation from quick taps (< 16px). Quick taps pass cleanly to 2D apps in App Drawer / Recent Apps.
+- **Samsung One UI Optimization:** Dynamic page-distance calculations for offset-silent launchers, keeping the sphere strictly visible on the selected page.
+- **Launcher State Accessibility Integration:** Detects app drawer and recents state across OEM launchers.
+- **Compatibility Notice:** Non-intrusive banner on Permanent Sphere configuration page.
 
 **Standalone Sphere Mode**
-- Launch AuraOrbit as a fullscreen immersive app from any group widget or the app drawer
-- Floats perfectly over your home screen seamlessly with zero black dimming!
-- Swipe-from-edge to reveal system bars; screen stays on
-- Tap apps to launch; tap outside to return home
+- Launch AuraOrbit as a fullscreen immersive app from any group widget or app drawer
+- Floats over your home screen seamlessly with zero black dimming!
 
 **Performance & Privacy**
 - Advanced memory caching for instant sphere loads
@@ -51,8 +47,8 @@
 ## 🛠️ Architecture
 
 AuraOrbit seamlessly merges standard Android UI with a high-performance C++ OpenGL backend via libGDX:
-- **`SphereEngine.java`**: The core 3D engine running libGDX (`ApplicationListener`). Uses `DecalBatch` for ultra-fast 3D billboarding and `ModelBatch` for the translucent group backdrops.
-- **`LiveWallpaperSettings.java`**: A purely code-driven Settings Activity (using `PreferenceFragmentCompat` and programmatically generated dialogs) to curate your apps and build custom-colored groups.
+- **`SphereEngine.java`**: The core 3D engine running libGDX (`ApplicationListener`). Uses `DecalBatch` for ultra-fast 3D billboarding and `ModelBatch` for translucent group backdrops.
+- **`WidgetEditFragment.java` & `PermanentSphereFragment.java`**: Modern Material 3 configuration fragments for managing 3D widgets and wallpaper settings.
 - **`AppFetcher.java`**: The data pipeline directly interfacing with Android's `PackageManager` to pull high-res application icons and convert them safely into OpenGL textures on the fly.
 
 ## 📦 How to Build & Install
@@ -62,7 +58,7 @@ AuraOrbit seamlessly merges standard Android UI with a high-performance C++ Open
 In the meantime, you can download the latest signed APK from the Releases page:
 👉 **[Download the latest APK](https://github.com/JaiminPatel345/AuraOrbit/releases/latest)**
 
-If you prefer to build it from source, the codebase requires **Java 17+** (due to AGP 8.x) to build correctly. Newer versions like Java 21 work perfectly as well. 
+If you prefer to build it from source, the codebase requires **Java 17+** (due to AGP 8.x) to build correctly. 
 
 **Via Android Studio (Recommended)**
 1. Open the project folder in Android Studio.
@@ -80,31 +76,15 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 ## ⚙️ Configuration
 
-Once installed, you can open the **AuraOrbit settings dashboard** from your launcher to:
-- Select which apps appear on your orbit.
+Once installed, you can open the **AuraOrbit settings dashboard (v3.0.0)** from your launcher to:
+- Configure Permanent Sphere wallpaper or create custom 3D Widget Spheres.
+- Select which apps appear on your orbit via dedicated app selection dialogs.
 - Apply third-party icon packs directly to your 3D sphere.
-- Create color-coded app groups with custom names and colors.
 - Drag and scale the sphere to any position on your screen.
-- Upload a custom background image and tune blur radius + strength.
-- Override backgrounds, blur, and positioning for individual app groups!
-- Customize each group's widget: logo, ring color, transparency, text visibility.
-- Set the target framerate (30/60/90/120 FPS).
-- Adjust icon size and rotation speed.
-
-To see the interactive 3D sphere on your home screen, add the **AuraOrbit widget**:
-1. Long-press on any empty space on your home screen.
-2. Select **Widgets** and find **AuraOrbit**.
-3. Drag the widget to your home screen.
-4. Pin specific app groups as widgets directly from the AuraOrbit settings dashboard.
+- Adjust full-screen background blur strength (0-100%).
+- Set target framerate (30/60/90/120 FPS).
+- Pin widgets directly to your home screen.
 
 ## 🤝 Contributing
 
-We welcome contributions from everyone! If you want to contribute to AuraOrbit, feel free to fork the repository, make your changes, and submit a pull request. 
-
-If you find any bugs or have feature requests, please **raise an issue** on GitHub so we can look into it. 
-
-## 📄 License
-
-This project is licensed under the **GNU General Public License v3.0 (GPLv3)**. It is Free and Open Source Software (FOSS). You are free to use, modify, and distribute the software.
-
-For more details, please read the [LICENSE](LICENSE) file.
+Contributions are welcome! Please check open issues or submit pull requests on [GitHub](https://github.com/JaiminPatel345/AuraOrbit).
