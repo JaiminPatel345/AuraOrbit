@@ -60,7 +60,6 @@ public class PermanentSphereFragment extends Fragment {
     private TextView tvSpherePositionStatus;
     private TextView tvAppsCount;
     private TextView tvGestureRadiusValue;
-    private TextView tvBlurStatus;
     private View sectionSphereSettings;
 
     private ActivityResultLauncher<PickVisualMediaRequest> pickMedia;
@@ -146,12 +145,7 @@ public class PermanentSphereFragment extends Fragment {
             }
         });
 
-        // Background Blur
-        tvBlurStatus = view.findViewById(R.id.tv_blur_status);
-        updateBlurStatusText(tvBlurStatus, prefs.getInt("pref_blur_radius", 0));
-        view.findViewById(R.id.btn_sphere_blur).setOnClickListener(v -> {
-            startActivity(new android.content.Intent(requireContext(), SphereBlurEditorActivity.class));
-        });
+
 
         // Icon Size slider
         Slider sliderIconSize = view.findViewById(R.id.slider_icon_size);
@@ -405,14 +399,7 @@ public class PermanentSphereFragment extends Fragment {
         }
     }
 
-    private void updateBlurStatusText(TextView tv, int amount) {
-        if (tv == null) return;
-        if (amount == 0) tv.setText("No Blur");
-        else if (amount <= 33) tv.setText("Sphere Background Only");
-        else if (amount <= 66) tv.setText("Nearby Area");
-        else if (amount < 100) tv.setText("Almost Full Screen");
-        else tv.setText("Full Screen Blur");
-    }
+
 
     private void showPermanentSphereGuideDialog(boolean launchWallpaperPicker) {
         new MaterialAlertDialogBuilder(requireContext())
