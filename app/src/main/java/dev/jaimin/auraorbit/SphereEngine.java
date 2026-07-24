@@ -2974,11 +2974,6 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         }
 
 
-        final long A11Y_FRESHNESS_NS = 5_000_000_000L; // 5 s
-        boolean a11yFresh = LauncherStateService.LauncherState.serviceConnected
-                && (System.nanoTime() - LauncherStateService.LauncherState.updatedNanos)
-                   < A11Y_FRESHNESS_NS;
-
         // Fetch preference values
         SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
         int totalPages = sharedPrefs.getInt("pref_total_pages", 3);
@@ -2987,7 +2982,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         boolean offsetsLive = offsetEverSeen
                 && (System.nanoTime() - lastOffsetTimeNanos) < 10_000_000_000L;
 
-        if (a11yFresh) {
+        if (LauncherStateService.LauncherState.serviceConnected) {
             int a11yPage = LauncherStateService.LauncherState.page;
             if (a11yPage >= 1) {
                 inferredPage = a11yPage - 1; // convert back to 0-based
