@@ -294,6 +294,8 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
 
         private float touchStartX = 0f;
         private float touchStartY = 0f;
+        private float touchStartRawX = 0f;
+        private float touchStartRawY = 0f;
         private boolean isDragging = false;
         private static final float DRAG_THRESHOLD_PX = 16f;
 
@@ -312,6 +314,8 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
                 case MotionEvent.ACTION_DOWN:
                     touchStartX = event.getX();
                     touchStartY = event.getY();
+                    touchStartRawX = event.getRawX();
+                    touchStartRawY = event.getRawY();
                     isDragging = false;
                     forwardToGdx(event);
                     return true;
@@ -334,10 +338,10 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
                         isDragging = false;
                         return true;
                     } else {
-                        // Quick tap (< 16px): trigger 3D sphere raycast and app launch!
+                        // Quick tap (< 16px): trigger 3D sphere raycast using raw screen coordinates!
                         if (app != null && app.getApplicationListener() instanceof SphereEngine) {
                             SphereEngine engine = (SphereEngine) app.getApplicationListener();
-                            engine.performTapLaunch(touchStartX, touchStartY);
+                            engine.performTapLaunch(touchStartRawX, touchStartRawY);
                         }
                         MotionEvent cancelEvent = MotionEvent.obtain(event);
                         cancelEvent.setAction(MotionEvent.ACTION_CANCEL);
@@ -361,7 +365,12 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
                 if (g instanceof com.badlogic.gdx.backends.android.AndroidGraphics) {
                     View v = ((com.badlogic.gdx.backends.android.AndroidGraphics) g).getView();
                     if (v != null) {
-                        v.dispatchTouchEvent(event);
+                        MotionEvent clone = MotionEvent.obtain(event);
+                        if (overlayParams != null) {
+                            clone.offsetLocation(overlayParams.x, overlayParams.y);
+                        }
+                        v.dispatchTouchEvent(clone);
+                        clone.recycle();
                     }
                 }
             }

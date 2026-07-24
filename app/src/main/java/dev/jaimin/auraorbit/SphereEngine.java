@@ -3657,16 +3657,45 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
 
     public boolean isOverlayInteractive() {
         if (isPreviewMode) return false;
-        if (pageVisibility < 0.8f) return false;
-        if (returnAnim < 0.8f) return false;
-        if (wallpaperZoom > 0.05f) return false;
+        if (pageVisibility < 0.5f) return false;
+        if (returnAnim < 0.5f) return false;
+        if (wallpaperZoom > 0.20f) return false;
         if (isA11yDrawerOpenFresh()) return false;
         if (LauncherStateService.LauncherState.drawerOpen) return false;
         if (LauncherStateService.LauncherState.systemUiVisible &&
-                (System.nanoTime() - LauncherStateService.LauncherState.updatedNanos) < 5_000_000_000L) {
+                (System.nanoTime() - LauncherStateService.LauncherState.updatedNanos) < 3_000_000_000L) {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Triggers a 3D raycast and app launch for quick taps originating from TouchOverlayView.
+     *
+     * @param x Screen-relative X coordinate in pixels
+     * @param y Screen-relative Y coordinate in pixels
+     * @return true if overlay is interactive and tap was posted, false otherwise
+     */
+    public boolean performTapLaunch(float x, float y) {
+        Log.d(TAG, "performTapLaunch called at raw (" + x + ", " + y + ")");
+        if (!isOverlayInteractive()) {
+            Log.d(TAG, "performTapLaunch: isOverlayInteractive returned false (pageVis=" + pageVisibility + ", returnAnim=" + returnAnim + ", zoom=" + wallpaperZoom + ")");
+            return false;
+        }
+        if (Gdx.app != null) {
+            final float fx = x;
+            final float fy = y;
+            Gdx.app.postRunnable(() -> {
+                if (isA11yDrawerOpenFresh()) {
+                    Log.d(TAG, "performTapLaunch: suppressed by a11y drawer open");
+                    return;
+                }
+                boolean launched = raycastAndLaunch(fx, fy);
+                Log.d(TAG, "performTapLaunch: raycastAndLaunch result=" + launched + " for raw (" + fx + ", " + fy + ")");
+            });
+            return true;
+        }
+        return false;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -3824,27 +3853,6 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
             }
             raycastAndLaunch(fx, fy);
         });
-    }
-
-    /**
-     * Triggers a 3D raycast and app launch for quick taps originating from TouchOverlayView.
-     *
-     * @param x Surface-relative X coordinate in pixels
-     * @param y Surface-relative Y coordinate in pixels
-     * @return true if overlay is interactive and tap was posted, false otherwise
-     */
-    public boolean performTapLaunch(float x, float y) {
-        if (!isOverlayInteractive()) return false;
-        if (Gdx.app != null) {
-            final float fx = x;
-            final float fy = y;
-            Gdx.app.postRunnable(() -> {
-                if (isA11yDrawerOpenFresh()) return;
-                raycastAndLaunch(fx, fy);
-            });
-            return true;
-        }
-        return false;
     }
 
     /**
