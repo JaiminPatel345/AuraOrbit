@@ -416,7 +416,9 @@ public class PermanentSphereFragment extends Fragment {
                 .setTitle("Permanent Sphere Guide")
                 .setMessage("🌐 Permanent Sphere:\n" +
                            "Renders an interactive 3D app sphere as your live wallpaper directly on your home screen background.\n\n" +
-                           "🛡️ Block Launcher Gestures:\n" +
+                           "📄 Page Setup:\n" +
+                           "Set the total number of home screen pages and select the exact page on which you want to display this sphere.\n\n" +
+                           "🛡️ Block Launcher Gestures (Recommended):\n" +
                            "Prevents your home screen launcher from accidentally swiping pages or pulling down notifications while you rotate or interact with the 3D sphere.")
                 .setPositiveButton(launchWallpaperPicker ? "Set Wallpaper" : "Got It", (dialog, which) -> {
                     if (launchWallpaperPicker) {
