@@ -107,6 +107,9 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
         @Override
         public void onOffsetsChanged(float xOffset, float yOffset, float xOffsetStep, float yOffsetStep, int xPixelOffset, int yPixelOffset) {
             super.onOffsetsChanged(xOffset, yOffset, xOffsetStep, yOffsetStep, xPixelOffset, yPixelOffset);
+            if (app != null && app.getApplicationListener() instanceof SphereEngine) {
+                ((SphereEngine) app.getApplicationListener()).onOffsetsChanged(xOffset, yOffset, xOffsetStep, yOffsetStep);
+            }
         }
     }
 

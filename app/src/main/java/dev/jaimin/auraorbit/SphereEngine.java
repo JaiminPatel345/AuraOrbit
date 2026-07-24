@@ -2979,8 +2979,7 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
         int totalPages = sharedPrefs.getInt("pref_total_pages", 3);
         int targetActivePage = activePage;
 
-        boolean offsetsLive = offsetEverSeen
-                && (System.nanoTime() - lastOffsetTimeNanos) < 10_000_000_000L;
+        boolean offsetsLive = offsetEverSeen;
 
         if (LauncherStateService.LauncherState.serviceConnected) {
             int a11yPage = LauncherStateService.LauncherState.page;
