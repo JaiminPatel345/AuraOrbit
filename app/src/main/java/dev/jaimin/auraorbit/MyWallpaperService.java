@@ -334,7 +334,11 @@ public class MyWallpaperService extends AndroidLiveWallpaperService {
                         isDragging = false;
                         return true;
                     } else {
-                        // Quick tap (< 16px): send cancel to GDX and return false to let Android pass tap to 2D App Drawer / Recent Apps / Wallpaper
+                        // Quick tap (< 16px): trigger 3D sphere raycast and app launch!
+                        if (app != null && app.getApplicationListener() instanceof SphereEngine) {
+                            SphereEngine engine = (SphereEngine) app.getApplicationListener();
+                            engine.performTapLaunch(touchStartX, touchStartY);
+                        }
                         MotionEvent cancelEvent = MotionEvent.obtain(event);
                         cancelEvent.setAction(MotionEvent.ACTION_CANCEL);
                         forwardToGdx(cancelEvent);

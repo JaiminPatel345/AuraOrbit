@@ -3827,6 +3827,27 @@ public class SphereEngine implements ApplicationListener, AndroidWallpaperListen
     }
 
     /**
+     * Triggers a 3D raycast and app launch for quick taps originating from TouchOverlayView.
+     *
+     * @param x Surface-relative X coordinate in pixels
+     * @param y Surface-relative Y coordinate in pixels
+     * @return true if overlay is interactive and tap was posted, false otherwise
+     */
+    public boolean performTapLaunch(float x, float y) {
+        if (!isOverlayInteractive()) return false;
+        if (Gdx.app != null) {
+            final float fx = x;
+            final float fy = y;
+            Gdx.app.postRunnable(() -> {
+                if (isA11yDrawerOpenFresh()) return;
+                raycastAndLaunch(fx, fy);
+            });
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Called from {@code MyWallpaperService.AuraOrbitEngine.onZoomChanged} when
      * the launcher zooms the wallpaper surface.
      *
