@@ -56,7 +56,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Some features (such as dynamic page scrolling) may not function as expected on certain OEM launchers like Samsung One UI due to system wallpaper restrictions."
+                        android:text="Due to some restrictions, Permanent Sphere may not work properly in some launchers like One UI."
                         android:textSize="13sp"
                         android:textColor="#FFECB3"
                         android:layout_marginTop="4dp"
