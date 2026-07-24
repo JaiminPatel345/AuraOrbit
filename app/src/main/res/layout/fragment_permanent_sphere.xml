@@ -260,6 +260,18 @@
                                     android:textColor="?android:attr/textColorPrimary"
                                     android:textSize="16sp" />
 
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Recommended"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold"
+                                    android:textColor="?attr/colorPrimary"
+                                    android:background="@drawable/rounded_bg_solid"
+                                    android:paddingHorizontal="8dp"
+                                    android:paddingVertical="3dp"
+                                    android:layout_marginStart="8dp" />
+
                                 <ImageButton
                                     android:id="@+id/btn_info_block_gestures"
                                     android:layout_width="18dp"
