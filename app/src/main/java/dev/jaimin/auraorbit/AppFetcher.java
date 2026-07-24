@@ -161,18 +161,25 @@ public class AppFetcher {
             // Load apps selected for this specific widget
             List<WidgetStore.Widget> widgets = WidgetStore.load(prefs);
             WidgetStore.Widget w = WidgetStore.find(widgets, pinnedGroupName);
-            if (w != null) {
+            if (w != null && w.packages != null && !w.packages.isEmpty()) {
                 selectedPackages.addAll(w.packages);
             }
-        } else {
+        }
+
+        if (selectedPackages.isEmpty()) {
             // Load apps selected for the permanent sphere
-            selectedPackages.addAll(prefs.getStringSet(PREF_SELECTED_APPS, new HashSet<>()));
-            if (selectedPackages.isEmpty()) {
-                List<ResolveInfo> launchable = getAllLaunchableApps(context);
-                for (ResolveInfo info : launchable) {
-                    if (info.activityInfo != null && info.activityInfo.packageName != null) {
-                        selectedPackages.add(info.activityInfo.packageName);
-                    }
+            Set<String> permApps = prefs.getStringSet(PREF_SELECTED_APPS, new HashSet<>());
+            if (permApps != null && !permApps.isEmpty()) {
+                selectedPackages.addAll(permApps);
+            }
+        }
+
+        if (selectedPackages.isEmpty()) {
+            // Fall back to ALL launchable apps
+            List<ResolveInfo> launchable = getAllLaunchableApps(context);
+            for (ResolveInfo info : launchable) {
+                if (info.activityInfo != null && info.activityInfo.packageName != null) {
+                    selectedPackages.add(info.activityInfo.packageName);
                 }
             }
         }
