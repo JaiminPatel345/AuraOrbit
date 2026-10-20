@@ -1,0 +1,31 @@
+name: Build debug and lint
+on:
+  workflow_dispatch:
+  push:
+    branches: [android9-support]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: chmod +x gradlew
+      - name: Lint
+        run: ./gradlew lint
+        continue-on-error: true
+      - name: Build debug APK
+        run: ./gradlew assembleDebug
+        continue-on-error: true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lint-reports
+          path: app/build/reports/lint-results*
