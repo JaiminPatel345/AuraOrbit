@@ -62,7 +62,7 @@ public class DashboardFragment extends Fragment {
                         .getPackageInfo(requireContext().getPackageName(), 0).versionName;
                 tvAppVersion.setText("v" + versionName);
             } catch (Exception e) {
-                tvAppVersion.setText("v3.0.0");
+                tvAppVersion.setText("v3.0.1");
             }
         }
 

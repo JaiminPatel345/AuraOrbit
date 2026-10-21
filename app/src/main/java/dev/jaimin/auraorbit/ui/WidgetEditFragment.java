@@ -436,31 +436,35 @@ public class WidgetEditFragment extends Fragment {
 
         // ─── Pin Widget button ────────────────────────────────────────────
         AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(requireContext());
-        if (originalWidgetName != null && appWidgetManager.isRequestPinAppWidgetSupported()) {
+        if (targetAppWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID && originalWidgetName != null) {
             btnPinWidget.setVisibility(View.VISIBLE);
             if (btnInfoPinWidget != null) {
                 btnInfoPinWidget.setVisibility(View.VISIBLE);
                 btnInfoPinWidget.setOnClickListener(v -> showInfoDialog("Add to Home Screen", "Adds a shortcut to this widget directly on your home screen for quick access."));
             }
             btnPinWidget.setOnClickListener(v -> {
-                int[] appWidgetIds = appWidgetManager.getAppWidgetIds(new ComponentName(requireContext(), SphereWidgetProvider.class));
-                boolean alreadyPinned = false;
-                for (int id : appWidgetIds) {
-                    if (originalWidgetName.equals(prefs.getString("widget_group_" + id, null))) {
-                        alreadyPinned = true;
-                        break;
+                if (appWidgetManager.isRequestPinAppWidgetSupported()) {
+                    int[] appWidgetIds = appWidgetManager.getAppWidgetIds(new ComponentName(requireContext(), SphereWidgetProvider.class));
+                    boolean alreadyPinned = false;
+                    for (int id : appWidgetIds) {
+                        if (originalWidgetName.equals(prefs.getString("widget_group_" + id, null))) {
+                            alreadyPinned = true;
+                            break;
+                        }
                     }
-                }
-                
-                if (alreadyPinned) {
-                    new MaterialAlertDialogBuilder(requireContext())
-                        .setTitle("Widget Already Pinned")
-                        .setMessage("A shortcut for this widget is already on your home screen. Do you want to add another one?")
-                        .setPositiveButton("Add Another", (dialog, which) -> requestPinWidget(originalWidgetName))
-                        .setNegativeButton("Cancel", null)
-                        .show();
+                    
+                    if (alreadyPinned) {
+                        new MaterialAlertDialogBuilder(requireContext())
+                            .setTitle("Widget Already Pinned")
+                            .setMessage("A shortcut for this widget is already on your home screen. Do you want to add another one?")
+                            .setPositiveButton("Add Another", (dialog, which) -> requestPinWidget(originalWidgetName))
+                            .setNegativeButton("Cancel", null)
+                            .show();
+                    } else {
+                        requestPinWidget(originalWidgetName);
+                    }
                 } else {
-                    requestPinWidget(originalWidgetName);
+                    showManualPinInstructions(originalWidgetName);
                 }
             });
         } else {
@@ -474,9 +478,19 @@ public class WidgetEditFragment extends Fragment {
         MaterialButton btnSaveNewGroup = root.findViewById(R.id.btn_save_new_widget);
         MaterialButton btnDelete = root.findViewById(R.id.btn_delete);
         
-        if (originalWidgetName == null) {
+        if (targetAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
             if (btnSaveNewGroup != null) {
                 btnSaveNewGroup.setVisibility(View.VISIBLE);
+                btnSaveNewGroup.setText("Apply to Home Screen");
+                btnSaveNewGroup.setOnClickListener(v -> saveData());
+            }
+            if (btnDelete != null) {
+                btnDelete.setVisibility(View.GONE);
+            }
+        } else if (originalWidgetName == null) {
+            if (btnSaveNewGroup != null) {
+                btnSaveNewGroup.setVisibility(View.VISIBLE);
+                btnSaveNewGroup.setText("Save Widget");
                 btnSaveNewGroup.setOnClickListener(v -> saveData());
             }
             if (btnDelete != null) {
@@ -770,8 +784,20 @@ public class WidgetEditFragment extends Fragment {
 
             appWidgetManager.requestPinAppWidget(myProvider, null, successCallback);
         } else {
-            Toast.makeText(requireContext(), "Pinning widgets is not supported on this device.", Toast.LENGTH_SHORT).show();
+            showManualPinInstructions(widgetName);
         }
+    }
+
+    private void showManualPinInstructions(String widgetName) {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Add to Home Screen")
+                .setMessage("Your launcher (e.g. Total Launcher) does not support automatic widget pinning from apps.\n\n" +
+                        "To add this widget manually:\n" +
+                        "1. Long-press an empty space on your home screen.\n" +
+                        "2. Open your launcher's widget menu (in Total Launcher: Edit Mode > + > Widget).\n" +
+                        "3. Select AuraOrbit and choose '" + widgetName + "'.")
+                .setPositiveButton("Got it", null)
+                .show();
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -1002,7 +1028,7 @@ public class WidgetEditFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        if (originalWidgetName != null) {
+        if (originalWidgetName != null && targetAppWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
             saveData();
         }
     }
@@ -1186,30 +1212,52 @@ public class WidgetEditFragment extends Fragment {
 
 
         if (targetAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
-            prefs.edit().putString("widget_group_" + targetAppWidgetId, newName).apply();
+            prefs.edit().putString("widget_group_" + targetAppWidgetId, newName).commit();
             Intent resultValue = new Intent();
             resultValue.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, targetAppWidgetId);
             if (getActivity() != null) {
                 getActivity().setResult(android.app.Activity.RESULT_OK, resultValue);
             }
+            AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(requireContext());
+            new SphereWidgetProvider().onUpdate(requireContext(), appWidgetManager, new int[]{targetAppWidgetId});
+            SphereWidgetProvider.updateAllWidgets(requireContext());
+            Toast.makeText(requireContext(), "Widget placed!", Toast.LENGTH_SHORT).show();
+            if (getActivity() != null) {
+                getActivity().finish();
+            }
+            return true;
         }
 
-        if (originalWidgetName == null && targetAppWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
-            // Automatically prompt the user to pin the widget to their home screen for new widgets
-            requestPinWidget(newName);
+        if (originalWidgetName == null) {
+            AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(requireContext());
+            if (appWidgetManager.isRequestPinAppWidgetSupported()) {
+                requestPinWidget(newName);
+                Toast.makeText(requireContext(), "Saved!", Toast.LENGTH_SHORT).show();
+            } else {
+                new MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Widget Saved")
+                        .setMessage("Widget saved successfully!\n\n" +
+                                "Your launcher (e.g. Total Launcher) does not support automatic widget pinning from apps.\n\n" +
+                                "To add this widget to your home screen:\n" +
+                                "1. Long-press an empty space on your home screen.\n" +
+                                "2. Open your launcher's widget menu (in Total Launcher: Edit Mode > + > Widget).\n" +
+                                "3. Select AuraOrbit and choose '" + newName + "'.")
+                        .setPositiveButton("Got it", (dialog, which) -> {
+                            if (getActivity() != null) {
+                                getActivity().getSupportFragmentManager().popBackStack();
+                            }
+                        })
+                        .show();
+            }
         } else {
             // Update existing widgets when a widget is edited
             SphereWidgetProvider.updateAllWidgets(requireContext());
+            Toast.makeText(requireContext(), "Saved!", Toast.LENGTH_SHORT).show();
         }
-
-        Toast.makeText(requireContext(), "Saved!", Toast.LENGTH_SHORT).show();
 
         // Update originalWidgetName so subsequent auto-saves (e.g. after config change)
         // know the new identity of this widget.
         originalWidgetName = newName;
-        if (targetAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID && getActivity() != null) {
-            getActivity().finish();
-        }
         return true;
     }
 

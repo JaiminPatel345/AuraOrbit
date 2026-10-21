@@ -1,5 +1,8 @@
 package dev.jaimin.auraorbit.ui;
 
+import android.appwidget.AppWidgetManager;
+import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -22,6 +25,7 @@ import java.util.List;
 
 import dev.jaimin.auraorbit.WidgetStore;
 import dev.jaimin.auraorbit.R;
+import dev.jaimin.auraorbit.SphereWidgetProvider;
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════
@@ -30,9 +34,32 @@ import dev.jaimin.auraorbit.R;
  */
 public class WidgetListFragment extends Fragment {
 
+    private static final String ARG_APPWIDGET_ID = "arg_app_widget_id";
+    private int targetAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
+
     private WidgetAdapter adapter;
     private View emptyView;
     private RecyclerView recyclerView;
+
+    public static WidgetListFragment newInstance() {
+        return new WidgetListFragment();
+    }
+
+    public static WidgetListFragment newInstance(int appWidgetId) {
+        WidgetListFragment fragment = new WidgetListFragment();
+        Bundle args = new Bundle();
+        args.putInt(ARG_APPWIDGET_ID, appWidgetId);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            targetAppWidgetId = getArguments().getInt(ARG_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
+        }
+    }
 
     @Nullable
     @Override
@@ -61,7 +88,11 @@ public class WidgetListFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        requireActivity().setTitle(R.string.title_widgets);
+        if (targetAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+            requireActivity().setTitle("Select Widget");
+        } else {
+            requireActivity().setTitle(R.string.title_widgets);
+        }
         reloadWidgets();
     }
 
@@ -84,9 +115,27 @@ public class WidgetListFragment extends Fragment {
     private void navigateToEdit(@Nullable String widgetName) {
         getParentFragmentManager()
                 .beginTransaction()
-                .replace(R.id.settings_container, WidgetEditFragment.newInstance(widgetName))
+                .replace(R.id.settings_container, WidgetEditFragment.newInstance(widgetName, targetAppWidgetId))
                 .addToBackStack(null)
                 .commit();
+    }
+
+    private void selectWidgetForPlacement(String widgetName) {
+        if (targetAppWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return;
+        Context context = requireContext();
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        prefs.edit().putString("widget_group_" + targetAppWidgetId, widgetName).commit();
+
+        AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+        new SphereWidgetProvider().onUpdate(context, appWidgetManager, new int[]{targetAppWidgetId});
+        SphereWidgetProvider.updateAllWidgets(context);
+
+        Intent resultValue = new Intent();
+        resultValue.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, targetAppWidgetId);
+        if (getActivity() != null) {
+            getActivity().setResult(android.app.Activity.RESULT_OK, resultValue);
+            getActivity().finish();
+        }
     }
 
     private void confirmDelete(@NonNull String widgetName) {
@@ -187,7 +236,23 @@ public class WidgetListFragment extends Fragment {
             holder.count.setText(getString(R.string.group_member_count,
                     widget.packages.size()));
 
-            holder.itemView.setOnClickListener(v -> navigateToEdit(widget.name));
+            holder.itemView.setOnClickListener(v -> {
+                if (targetAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+                    new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                            .setTitle(widget.name)
+                            .setMessage("Place this widget on your home screen?")
+                            .setPositiveButton("Select", (dialog, which) -> {
+                                selectWidgetForPlacement(widget.name);
+                            })
+                            .setNeutralButton("Customize", (dialog, which) -> {
+                                navigateToEdit(widget.name);
+                            })
+                            .setNegativeButton(R.string.btn_cancel, null)
+                            .show();
+                } else {
+                    navigateToEdit(widget.name);
+                }
+            });
             holder.btnDelete.setOnClickListener(v -> confirmDelete(widget.name));
         }
 

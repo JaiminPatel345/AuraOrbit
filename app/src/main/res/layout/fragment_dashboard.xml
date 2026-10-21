@@ -273,7 +273,7 @@
                 android:id="@+id/tv_app_version"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="v3.0.0"
+                android:text="v3.0.1"
                 android:textColor="?android:attr/textColorSecondary"
                 android:textSize="12sp"
                 android:layout_marginTop="4dp" />
