@@ -96,8 +96,17 @@
             android:screenOrientation="portrait"
             android:taskAffinity=".SphereTask"
             android:excludeFromRecents="true"
-            android:launchMode="singleInstance"
+            android:launchMode="singleTask"
             android:configChanges="orientation|screenSize|keyboardHidden">
+            <!-- HOME + DEFAULT makes this activity selectable as the device
+                 Home app (Settings > Apps > Default apps > Home app).
+                 LAUNCHER is deliberately NOT added here so the existing
+                 LiveWallpaperSettings launcher icon is kept untouched. -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
 
         <!-- ═══════════════════════════════════════════════════════════════
