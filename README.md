@@ -1,4 +1,4 @@
-# AuraOrbit 🌍✨ (v3.0.0)
+# AuraOrbit 🌍✨ (v3.0.1)
 
 **AuraOrbit** is a next-generation Android application featuring a fully interactive 3D sphere that orbits your favorite apps right on your home screen via customizable widgets or a standalone immersive launcher mode. Built on the high-performance libGDX game engine, it leverages a golden angle Fibonacci distribution to plot your apps perfectly in a 3D space, supporting true 120 FPS hardware refresh rates!
 

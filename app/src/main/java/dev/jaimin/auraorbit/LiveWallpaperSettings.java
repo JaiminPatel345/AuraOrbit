@@ -1,6 +1,7 @@
 package dev.jaimin.auraorbit;
 
 import android.app.WallpaperManager;
+import android.appwidget.AppWidgetManager;
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
@@ -88,8 +89,15 @@ public class LiveWallpaperSettings extends AppCompatActivity {
 
         // Handle widget configuration intent
         Intent intent = getIntent();
-        int appWidgetId = intent.getIntExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID, android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID);
+        int appWidgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
         android.util.Log.d("AuraOrbit", "CONFIGURE check. action=" + intent.getAction() + " appWidgetId=" + appWidgetId);
+
+        if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+            // Set default result to CANCELED so if the user backs out, the launcher removes the unconfigured widget host
+            Intent cancelResult = new Intent();
+            cancelResult.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
+            setResult(RESULT_CANCELED, cancelResult);
+        }
 
         // Inflate the activity layout that owns the MaterialToolbar + settings_container.
         setContentView(R.layout.activity_settings);
@@ -112,22 +120,29 @@ public class LiveWallpaperSettings extends AppCompatActivity {
 
         // Only push the root fragment on a clean launch
         if (savedInstanceState == null) {
-            if (appWidgetId != android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID) {
+            if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
                 String widgetName = prefs.getString("widget_group_" + appWidgetId, null);
                 if (widgetName == null) {
                     widgetName = prefs.getString("widget_name_" + appWidgetId, null);
                 }
                 
-                if (widgetName != null && WidgetStore.find(WidgetStore.load(prefs), widgetName) != null) {
+                List<WidgetStore.Widget> existingWidgets = WidgetStore.load(prefs);
+                if (widgetName != null && WidgetStore.find(existingWidgets, widgetName) != null) {
                     getSupportFragmentManager()
                             .beginTransaction()
                             .replace(R.id.settings_container, dev.jaimin.auraorbit.ui.WidgetEditFragment.newInstance(widgetName, appWidgetId))
                             .commit();
+                } else if (existingWidgets.isEmpty()) {
+                    // No widgets created yet: guide user straight into creating one for this widget slot
+                    getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.settings_container, dev.jaimin.auraorbit.ui.WidgetEditFragment.newInstance(null, appWidgetId))
+                            .commit();
                 } else {
                     getSupportFragmentManager()
                             .beginTransaction()
-                            .replace(R.id.settings_container, new dev.jaimin.auraorbit.ui.WidgetListFragment())
+                            .replace(R.id.settings_container, dev.jaimin.auraorbit.ui.WidgetListFragment.newInstance(appWidgetId))
                             .commit();
                 }
             } else {
@@ -205,6 +220,12 @@ public class LiveWallpaperSettings extends AppCompatActivity {
      */
     private void refreshApplyButtonVisibility() {
         if (btnApplyWallpaper == null) return;
+
+        boolean isWidgetConfig = getIntent().getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID) != AppWidgetManager.INVALID_APPWIDGET_ID;
+        if (isWidgetConfig) {
+            btnApplyWallpaper.setVisibility(View.GONE);
+            return;
+        }
 
         boolean isRoot = getSupportFragmentManager().getBackStackEntryCount() == 0;
         btnApplyWallpaper.setVisibility(isRoot ? View.VISIBLE : View.GONE);
