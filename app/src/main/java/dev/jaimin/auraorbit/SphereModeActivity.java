@@ -280,10 +280,37 @@ public class SphereModeActivity extends AndroidApplication {
 
     @Override
     public void onBackPressed() {
+        // When AuraOrbit is the active Home app, Back must NOT close the
+        // launcher — there would be no way back to the home screen at all.
+        // We only swallow the event; the sphere stays fully interactive.
+        if (isHomeLauncher()) {
+            return;
+        }
         if (sphereEngine != null) {
             sphereEngine.fanOutAndFinish();
         } else {
             super.onBackPressed();
+        }
+    }
+
+    /**
+     * True when the system has AuraOrbit selected as the default Home app.
+     *
+     * <p>Detected by asking the package manager which activity handles the
+     * ACTION_MAIN / CATEGORY_HOME intent and comparing its package name with
+     * ours. This works on every API level and needs no extra permission.
+     */
+    private boolean isHomeLauncher() {
+        try {
+            android.content.Intent homeIntent = new android.content.Intent(android.content.Intent.ACTION_MAIN);
+            homeIntent.addCategory(android.content.Intent.CATEGORY_HOME);
+            homeIntent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+            android.content.pm.ResolveInfo info = getPackageManager()
+                    .resolveActivity(homeIntent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY);
+            return info != null && info.activityInfo != null
+                    && getPackageName().equals(info.activityInfo.packageName);
+        } catch (Exception e) {
+            return false;
         }
     }
 
