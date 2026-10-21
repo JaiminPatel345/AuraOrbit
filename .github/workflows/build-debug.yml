@@ -2,7 +2,7 @@ name: Build debug and lint
 on:
   workflow_dispatch:
   push:
-    branches: [android9-support]
+    branches: [Android9-support]
 jobs:
   build:
     runs-on: ubuntu-latest
