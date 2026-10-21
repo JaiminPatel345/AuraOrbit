@@ -227,12 +227,18 @@ public class SphereModeActivity extends AndroidApplication {
         
         // If the activity was already running and another widget was clicked,
         // update the engine with the new group name!
+        // NOTE: when AuraOrbit is the Home app, the system re-delivers the
+        // MAIN/HOME intent here every time the user presses Home. That intent
+        // carries NO group/widget extras, so we must not clear the currently
+        // selected group — only apply a group name when one was actually sent.
         if (sphereEngine != null) {
             String groupName = intent.getStringExtra("group_name");
             if (groupName == null) {
                 groupName = intent.getStringExtra("widget_name");
             }
-            sphereEngine.setPinnedGroupName(groupName);
+            if (groupName != null) {
+                sphereEngine.setPinnedGroupName(groupName);
+            }
         }
     }
 
